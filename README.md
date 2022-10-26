@@ -1,5 +1,18 @@
 # MolecuLib – Molecular Data Pipelining Tools
 
+## Usage
+
+One needs to install moleculib locally with 
+```
+pip install -e .
+```
+Then `moleculib` becomes importable in python scripts:
+
+```
+from moleculib.protein.batch import PadBatch
+```
+
+
 ## Environment
 Install [micromamba](https://mamba.readthedocs.io/en/latest/installation.html):
 
