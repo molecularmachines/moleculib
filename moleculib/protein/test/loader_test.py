@@ -1,9 +1,9 @@
 import unittest
 
-from protein.dataset import ProteinDataset
-from protein.loader import ProteinDataLoader
-from protein.batch import PadBatch
-from protein.utils import pids_file_to_list
+from .. import dataset
+from .. import loader
+from .. import batch
+from .. import utils
 
 
 class DataLoaderTest(unittest.TestCase):
@@ -15,12 +15,12 @@ class DataLoaderTest(unittest.TestCase):
 
     def test_dataload_from_filesystem(self):
         bs = 2
-        data_path = "data/pids_sanity.txt"
-        pids = pids_file_to_list(data_path)
+        data_path = "moleculib/data/pids_sanity.txt"
+        pids = utils.pids_file_to_list(data_path)
         self.check_dataloader_batch_size(pids, bs)
 
     def check_dataloader_batch_size(self, pids, bs):
-        dataset = ProteinDataset.fetch_from_pdb(pids)
-        dataloader = ProteinDataLoader(dataset, collator=PadBatch, batch_size=bs)
-        for batch in dataloader:
-            self.assertTrue(batch.atom_token.shape[0] == bs)
+        ds = dataset.ProteinDataset.fetch_from_pdb(pids)
+        dataloader = loader.ProteinDataLoader(ds, collator=batch.PadBatch, batch_size=bs)
+        for batch_ in dataloader:
+            self.assertTrue(batch_.atom_token.shape[0] == bs)

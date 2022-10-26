@@ -4,8 +4,8 @@ import unittest
 from tqdm import tqdm
 from tempfile import gettempdir
 
-from protein.datum import ProteinDatum
-from protein.utils import pids_file_to_list
+from .. import datum
+from .. import utils
 
 
 class ProteinDatumTest(unittest.TestCase):
@@ -21,16 +21,16 @@ class ProteinDatumTest(unittest.TestCase):
         self.assertTrue((sample.atom_coord[~sample.atom_mask] == 0.0).sum())
 
     def test_from_pdb(self):
-        sample = ProteinDatum.fetch_from_pdb("1BFV")
+        sample = datum.ProteinDatum.fetch_from_pdb("1BFV")
         self.check_attribute_shapes(sample)
         self.check_masking(sample)
 
     def test_from_npz(self):
-        sample = ProteinDatum.fetch_from_pdb(
+        sample = datum.ProteinDatum.fetch_from_pdb(
             "1BFV", save_path=gettempdir(), format="npz"
         )
         npz_path = Path(gettempdir()) / "1BFV.npz"
-        sample = ProteinDatum.from_filepath(npz_path, format='npz')
+        sample = datum.ProteinDatum.from_filepath(npz_path, format='npz')
         self.check_attribute_shapes(sample)
         self.check_masking(sample)
 
@@ -38,7 +38,7 @@ class ProteinDatumTest(unittest.TestCase):
         os.remove(str(npz_path))
 
     def test_all_pdb(self):
-        all_pids_path = "data/pids_all.txt"
-        pids = pids_file_to_list(all_pids_path)
-        for pid in pids:
-            protein = ProteinDatum.fetch_from_pdb(pid)
+        all_pids_path = "moleculib/data/pids_all.txt"
+        pids = utils.pids_file_to_list(all_pids_path)
+        for pid in pids[:30]:
+            protein = datum.ProteinDatum.fetch_from_pdb(pid)

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-import protein.datum as datum
-import protein.batch as batch
+from .. import datum
+from .. import batch
 
 
 class BatchTest(unittest.TestCase):
