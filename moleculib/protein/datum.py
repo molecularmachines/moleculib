@@ -13,7 +13,6 @@ from biotite.structure import (
     apply_chain_wise,
     get_chain_count,
 )
-
 from .alphabet import (
     atom_index,
     residue_index,
@@ -31,6 +30,8 @@ class ProteinDatum:
 
     def __init__(
         self,
+        pid: str,
+        resolution: float,
         sequence: ProteinSequence,
         residue_token: np.ndarray,
         residue_mask: np.ndarray,
@@ -39,6 +40,8 @@ class ProteinDatum:
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
     ):
+        self.pid = pid
+        self.resolution = resolution
         self.sequence = sequence
         self.residue_token = residue_token
         self.residue_mask = residue_mask
@@ -62,7 +65,7 @@ class ProteinDatum:
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_array, atom):
-            atom_array_ = atom_array[:, (atom_array.atom_name == atom_name)]
+            atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_residues_index[atom_token][res_tokens]
             for attr in attrs:
@@ -82,6 +85,8 @@ class ProteinDatum:
     @classmethod
     def empty_protein(cls):
         return cls(
+            pid="",
+            resolution=0.0,
             sequence=ProteinSequence(""),
             residue_token=np.array([]),
             residue_mask=np.array([]),
@@ -100,7 +105,10 @@ class ProteinDatum:
             atom_array = file.get_structure()
         else:
             raise ValueError('format needs to be npz or pdb')
-        return cls.from_atom_array(atom_array)
+        pdb_id = filepath[-7:-3]
+        header = dict(pid=pdb_id)
+
+        return cls.from_atom_array(atom_array, header)
 
     @classmethod
     def fetch_from_pdb(cls, id, save_path=None, format="npz"):
@@ -121,10 +129,12 @@ class ProteinDatum:
             npz_file.set_structure(atom_array)
             npz_file.write(str(data_path))
 
-        return cls.from_atom_array(atom_array)
+        header = dict(pid=id)
+        return cls.from_atom_array(atom_array, header=header)
+
 
     @classmethod
-    def from_atom_array(cls, atom_array, query_atoms=all_atoms):
+    def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
         if atom_array.array_length() == 0:
             return cls.empty_protein()
 
@@ -182,8 +192,13 @@ class ProteinDatum:
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
 
+        # NOTE(Allan): the easy fix for resolution requires modifying
+        # biotite. It's an easy modification with PR to two different repos
+        # I'll come back to this at some point.
         return cls(
+            pid=header['pid'],
             sequence=sequence,
+            resolution=0.0,
             residue_token=residue_token,
             residue_mask=residue_mask,
             chain_token=chain_token,
