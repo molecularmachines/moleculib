@@ -12,11 +12,11 @@ config = {
 
 def pdb_to_atom_array(pdb_path):
     pdb_file = PDBFile.read(pdb_path)
-    atom_array = pdb_file.get_structure(
+    atom_array = pdb_file.get_structure(model=1,
         extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
     )
     aa_filter = filter_amino_acids(atom_array)
-    atom_array = atom_array[:, aa_filter]
+    atom_array = atom_array[aa_filter]
     return atom_array
 
 
