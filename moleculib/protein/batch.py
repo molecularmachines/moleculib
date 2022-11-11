@@ -1,8 +1,12 @@
-from functools import reduce, partial
-import numpy as np
-from .datum import ProteinDatum
-from typing import List
+from __future__ import annotations
 
+import torch
+import numpy as np
+from functools import reduce, partial
+from .datum import ProteinDatum
+from typing import List, Tuple
+from einops import repeat, rearrange
+from .alphabet import backbone_atoms
 
 class ProteinCollator:
     """
@@ -24,6 +28,29 @@ class ProteinCollator:
         Reverts a batch to its original list form
         """
         raise NotImplementedError("revert method has to be implemented")
+
+    def to(self, device: str) -> ProteinCollator:
+        for attr, obj in vars(self).items():
+            if type(obj) == np.ndarray:
+                setattr(self, attr, obj.to(device))
+        return self
+
+    def torch(self) -> ProteinCollator:
+        for attr, obj in vars(self).items():
+            if type(obj) == np.ndarray:
+                setattr(self, attr, torch.from_numpy(obj))
+        return self
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            if type(obj) is list:
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_
 
 
 def pad_array(array, total_size):
@@ -137,4 +164,49 @@ class GeometricBatch(ProteinCollator):
         ]
         batch_index = np.concatenate(batch_index, axis=0)
 
-        return cls(batch_index, num_nodes, **batch_attr)
+        return cls(batch_index=batch_index, num_nodes=num_nodes, **batch_attr)
+
+
+def complete_graph(batch_num_nodes) -> np.array:
+    cumsum = np.cumsum([0] + list(batch_num_nodes[:-1]))
+    batch_edge_2d = [
+        np.stack(
+            (
+                repeat(np.arange(0, num_nodes), "i -> i j", j=num_nodes),
+                repeat(np.arange(0, num_nodes), "j -> i j", i=num_nodes),
+            ),
+            axis=0,
+        )
+        for num_nodes in batch_num_nodes
+    ]
+    batch_edge_flattened = [
+        rearrange(edges, "... i j -> ... (i j)") for edges in batch_edge_2d
+    ]
+    batch_edge_reindex = list(map(sum, zip(batch_edge_flattened, cumsum)))
+    edge_index = np.concatenate(batch_edge_reindex, axis=-1)
+    return edge_index
+
+
+def radial_graph(coords, batch_num_nodes, max_radius: 15.0) -> Tuple[np.array, np.array]:
+    edge_index = (v, u) = complete_graph(batch_num_nodes)
+    distances = np.linalg.norm(coords[v] - coords[u], axis=-1, keepdims=True)
+    accepted = (distances < max_radius).squeeze(-1)
+    return edge_index[:, accepted], distances[accepted]
+
+class FullyConnectedGeometricBatch(GeometricBatch):
+
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.edge_index = complete_graph(self.num_nodes)
+
+
+class RadialGeometricBatch(GeometricBatch):
+
+    def __init__(self, max_radius, **kwargs) -> None:
+        super().__init__(**kwargs)
+        ca_coord = self.atom_coord[:, backbone_atoms.index('CA')]
+        edge_index, _ = radial_graph(ca_coord, self.num_nodes, max_radius=max_radius)
+        self.edge_index = edge_index
+
+
