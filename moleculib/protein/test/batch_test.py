@@ -26,7 +26,7 @@ class BatchTest(unittest.TestCase):
         self.assertTrue((sample.atom_coord[~sample.atom_mask] == 0.0).sum())
 
     def test_pad_batch(self):
-        samples = list(map(datum.ProteinDatum.fetch_from_pdb, ["1BFV", "2GN4"]))
+        samples = list(map(datum.ProteinDatum.build, ["1BFV", "2GN4"]))
         max_seq_size = max([len(sample.sequence) for sample in samples])
         batch_ = batch.PadBatch.collate(samples)
         self.check_pad_batch_attribute_shapes(
@@ -35,7 +35,7 @@ class BatchTest(unittest.TestCase):
         self.check_masking(batch_)
 
     def test_pad_unbatch(self):
-        samples = list(map(datum.ProteinDatum.fetch_from_pdb, ["1BFV", "2GN4"]))
+        samples = list(map(datum.ProteinDatum.build, ["1BFV", "2GN4"]))
         max_seq_size = max([len(sample.sequence) for sample in samples])
         batched_samples = batch.PadBatch.collate(samples)
         samples_after = batched_samples.revert()
@@ -49,7 +49,7 @@ class BatchTest(unittest.TestCase):
         self.assertTrue(sample.residue_token.shape == (total_num_nodes,))
 
     def test_geometric_batch(self):
-        samples = list(map(datum.ProteinDatum.fetch_from_pdb, ["1BFV", "2GN4"]))
+        samples = list(map(datum.ProteinDatum.build, ["1BFV", "2GN4"]))
         num_nodes = [len(sample.sequence) for sample in samples]
         total_num_nodes = sum(num_nodes)
         batch_ = batch.GeometricBatch.collate(samples)
@@ -58,7 +58,7 @@ class BatchTest(unittest.TestCase):
         self.check_geometric_batch_attribute_shapes(batch_, total_num_nodes)
 
     def test_geometric_unbatch(self):
-        samples = list(map(datum.ProteinDatum.fetch_from_pdb, ["1BFV", "2GN4"]))
+        samples = list(map(datum.ProteinDatum.build, ["1BFV", "2GN4"]))
         batched_samples = batch.GeometricBatch.collate(samples)
         samples_after = batched_samples.revert()
         self.check_unbatched(samples, samples_after)
