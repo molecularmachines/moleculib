@@ -3,6 +3,8 @@ from collections import OrderedDict
 from ordered_set import OrderedSet
 from typing import List
 
+UNK_TOKEN = 1
+
 sidechain_atoms_per_residue = OrderedDict(
     ALA=["CB"],
     ARG=["CB", "CG", "CD", "NE", "CZ", "NH1", "NH2"],
@@ -59,7 +61,7 @@ def _index(lst: List[str], item: str) -> int:
     try:
         index = lst.index(item)
     except ValueError:
-        index = 1  # UNK
+        index = UNK_TOKEN # UNK
     return index
 
 
