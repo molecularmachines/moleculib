@@ -30,7 +30,7 @@ class ProteinDatumTest(unittest.TestCase):
             "1BFV", save_path=gettempdir(), format="npz"
         )
         npz_path = Path(gettempdir()) / "1BFV.npz"
-        sample = datum.ProteinDatum.from_filepath(npz_path, format='npz')
+        sample = datum.ProteinDatum.from_filepath(npz_path, format="npz")
         self.check_attribute_shapes(sample)
         self.check_masking(sample)
 

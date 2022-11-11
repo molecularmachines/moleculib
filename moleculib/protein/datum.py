@@ -97,14 +97,14 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath, format='npz'):
-        if format == 'pdb':
+    def from_filepath(cls, filepath, format="npz"):
+        if format == "pdb":
             atom_array = pdb_to_atom_array(filepath)
-        elif format == 'npz':
+        elif format == "npz":
             file = NpzFile.read(str(filepath))
             atom_array = file.get_structure()
         else:
-            raise ValueError('format needs to be npz or pdb')
+            raise ValueError("format needs to be npz or pdb")
         pdb_id = filepath[-7:-3]
         header = dict(pid=pdb_id)
 
@@ -115,7 +115,7 @@ class ProteinDatum:
         if (save_path is not None) and (format == "pdb"):
             pdb_save_path = save_path
         else:
-            pdb_save_path = config['cache_dir']
+            pdb_save_path = config["cache_dir"]
 
         filepath = rcsb.fetch(id, "pdb", pdb_save_path, verbose=True)
         atom_array = pdb_to_atom_array(filepath)
@@ -131,7 +131,6 @@ class ProteinDatum:
 
         header = dict(pid=id)
         return cls.from_atom_array(atom_array, header=header)
-
 
     @classmethod
     def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
@@ -196,7 +195,7 @@ class ProteinDatum:
         # biotite. It's an easy modification with PR to two different repos
         # I'll come back to this at some point.
         return cls(
-            pid=header['pid'],
+            pid=header["pid"],
             sequence=sequence,
             resolution=0.0,
             residue_token=residue_token,

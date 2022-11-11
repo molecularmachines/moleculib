@@ -5,15 +5,13 @@ from pathlib import Path
 
 
 home_dir = str(Path.home())
-config = {
-    'cache_dir': os.path.join(home_dir, '.cache', 'moleculib')
-}
+config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 
 
 def pdb_to_atom_array(pdb_path):
     pdb_file = PDBFile.read(pdb_path)
-    atom_array = pdb_file.get_structure(model=1,
-        extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
+    atom_array = pdb_file.get_structure(
+        model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
     )
     aa_filter = filter_amino_acids(atom_array)
     atom_array = atom_array[aa_filter]

@@ -15,8 +15,5 @@ class ProteinDataLoader(DataLoader):
         the method by which list of ProteinDatum items are collated
     """
 
-    def __init__(self, 
-                 dataset: ProteinDataset,
-                 collator: ProteinCollator,
-                 **kwargs):
+    def __init__(self, dataset: ProteinDataset, collator: ProteinCollator, **kwargs):
         super().__init__(dataset, collate_fn=collator.collate, **kwargs)

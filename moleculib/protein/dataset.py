@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pathlib import Path
+from functools import partial
 from typing import List, Union
 from torch.utils.data import Dataset
 from tempfile import gettempdir
@@ -12,52 +13,16 @@ from .utils import config, pids_file_to_list
 from .alphabet import UNK_TOKEN
 import traceback
 
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 MAX_COMPLEX_SIZE = 32
-PDB_METADATA_FIELDS = [('pid', str), ('num_res', int), ('standard', bool), ('resolution', float)]
-PDB_METADATA_FIELDS += [(f'num_res_{idx}', int) for idx in range(MAX_COMPLEX_SIZE)]
-
-
-class PDBMetadata:
-    """
-    Abstracts a pandas Dataframe into metadata for PDB
-    Defines how the raw Datum is incorporated as a row in metadata
-    """
-
-    def __init__(self):
-        series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
-        self.df = DataFrame(series)
-
-    def __len__(self):
-        return len(self.df)
-
-    def fetch(self,):
-        raise NotImplementedError('')
-
-    def write(self, filepath):
-        # TODO(): this saving throws the following error
-        # PerformanceWarning: your performance may suffer as PyTables will pickle object types that it cannot
-        # map directly to c-types [inferred_type->mixed,key->block2_values] 
-        # ------> [items->Index(['pid', 'standard', 'resolution'], dtype='object')]
-        self.df.to_hdf(filepath, key='PDBMetadata')
-
-    def __getitem__(self, idx):
-        return self.df.iloc[idx]
-
-    def add(self, datum: ProteinDatum):
-        metrics = dict()
-        metrics['pid'] = datum.pid
-        metrics['standard'] = not (datum.residue_token == UNK_TOKEN).all()
-        metrics['resolution'] = datum.pid
-        metrics['num_res'] = datum.atom_coord.shape[0]
-
-        # Note(Allan): eventually to be made into ComplexDatum.iter_chains() to
-        # generate tensor views instantiated as ProteinDatum
-        for chain_idx in range(np.max(datum.chain_token)):
-            metrics[f'num_res_{chain_idx}'] = datum.atom_coord[datum.chain_token == chain_idx].shape[0]
-        self.df = pd.concat((self.df, Series(metrics).to_frame().T))
-
+PDB_METADATA_FIELDS = [
+    ("pid", str),
+    ("num_res", int),
+    ("standard", bool),
+    ("resolution", float),
+]
+PDB_METADATA_FIELDS += [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
 
 
 class ProteinDataset(Dataset):
@@ -76,12 +41,14 @@ class ProteinDataset(Dataset):
         a partial list of protein attributes that should be in each protein
     """
 
-    def __init__(self,
-                 base_path: str,
-                 metadata: PDBMetadata,
-                 format: str = 'npz',
-                 transform: ProteinTransform = None,
-                 attrs: Union[List[str], str] = 'all'):
+    def __init__(
+        self,
+        base_path: str,
+        metadata: DataFrame,
+        format: str = "npz",
+        transform: ProteinTransform = None,
+        attrs: Union[List[str], str] = "all",
+    ):
 
         super().__init__()
         self.base_path = Path(base_path)
@@ -91,18 +58,18 @@ class ProteinDataset(Dataset):
 
         # specific protein attributes
         protein_attrs = [
-            'pid',
-            'resolution',
-            'residue_token',
-            'residue_token',
-            'residue_mask',
-            'chain_token',
-            'atom_token',
-            'atom_coord',
-            'atom_mask',
+            "pid",
+            "resolution",
+            "residue_token",
+            "residue_token",
+            "residue_mask",
+            "chain_token",
+            "atom_token",
+            "atom_coord",
+            "atom_mask",
         ]
 
-        if attrs == 'all':
+        if attrs == "all":
             self.attrs = protein_attrs
         else:
             for attr in attrs:
@@ -110,41 +77,64 @@ class ProteinDataset(Dataset):
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
-    @classmethod
-    def build(self, pdb_ids: List[str] = None, base_path: str = None, format='npz'):
-        """
-        Builds dataset from scratch given specified pdb_ids, prepares
-        data and metadata for later use.
-        """
-        if pdb_ids is None:
-            root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-            pdb_ids = pids_file_to_list(root + '/data/pids_all.txt')
-        if base_path is None:
-            base_path = gettempdir()
-
-        metadata = PDBMetadata()
-        for pdb_id in tqdm(pdb_ids):
-            try:
-                datum = ProteinDatum.fetch_from_pdb(pdb_id, save_path=base_path, format=format)
-            except KeyboardInterrupt: exit()
-            except (ValueError, IndexError) as error:
-                print(traceback.format_exc())
-                print(error)
-                continue
-            except:
-                breakpoint()
-            if len(datum.sequence) != 0:
-                metadata.add(datum)
-        metadata.write(base_path + 'metadata.h5')
-        return ProteinDataset(base_path, metadata=metadata, format=format)
-
     def __len__(self):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        pdb_id = self.metadata[idx]['pid']
+        pdb_id = self.metadata.iloc[idx]["pid"]
         filepath = os.path.join(self.base_path, f"{pdb_id}.{self.format}")
         protein = ProteinDatum.from_filepath(filepath, self.format)
         if self.transform is not None:
             protein = self.transform.transform(protein)
         return protein
+
+    @staticmethod
+    def _extract_datum_row(datum):
+        is_standard = not (datum.residue_token == UNK_TOKEN).all()
+        metrics = dict(
+            pid=datum.pid,
+            standard=is_standard,
+            resolution=datum.pid,
+            num_res=len(datum.sequence),
+        )
+        for chain in range(np.max(datum.chain_token)):
+            num_residues = (datum.chain_token == chain).sum()
+            metrics[f"num_res_{chain}"] = num_residues
+        return Series(metrics).to_frame().T
+
+    @staticmethod
+    def _fetch_and_extract(pdb_id, save_path):
+        try:
+            datum = ProteinDatum.fetch_from_pdb(
+                pdb_id, save_path=save_path, format=format
+            )
+        except KeyboardInterrupt:
+            exit()
+        except (ValueError, IndexError) as error:
+            print(traceback.format_exc())
+            print(error)
+            return None
+        if len(datum.sequence) == 0:
+            return None
+        return ProteinDataset._extract_datum_row(datum)
+
+    @classmethod
+    def build(cls, pdb_ids: List[str] = None, save_path: str = None, max_workers: int = 1, format="npz"):
+        """
+        Builds dataset from scratch given specified pdb_ids, prepares
+        data and metadata for later use.
+        """
+        if pdb_ids is None:
+            root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+            pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
+        if save_path is None:
+            save_path = gettempdir()
+
+        series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
+        metadata = DataFrame(series)
+        extractor = partial(cls._fetch_and_extract, save_path=save_path)
+        rows = process_map(extractor, pdb_ids, max_workers=max_workers)
+        rows = filter(lambda row: row is not None, rows)
+        metadata = pd.concat((metadata, *rows), axis=0)
+
+        return ProteinDataset(save_path, metadata=metadata, format=format)

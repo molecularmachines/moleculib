@@ -8,6 +8,7 @@ from typing import List, Tuple
 from einops import repeat, rearrange
 from .alphabet import backbone_atoms
 
+
 class ProteinCollator:
     """
     Abstract class for collation of multiple ProteinDatum instances
@@ -187,26 +188,24 @@ def complete_graph(batch_num_nodes) -> np.array:
     return edge_index
 
 
-def radial_graph(coords, batch_num_nodes, max_radius: 15.0) -> Tuple[np.array, np.array]:
+def radial_graph(
+    coords, batch_num_nodes, max_radius: 15.0
+) -> Tuple[np.array, np.array]:
     edge_index = (v, u) = complete_graph(batch_num_nodes)
     distances = np.linalg.norm(coords[v] - coords[u], axis=-1, keepdims=True)
     accepted = (distances < max_radius).squeeze(-1)
     return edge_index[:, accepted], distances[accepted]
 
+
 class FullyConnectedGeometricBatch(GeometricBatch):
-
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.edge_index = complete_graph(self.num_nodes)
 
 
 class RadialGeometricBatch(GeometricBatch):
-
     def __init__(self, max_radius, **kwargs) -> None:
         super().__init__(**kwargs)
-        ca_coord = self.atom_coord[:, backbone_atoms.index('CA')]
+        ca_coord = self.atom_coord[:, backbone_atoms.index("CA")]
         edge_index, _ = radial_graph(ca_coord, self.num_nodes, max_radius=max_radius)
         self.edge_index = edge_index
-
-

@@ -61,7 +61,7 @@ def _index(lst: List[str], item: str) -> int:
     try:
         index = lst.index(item)
     except ValueError:
-        index = UNK_TOKEN # UNK
+        index = UNK_TOKEN  # UNK
     return index
 
 
