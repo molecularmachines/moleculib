@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import numpy as np
+from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
 from biotite.structure.io.npz import NpzFile
 from biotite.sequence import ProteinSequence
@@ -15,8 +16,9 @@ from biotite.structure import (
 )
 from .alphabet import (
     atom_index,
-    residue_index,
+    get_residue_index,
     all_atoms,
+    all_residues,
     atom_to_residues_index,
 )
 from .utils import pdb_to_atom_array, config
@@ -30,20 +32,22 @@ class ProteinDatum:
 
     def __init__(
         self,
-        pid: str,
+        idcode: str,
         resolution: float,
         sequence: ProteinSequence,
         residue_token: np.ndarray,
+        residue_index: np.ndarray,
         residue_mask: np.ndarray,
         chain_token: np.ndarray,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
     ):
-        self.pid = pid
+        self.idcode = idcode
         self.resolution = resolution
         self.sequence = sequence
         self.residue_token = residue_token
+        self.residue_index = residue_index
         self.residue_mask = residue_mask
         self.chain_token = chain_token
         self.atom_token = atom_token
@@ -85,7 +89,7 @@ class ProteinDatum:
     @classmethod
     def empty_protein(cls):
         return cls(
-            pid="",
+            idcode="",
             resolution=0.0,
             sequence=ProteinSequence(""),
             residue_token=np.array([]),
@@ -97,40 +101,15 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath, format="npz"):
-        if format == "pdb":
-            atom_array = pdb_to_atom_array(filepath)
-        elif format == "npz":
-            file = NpzFile.read(str(filepath))
-            atom_array = file.get_structure()
-        else:
-            raise ValueError("format needs to be npz or pdb")
-        pdb_id = filepath[-7:-3]
-        header = dict(pid=pdb_id)
-
-        return cls.from_atom_array(atom_array, header)
+    def from_filepath(cls, filepath):
+        atom_array = pdb_to_atom_array(filepath)
+        header = parse_pdb_header(filepath)
+        return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_from_pdb(cls, id, save_path=None, format="npz"):
-        if (save_path is not None) and (format == "pdb"):
-            pdb_save_path = save_path
-        else:
-            pdb_save_path = config["cache_dir"]
-
-        filepath = rcsb.fetch(id, "pdb", pdb_save_path, verbose=True)
-        atom_array = pdb_to_atom_array(filepath)
-
-        if (save_path is not None) and (format == "npz"):
-            save_path = Path(save_path)
-            data_path = save_path / f"{id}.npz"
-            os.makedirs(str(save_path), exist_ok=True)
-
-            npz_file = NpzFile()
-            npz_file.set_structure(atom_array)
-            npz_file.write(str(data_path))
-
-        header = dict(pid=id)
-        return cls.from_atom_array(atom_array, header=header)
+    def fetch_pdb_id(cls, id, save_path=None):
+        filepath = rcsb.fetch(id, "pdb", save_path)
+        return cls.from_filepath(filepath)
 
     @classmethod
     def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
@@ -138,7 +117,8 @@ class ProteinDatum:
             return cls.empty_protein()
 
         res_ids, res_names = get_residues(atom_array)
-        sequence = ProteinSequence(res_names)
+        res_names = [('UNK' if (name not in all_residues) else name) for name in res_names]
+        sequence = ProteinSequence(list(res_names))
 
         atom_array.add_annotation("seq_uid", int)
         atom_array.seq_uid = spread_residue_wise(
@@ -151,7 +131,7 @@ class ProteinDatum:
         )
 
         residue_token = np.array(
-            list(map(lambda res: residue_index(res), atom_array.res_name))
+            list(map(lambda res: get_residue_index(res), atom_array.res_name))
         )
         residue_mask = np.ones_like(residue_token).astype(bool)
 
@@ -184,6 +164,7 @@ class ProteinDatum:
             return apply_residue_wise(atom_array, attr, _pool_residue_token, axis=0)
 
         residue_token = _reshape_residue_attr(residue_token)
+        residue_index = np.arange(0, residue_token.shape[0])
         residue_mask = _reshape_residue_attr(residue_mask)
         chain_token = _reshape_residue_attr(chain_token)
 
@@ -191,14 +172,12 @@ class ProteinDatum:
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
 
-        # NOTE(Allan): the easy fix for resolution requires modifying
-        # biotite. It's an easy modification with PR to two different repos
-        # I'll come back to this at some point.
         return cls(
-            pid=header["pid"],
+            idcode=header["idcode"],
             sequence=sequence,
-            resolution=0.0,
+            resolution=header['resolution'],
             residue_token=residue_token,
+            residue_index=residue_index,
             residue_mask=residue_mask,
             chain_token=chain_token,
             **atom_extract,

@@ -1,4 +1,5 @@
 import os
+import biotite
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -17,7 +18,7 @@ from tqdm.contrib.concurrent import process_map
 
 MAX_COMPLEX_SIZE = 32
 PDB_METADATA_FIELDS = [
-    ("pid", str),
+    ("idcode", str),
     ("num_res", int),
     ("standard", bool),
     ("resolution", float),
@@ -44,23 +45,21 @@ class ProteinDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        metadata: DataFrame,
-        format: str = "npz",
         transform: ProteinTransform = None,
         attrs: Union[List[str], str] = "all",
     ):
 
         super().__init__()
         self.base_path = Path(base_path)
-        self.metadata = metadata
-        self.format = format
+        self.metadata = pd.read_hdf(str(self.base_path / 'metadata.h5'))
         self.transform = transform
 
         # specific protein attributes
         protein_attrs = [
-            "pid",
+            "idcode",
             "resolution",
             "residue_token",
+            "residue_index",
             "residue_token",
             "residue_mask",
             "chain_token",
@@ -81,9 +80,9 @@ class ProteinDataset(Dataset):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        pdb_id = self.metadata.iloc[idx]["pid"]
-        filepath = os.path.join(self.base_path, f"{pdb_id}.{self.format}")
-        protein = ProteinDatum.from_filepath(filepath, self.format)
+        pdb_id = self.metadata.iloc[idx]["idcode"]
+        filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
+        protein = ProteinDatum.from_filepath(filepath)
         if self.transform is not None:
             protein = self.transform.transform(protein)
         return protein
@@ -92,9 +91,9 @@ class ProteinDataset(Dataset):
     def _extract_datum_row(datum):
         is_standard = not (datum.residue_token == UNK_TOKEN).all()
         metrics = dict(
-            pid=datum.pid,
+            idcode=datum.idcode,
             standard=is_standard,
-            resolution=datum.pid,
+            resolution=datum.resolution,
             num_res=len(datum.sequence),
         )
         for chain in range(np.max(datum.chain_token)):
@@ -103,10 +102,10 @@ class ProteinDataset(Dataset):
         return Series(metrics).to_frame().T
 
     @staticmethod
-    def _fetch_and_extract(pdb_id, save_path):
+    def _maybe_fetch_and_extract(pdb_id, save_path):
         try:
-            datum = ProteinDatum.fetch_from_pdb(
-                pdb_id, save_path=save_path, format=format
+            datum = ProteinDatum.fetch_pdb_id(
+                pdb_id, save_path=save_path
             )
         except KeyboardInterrupt:
             exit()
@@ -114,12 +113,15 @@ class ProteinDataset(Dataset):
             print(traceback.format_exc())
             print(error)
             return None
+        except (biotite.database.RequestError) as request_error:
+            print(request_error)
+            return None
         if len(datum.sequence) == 0:
             return None
         return ProteinDataset._extract_datum_row(datum)
 
     @classmethod
-    def build(cls, pdb_ids: List[str] = None, save_path: str = None, max_workers: int = 1, format="npz"):
+    def build(cls, pdb_ids: List[str] = None, save_path: str = None, max_workers: int = 1, **kwargs):
         """
         Builds dataset from scratch given specified pdb_ids, prepares
         data and metadata for later use.
@@ -132,9 +134,16 @@ class ProteinDataset(Dataset):
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
-        extractor = partial(cls._fetch_and_extract, save_path=save_path)
-        rows = process_map(extractor, pdb_ids, max_workers=max_workers)
-        rows = filter(lambda row: row is not None, rows)
-        metadata = pd.concat((metadata, *rows), axis=0)
 
-        return ProteinDataset(save_path, metadata=metadata, format=format)
+        extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
+        if (max_workers > 1):
+            rows = process_map(extractor, pdb_ids, max_workers=max_workers, chunksize=50)
+        else:
+            rows = list(map(extractor, pdb_ids))
+        rows = filter(lambda row: row is not None, rows)
+
+        metadata = pd.concat((metadata, *rows), axis=0)
+        metadata.to_hdf(str(Path(save_path) / 'metadata.h5'), key='metadata')
+
+        return cls(base_path=save_path, **kwargs)
+

@@ -69,7 +69,7 @@ def atom_index(atom: str) -> int:
     return _index(all_atoms, atom)
 
 
-def residue_index(residue: str) -> int:
+def get_residue_index(residue: str) -> int:
     return _index(all_residues, residue)
 
 

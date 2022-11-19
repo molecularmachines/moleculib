@@ -9,21 +9,19 @@ if __name__ == "__main__":
     train, test, val = mol.split_dataset(all_proteins)
 
     # construct dataloaders
-    train_dataloader = mol.ProteinDataLoader(train,
-                                             batch_size=8,
-                                             collate_fn="pad",
-                                             attrs=["sequence", "coords"])
+    train_dataloader = mol.ProteinDataLoader(
+        train, batch_size=8, collate_fn="pad", attrs=["sequence", "coords"]
+    )
 
-    test_dataloader = mol.ProteinDataLoader(test,
-                                            batch_size=8,
-                                            collate_fn="pad",
-                                            attrs=["sequence", "coords"])
+    test_dataloader = mol.ProteinDataLoader(
+        test, batch_size=8, collate_fn="pad", attrs=["sequence", "coords"]
+    )
     # arbitrary torch neural net
     model = torch.nn.Module()
     optimizer = torch.optim.AdamW(model.params(), lr=5e-5)
     criterion = torch.nn.CrossEntropyLoss()
     num_epochs = 10
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # train network
     for epoch in range(num_epochs):

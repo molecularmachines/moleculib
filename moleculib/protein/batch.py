@@ -48,7 +48,10 @@ class ProteinCollator:
         dict_ = {}
         for attr in attrs:
             obj = getattr(self, attr)
-            if type(obj) is list:
+            # strings are not JAX types
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
                 obj = np.array(obj)
             dict_[attr] = obj
         return dict_
