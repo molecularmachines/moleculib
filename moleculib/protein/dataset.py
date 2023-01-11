@@ -47,6 +47,9 @@ class ProteinDataset(Dataset):
         base_path: str,
         transform: ProteinTransform = None,
         attrs: Union[List[str], str] = "all",
+        max_resolution: float = None,
+        min_sequence_length: int = None,
+        max_sequence_length: int = None,
     ):
 
         super().__init__()
@@ -54,6 +57,14 @@ class ProteinDataset(Dataset):
         self.metadata = pd.read_hdf(str(self.base_path / 'metadata.h5'))
         self.transform = transform
 
+        if max_resolution is not None:
+            self.metadata = self.metadata[self.metadata['resolution'] <= max_resolution]
+
+        if min_sequence_length is not None:
+            self.metadata = self.metadata[self.metadata['num_res_0'] >= min_sequence_length]
+
+        if max_sequence_length is not None:
+            self.metadata = self.metadata[self.metadata['num_res_0'] <= max_sequence_length ]
         # specific protein attributes
         protein_attrs = [
             "idcode",

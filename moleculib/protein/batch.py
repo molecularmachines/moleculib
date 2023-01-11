@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import torch
 import numpy as np
+import jax.numpy as jnp
 from functools import reduce, partial
 from .datum import ProteinDatum
 from typing import List, Tuple
 from einops import repeat, rearrange
 from .alphabet import backbone_atoms
+
 
 
 class ProteinCollator:
@@ -52,7 +54,7 @@ class ProteinCollator:
             if type(obj) in [list, tuple]:
                 if type(obj[0]) not in [int, float]:
                     continue
-                obj = np.array(obj)
+                obj = jnp.array(obj)
             dict_[attr] = obj
         return dict_
 
