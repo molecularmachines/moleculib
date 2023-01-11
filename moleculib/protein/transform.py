@@ -20,6 +20,9 @@ class ProteinCrop(ProteinTransform):
 
     def transform(self, datum):
         return ProteinDatum(
+            idcode=datum.idcode,
+            resolution=datum.resolution,
+            residue_index=datum.residue_index[: self.crop_size],
             sequence=datum.sequence[: self.crop_size],
             residue_token=datum.residue_token[: self.crop_size],
             residue_mask=datum.residue_mask[: self.crop_size],
