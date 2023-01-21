@@ -13,31 +13,6 @@ from moleculib.protein.batch import PadBatch
 ```
 
 
-## Environment
-Install [micromamba](https://mamba.readthedocs.io/en/latest/installation.html):
-
-```sh
-curl micro.mamba.pm/install.sh | bash #linux
-curl micro.mamba.pm/install.sh | zsh  #mac
-```
-
-To install listed dependencies and activate the environment:
-
-```sh
-micromamba create -f env.yml
-micromamba activate moleculib
-```
-
-To install **new** dependencies for development:
-
-```sh
-micromamba install package_name -c conda-forge
-```
-
-To update `env.yml`:
-```sh
-micromamba env export -n moleculib > env.yml
-```
 
 
 ## Testing
