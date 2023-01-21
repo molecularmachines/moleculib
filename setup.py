@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
-import os.path
+from setuptools import setup
 
-setup(name="myproject", version="0.0", packages=find_packages())
+if __name__ == "__main__":
+    setup()

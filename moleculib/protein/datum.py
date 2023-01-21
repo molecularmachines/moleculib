@@ -1,27 +1,25 @@
-import os
-from pathlib import Path
 import numpy as np
 from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
-from biotite.structure.io.npz import NpzFile
 from biotite.sequence import ProteinSequence
 from biotite.structure import (
-    get_residues,
-    get_residue_count,
-    spread_residue_wise,
-    apply_residue_wise,
-    spread_chain_wise,
     apply_chain_wise,
+    apply_residue_wise,
     get_chain_count,
+    get_residue_count,
+    get_residues,
+    spread_chain_wise,
+    spread_residue_wise,
 )
+
 from .alphabet import (
-    atom_index,
-    get_residue_index,
     all_atoms,
     all_residues,
+    atom_index,
     atom_to_residues_index,
+    get_residue_index,
 )
-from .utils import pdb_to_atom_array, config
+from .utils import pdb_to_atom_array
 
 
 class ProteinDatum:
@@ -117,7 +115,9 @@ class ProteinDatum:
             return cls.empty_protein()
 
         res_ids, res_names = get_residues(atom_array)
-        res_names = [('UNK' if (name not in all_residues) else name) for name in res_names]
+        res_names = [
+            ("UNK" if (name not in all_residues) else name) for name in res_names
+        ]
         sequence = ProteinSequence(list(res_names))
 
         atom_array.add_annotation("seq_uid", int)
@@ -175,7 +175,7 @@ class ProteinDatum:
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
-            resolution=header['resolution'],
+            resolution=header["resolution"],
             residue_token=residue_token,
             residue_index=residue_index,
             residue_mask=residue_mask,
