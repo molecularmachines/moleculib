@@ -1,20 +1,21 @@
 import os
+import traceback
+from functools import partial
+from pathlib import Path
+from tempfile import gettempdir
+from typing import List, Union
+
 import biotite
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from pathlib import Path
-from functools import partial
-from typing import List, Union
 from torch.utils.data import Dataset
-from tempfile import gettempdir
+from tqdm.contrib.concurrent import process_map
+
+from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
 from .transform import ProteinTransform
-from .utils import config, pids_file_to_list
-from .alphabet import UNK_TOKEN
-import traceback
-
-from tqdm.contrib.concurrent import process_map
+from .utils import pids_file_to_list
 
 MAX_COMPLEX_SIZE = 32
 PDB_METADATA_FIELDS = [
@@ -56,22 +57,26 @@ class ProteinDataset(Dataset):
         super().__init__()
         self.base_path = Path(base_path)
         if metadata is None:
-            metadata = pd.read_hdf(str(self.base_path / 'metadata.h5'))
+            metadata = pd.read_hdf(str(self.base_path / "metadata.h5"))
         self.metadata = metadata
         self.transform = transform
 
         if max_resolution is not None:
-            self.metadata = self.metadata[self.metadata['resolution'] <= max_resolution]
+            self.metadata = self.metadata[self.metadata["resolution"] <= max_resolution]
 
         if min_sequence_length is not None:
-            self.metadata = self.metadata[self.metadata['num_res_0'] >= min_sequence_length]
+            self.metadata = self.metadata[
+                self.metadata["num_res_0"] >= min_sequence_length
+            ]
 
         if max_sequence_length is not None:
-            self.metadata = self.metadata[self.metadata['num_res_0'] <= max_sequence_length ]
-       
-        # shuffle 
+            self.metadata = self.metadata[
+                self.metadata["num_res_0"] <= max_sequence_length
+            ]
+
+        # shuffle
         self.metadata = self.metadata.sample(frac=1).reset_index(drop=True)
-        
+
         # specific protein attributes
         protein_attrs = [
             "idcode",
@@ -122,9 +127,7 @@ class ProteinDataset(Dataset):
     @staticmethod
     def _maybe_fetch_and_extract(pdb_id, save_path):
         try:
-            datum = ProteinDatum.fetch_pdb_id(
-                pdb_id, save_path=save_path
-            )
+            datum = ProteinDatum.fetch_pdb_id(pdb_id, save_path=save_path)
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
@@ -139,7 +142,14 @@ class ProteinDataset(Dataset):
         return ProteinDataset._extract_datum_row(datum)
 
     @classmethod
-    def build(cls, pdb_ids: List[str] = None, save: bool = True, save_path: str = None, max_workers: int = 1, **kwargs):
+    def build(
+        cls,
+        pdb_ids: List[str] = None,
+        save: bool = True,
+        save_path: str = None,
+        max_workers: int = 1,
+        **kwargs,
+    ):
         """
         Builds dataset from scratch given specified pdb_ids, prepares
         data and metadata for later use.
@@ -154,14 +164,16 @@ class ProteinDataset(Dataset):
         metadata = DataFrame(series)
 
         extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
-        if (max_workers > 1):
-            rows = process_map(extractor, pdb_ids, max_workers=max_workers, chunksize=50)
+        if max_workers > 1:
+            rows = process_map(
+                extractor, pdb_ids, max_workers=max_workers, chunksize=50
+            )
         else:
             rows = list(map(extractor, pdb_ids))
         rows = filter(lambda row: row is not None, rows)
 
         metadata = pd.concat((metadata, *rows), axis=0)
-        if save: metadata.to_hdf(str(Path(save_path) / 'metadata.h5'), key='metadata')
+        if save:
+            metadata.to_hdf(str(Path(save_path) / "metadata.h5"), key="metadata")
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)
-

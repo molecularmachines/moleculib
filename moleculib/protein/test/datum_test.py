@@ -1,11 +1,9 @@
 import os
-from pathlib import Path
 import unittest
-from tqdm import tqdm
+from pathlib import Path
 from tempfile import gettempdir
 
-from .. import datum
-from .. import utils
+from .. import datum, utils
 
 
 class ProteinDatumTest(unittest.TestCase):
@@ -41,4 +39,4 @@ class ProteinDatumTest(unittest.TestCase):
         all_pids_path = "moleculib/data/pids_all.txt"
         pids = utils.pids_file_to_list(all_pids_path)
         for pid in pids[:30]:
-            protein = datum.ProteinDatum.fetch_from_pdb(pid)
+            datum.ProteinDatum.fetch_from_pdb(pid)

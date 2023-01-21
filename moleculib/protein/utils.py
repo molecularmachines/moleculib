@@ -1,8 +1,8 @@
 import os
-from biotite.structure.io.pdb import PDBFile
-from biotite.structure import filter_amino_acids
 from pathlib import Path
 
+from biotite.structure import filter_amino_acids
+from biotite.structure.io.pdb import PDBFile
 
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}

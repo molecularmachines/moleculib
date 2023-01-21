@@ -1,8 +1,8 @@
 import unittest
+
 import numpy as np
 
-from .. import datum
-from .. import batch
+from .. import batch, datum
 
 
 class BatchTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class BatchTest(unittest.TestCase):
 
     def test_pad_unbatch(self):
         samples = list(map(datum.ProteinDatum.build, ["1BFV", "2GN4"]))
-        max_seq_size = max([len(sample.sequence) for sample in samples])
+        # max_seq_size = max([len(sample.sequence) for sample in samples])
         batched_samples = batch.PadBatch.collate(samples)
         samples_after = batched_samples.revert()
         self.check_unbatched(samples, samples_after)

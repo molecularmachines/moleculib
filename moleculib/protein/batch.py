@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import torch
-import numpy as np
-import jax.numpy as jnp
-from functools import reduce, partial
-from .datum import ProteinDatum
+from functools import partial, reduce
 from typing import List, Tuple
-from einops import repeat, rearrange
-from .alphabet import backbone_atoms
 
+import jax.numpy as jnp
+import numpy as np
+from einops import rearrange, repeat
+
+from .alphabet import backbone_atoms
+from .datum import ProteinDatum
 
 
 class ProteinCollator:
@@ -39,6 +39,8 @@ class ProteinCollator:
         return self
 
     def torch(self) -> ProteinCollator:
+        import torch
+
         for attr, obj in vars(self).items():
             if type(obj) == np.ndarray:
                 setattr(self, attr, torch.from_numpy(obj))

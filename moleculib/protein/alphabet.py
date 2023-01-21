@@ -1,7 +1,8 @@
-import numpy as np
 from collections import OrderedDict
-from ordered_set import OrderedSet
 from typing import List
+
+import numpy as np
+from ordered_set import OrderedSet
 
 UNK_TOKEN = 1
 

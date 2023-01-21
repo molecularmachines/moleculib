@@ -1,9 +1,6 @@
 import unittest
 
-from .. import dataset
-from .. import loader
-from .. import batch
-from .. import utils
+from .. import batch, dataset, loader, utils
 
 
 class DataLoaderTest(unittest.TestCase):

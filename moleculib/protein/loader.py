@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
-from .dataset import ProteinDataset
+
 from .batch import ProteinCollator
+from .dataset import ProteinDataset
 
 
 class ProteinDataLoader(DataLoader):
