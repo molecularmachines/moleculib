@@ -47,6 +47,7 @@ class ProteinDataset(Dataset):
         base_path: str,
         transform: ProteinTransform = None,
         attrs: Union[List[str], str] = "all",
+        metadata: pd.DataFrame = None,
         max_resolution: float = None,
         min_sequence_length: int = None,
         max_sequence_length: int = None,
@@ -54,7 +55,9 @@ class ProteinDataset(Dataset):
 
         super().__init__()
         self.base_path = Path(base_path)
-        self.metadata = pd.read_hdf(str(self.base_path / 'metadata.h5'))
+        if metadata is None:
+            metadata = pd.read_hdf(str(self.base_path / 'metadata.h5'))
+        self.metadata = metadata
         self.transform = transform
 
         if max_resolution is not None:
@@ -65,6 +68,10 @@ class ProteinDataset(Dataset):
 
         if max_sequence_length is not None:
             self.metadata = self.metadata[self.metadata['num_res_0'] <= max_sequence_length ]
+       
+        # shuffle 
+        self.metadata = self.metadata.sample(frac=1).reset_index(drop=True)
+        
         # specific protein attributes
         protein_attrs = [
             "idcode",
@@ -132,7 +139,7 @@ class ProteinDataset(Dataset):
         return ProteinDataset._extract_datum_row(datum)
 
     @classmethod
-    def build(cls, pdb_ids: List[str] = None, save_path: str = None, max_workers: int = 1, **kwargs):
+    def build(cls, pdb_ids: List[str] = None, save: bool = True, save_path: str = None, max_workers: int = 1, **kwargs):
         """
         Builds dataset from scratch given specified pdb_ids, prepares
         data and metadata for later use.
@@ -154,7 +161,7 @@ class ProteinDataset(Dataset):
         rows = filter(lambda row: row is not None, rows)
 
         metadata = pd.concat((metadata, *rows), axis=0)
-        metadata.to_hdf(str(Path(save_path) / 'metadata.h5'), key='metadata')
+        if save: metadata.to_hdf(str(Path(save_path) / 'metadata.h5'), key='metadata')
 
-        return cls(base_path=save_path, **kwargs)
+        return cls(base_path=save_path, metadata=metadata, **kwargs)
 
