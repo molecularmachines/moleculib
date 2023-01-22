@@ -1,4 +1,5 @@
 import os
+import pickle
 import traceback
 from functools import partial
 from pathlib import Path
@@ -57,7 +58,8 @@ class ProteinDataset(Dataset):
         super().__init__()
         self.base_path = Path(base_path)
         if metadata is None:
-            metadata = pd.read_hdf(str(self.base_path / "metadata.h5"))
+            with open(str(self.base_path / "metadata.pyd"), 'rb') as file:
+                metadata = pickle.load(file)
         self.metadata = metadata
         self.transform = transform
 
@@ -174,6 +176,7 @@ class ProteinDataset(Dataset):
 
         metadata = pd.concat((metadata, *rows), axis=0)
         if save:
-            metadata.to_hdf(str(Path(save_path) / "metadata.h5"), key="metadata")
+            with open(str(Path(save_path) / "metadata.pyd"), 'wb') as file:
+                pickle.dump(metadata, file)
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)
