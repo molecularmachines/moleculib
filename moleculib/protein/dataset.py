@@ -54,6 +54,8 @@ class ProteinDataset(Dataset):
         min_sequence_length: int = None,
         max_sequence_length: int = None,
         frac: float = 1.0,
+        preload: bool = False,
+        preload_num_workers: int = 10,
     ):
 
         super().__init__()
@@ -102,21 +104,26 @@ class ProteinDataset(Dataset):
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
-        self.proteins = self.load_files_from_metadata()
+        self.preload = preload
+        if self.preload:
+            proteins = []
+            for idx in range(len(self.metadata.index)):
+                proteins.append(self.load_index(idx))
+            self.proteins = proteins
 
-    def load_files_from_metadata(self):
-        proteins = []
-        for idx in range(len(self.metadata.index)):
-            pdb_id = self.metadata.iloc[idx]["idcode"]
-            filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
-            proteins.append(ProteinDatum.from_filepath(filepath))
-        return proteins
+
+    def load_index(self, idx):
+        pdb_id = self.metadata.iloc[idx]["idcode"]
+        filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
+        protein = ProteinDatum.from_filepath(filepath)
+        return protein
+
 
     def __len__(self):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        protein = self.proteins[idx]
+        protein = self.proteins[idx] if self.preload else self.load_index(idx)
         if self.transform is not None:
             protein = self.transform.transform(protein)
         return protein
