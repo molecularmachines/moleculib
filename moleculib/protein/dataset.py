@@ -123,7 +123,8 @@ class ProteinDataset(Dataset):
     def __getitem__(self, idx):
         protein = self.proteins[idx] if self.preload else self.load_index(idx)
         if self.transform is not None:
-            protein = self.transform.transform(protein)
+            for transformation in self.transform:
+                protein = transformation.transform(protein)
         return protein
 
     @staticmethod

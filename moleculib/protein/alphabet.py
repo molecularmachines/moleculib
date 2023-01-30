@@ -28,7 +28,76 @@ sidechain_atoms_per_residue = OrderedDict(
     TYR=["CB", "CG", "CD1", "CE1", "CZ", "OH", "CE2", "CD2"],
     VAL=["CB", "CG1", "CG2"],
 )
+sidechain_bonds_per_residue = OrderedDict(
+    ALA=[["CA", "CB"]],
+    ARG=[
+        ["CA", "CB"],
+        ["CB", "CG"],
+        ["CG", "CD"],
+        ["CD", "NE"],
+        ["NE", "CZ"],
+        ["CZ", "NH1"],
+        ["CZ", "NH2"],
+    ],
+    ASN=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "ND2"]],
+    ASP=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "OD2"]],
+    CYS=[["CA", "CB"], ["CB", "SG"]],
+    GLN=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "NE2"]],
+    GLU=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "OE2"]],
+    GLY=[],
+    HIS=[
+        ["CA", "CB"],
+        ["CB", "CG"],
+        ["CG", "ND1"],
+        ["ND1", "CE1"],
+        ["CE1", "NE2"],
+        ["NE2", "CD2"],
+    ],
+    ILE=[["CA", "CB"], ["CB", "CG1"], ["CG1", "CD1"], ["CB", "CG2"]],
+    LEU=[["CA", "CB"], ["CB", "CG"], ["CG", "CD1"], ["CG", "CD2"]],
+    LYS=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "CE"], ["CE", "NZ"]],
+    MET=[["CA", "CB"], ["CB", "CG"], ["CG", "SD"], ["SD", "CE"]],
+    PHE=[
+        ["CA", "CB"],
+        ["CB", "CG"],
+        ["CG", "CD1"],
+        ["CD1", "CE1"],
+        ["CE1", "CZ"],
+        ["CZ", "CE2"],
+        ["CE2", "CD2"],
+    ],
+    PRO=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"]],
+    SER=[["CA", "CB"], ["CB", "OG"]],
+    THR=[["CA", "CB"], ["CB", "OG1"], ["CB", "CG2"]],
+    TRP=[
+        ["CA", "CB"],
+        ["CB", "CG"],
+        ["CG", "CD1"],
+        ["CD1", "NE1"],
+        ["NE1", "CE2"],
+        ["CE2", "CZ2"],
+        ["CZ2", "CH2"],
+        ["CH2", "CZ3"],
+        ["CZ3", "CE3"],
+        ["CE3", "CD2"],
+    ],
+    TYR=[
+        ["CA", "CB"],
+        ["CB", "CG"],
+        ["CG", "CD1"],
+        ["CD1", "CE1"],
+        ["CE1", "CZ"],
+        ["CZ", "OH"],
+        ["CZ", "CE2"],
+        ["CE2", "CD2"],
+    ],
+    VAL=[["CA", "CB"], ["CB", "CG1"], ["CB", "CG2"]],
+)
+
+
+# build base vocabularies for atoms
 backbone_atoms = ["N", "CA", "C", "O"]
+backbone_bonds = [["N", "CA"], ["CA", "C"], ["C", "N"], ["C", "O"]]
 special_tokens = ["PAD", "UNK"]
 
 atoms_per_residue = {
@@ -45,6 +114,35 @@ all_atoms_tokens = np.arange(len(all_atoms))
 all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
+
+# and base vocabularies for bonds
+bonds_per_residue = OrderedDict()
+for token in special_tokens:
+    bonds_per_residue[token] = []
+for (res, sidechain_bonds) in sidechain_bonds_per_residue.items():
+    bonds_per_residue[res] = backbone_bonds + sidechain_bonds
+
+bonds_index_per_residue = OrderedDict()
+for (res, bonds) in bonds_per_residue.items():
+    bonds_index_per_residue[res] = [
+        (atoms_per_residue[res].index(v), atoms_per_residue[res].index(u))
+        for (v, u) in bonds
+    ]
+
+bonds_arr_len = max([len(bonds) for bonds in bonds_index_per_residue.values()])
+bonds_arr = np.zeros((len(all_residues), bonds_arr_len, 2))
+bonds_mask = np.zeros((len(all_residues), bonds_arr_len, 1)).astype(np.bool_)
+
+for idx, bonds in enumerate(bonds_index_per_residue.values()):
+    len_difference = bonds_arr_len - len(bonds)
+    bonds = np.array(bonds)
+    if len_difference != 0:
+        pad = np.array([[bonds_arr_len, bonds_arr_len]] * len_difference)
+        bonds = (
+            np.concatenate((np.array(bonds), pad), axis=0) if len(bonds) > 0 else pad
+        )
+    bonds_arr[idx] = bonds
+    bonds_mask[idx, :-len_difference] = True
 
 
 def _atom_to_all_residues_index(atom):

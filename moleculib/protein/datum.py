@@ -90,6 +90,7 @@ class ProteinDatum:
             idcode="",
             resolution=0.0,
             sequence=ProteinSequence(""),
+            residue_index=np.array([]),
             residue_token=np.array([]),
             residue_mask=np.array([]),
             chain_token=np.array([]),

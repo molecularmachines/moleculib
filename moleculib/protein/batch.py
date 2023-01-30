@@ -111,6 +111,7 @@ class PadBatch(ProteinCollator):
             return np.stack(list(new_list), axis=0)
 
         keys = vars(proxy).keys()
+        assert "bonds_list" not in keys, "PadBatch does not support bonds"
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
         values = list(map(_maybe_pad_and_stack, value_lists))
@@ -128,6 +129,7 @@ class GeometricBatch(ProteinCollator):
         super().__init__()
         self.batch_index = batch_index
         self.num_nodes = num_nodes
+
         for attr, value in kwargs.items():
             setattr(self, attr, value)
 
@@ -151,8 +153,24 @@ class GeometricBatch(ProteinCollator):
     def collate(cls, data_list):
         proxy = data_list[0]
         data_type = type(proxy)
-        unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
+        unique_type = reduce(lambda _, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
+
+        num_nodes = np.array([len(datum.sequence) for datum in data_list])
+        nodes_cumsum = np.cumsum([0] + list(num_nodes[:-1]))
+        batch_index = [
+            np.full((size), fill_value=idx) for idx, size in enumerate(num_nodes)
+        ]
+        batch_index = np.concatenate(batch_index, axis=0)
+
+        def maybe_reindex(item):
+            key, obj_list = item
+            if "bonds_list" not in key:
+                return obj_list
+            reindex_obj_list = [
+                obj + reindex * 14 for (reindex, obj) in zip(nodes_cumsum, obj_list)
+            ]
+            return reindex_obj_list
 
         def maybe_concatenate(obj_list):
             obj = obj_list[0]
@@ -163,56 +181,8 @@ class GeometricBatch(ProteinCollator):
         keys = vars(proxy).keys()
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
+        value_lists = list(map(maybe_reindex, zip(keys, value_lists)))
         values = list(map(maybe_concatenate, value_lists))
         batch_attr = dict(zip(keys, values))
 
-        num_nodes = [len(datum.sequence) for datum in data_list]
-        batch_index = [
-            np.full((size), fill_value=idx) for idx, size in enumerate(num_nodes)
-        ]
-        batch_index = np.concatenate(batch_index, axis=0)
-
         return cls(batch_index=batch_index, num_nodes=num_nodes, **batch_attr)
-
-
-def complete_graph(batch_num_nodes) -> np.array:
-    cumsum = np.cumsum([0] + list(batch_num_nodes[:-1]))
-    batch_edge_2d = [
-        np.stack(
-            (
-                repeat(np.arange(0, num_nodes), "i -> i j", j=num_nodes),
-                repeat(np.arange(0, num_nodes), "j -> i j", i=num_nodes),
-            ),
-            axis=0,
-        )
-        for num_nodes in batch_num_nodes
-    ]
-    batch_edge_flattened = [
-        rearrange(edges, "... i j -> ... (i j)") for edges in batch_edge_2d
-    ]
-    batch_edge_reindex = list(map(sum, zip(batch_edge_flattened, cumsum)))
-    edge_index = np.concatenate(batch_edge_reindex, axis=-1)
-    return edge_index
-
-
-def radial_graph(
-    coords, batch_num_nodes, max_radius: 15.0
-) -> Tuple[np.array, np.array]:
-    edge_index = (v, u) = complete_graph(batch_num_nodes)
-    distances = np.linalg.norm(coords[v] - coords[u], axis=-1, keepdims=True)
-    accepted = (distances < max_radius).squeeze(-1)
-    return edge_index[:, accepted], distances[accepted]
-
-
-class FullyConnectedGeometricBatch(GeometricBatch):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.edge_index = complete_graph(self.num_nodes)
-
-
-class RadialGeometricBatch(GeometricBatch):
-    def __init__(self, max_radius, **kwargs) -> None:
-        super().__init__(**kwargs)
-        ca_coord = self.atom_coord[:, backbone_atoms.index("CA")]
-        edge_index, _ = radial_graph(ca_coord, self.num_nodes, max_radius=max_radius)
-        self.edge_index = edge_index
