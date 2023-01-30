@@ -52,6 +52,7 @@ class ListBonds(ProteinTransform):
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
         )
         bonds_per_residue = bonds_arr[datum.residue_token]
+
         bonds_mask_per_residue = bonds_mask[datum.residue_token].squeeze(-1)
         bonds_list = (bonds_per_residue + count)[bonds_mask_per_residue].astype(
             np.int32

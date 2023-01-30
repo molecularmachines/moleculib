@@ -136,13 +136,14 @@ bonds_mask = np.zeros((len(all_residues), bonds_arr_len, 1)).astype(np.bool_)
 for idx, bonds in enumerate(bonds_index_per_residue.values()):
     len_difference = bonds_arr_len - len(bonds)
     bonds = np.array(bonds)
+    bonds_mask[idx] = True
     if len_difference != 0:
         pad = np.array([[bonds_arr_len, bonds_arr_len]] * len_difference)
         bonds = (
             np.concatenate((np.array(bonds), pad), axis=0) if len(bonds) > 0 else pad
         )
+        bonds_mask[idx, -len_difference:] = False
     bonds_arr[idx] = bonds
-    bonds_mask[idx, :-len_difference] = True
 
 
 def _atom_to_all_residues_index(atom):
