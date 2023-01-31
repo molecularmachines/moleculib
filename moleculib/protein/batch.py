@@ -165,7 +165,7 @@ class GeometricBatch(ProteinCollator):
 
         def maybe_reindex(item):
             key, obj_list = item
-            if "bonds_list" not in key:
+            if key not in ["bonds_list", "angles_list"]:
                 return obj_list
             reindex_obj_list = [
                 obj + reindex * 14 for (reindex, obj) in zip(nodes_cumsum, obj_list)
