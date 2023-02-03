@@ -7,11 +7,34 @@ from ordered_set import OrderedSet
 UNK_TOKEN = 1
 
 # data collected by Jonathan King in
-# https://github.com/jonathanking/sidechainnet
+# SidechainNet https://github.com/jonathanking/sidechainnet
 # Further processed by Eric Alcaide in
 # MP-NeRF: Massively Parallel Natural Extension of Reference Frame
 # https://github.com/EleutherAI/mp_nerf
 # And modified in this version to allow cycles in sidechains
+# number of listed properties significantly reduced from original
+#
+# This document inherits the license from SidechainNet
+#
+# Copyright 2020 Jonathan King
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
+# following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
+# disclaimer in the documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote
+# products derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 sidechain_atoms_per_residue = OrderedDict(
     ALA=["CB"],
@@ -39,7 +62,7 @@ sidechain_atoms_per_residue = OrderedDict(
 sidechain_chemistry_per_residue = OrderedDict(
     ALA=dict(
         bonds=[["CA", "CB"]],
-        angles=[["N", "CA", "CB"]],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"] ],
         dihedrals=[["C", "N", "CA", "CB"]],
     ),
     ARG=dict(
@@ -54,6 +77,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         ],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD"],
             ["CG", "CD", "NE"],
@@ -75,6 +99,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "ND2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "OD1"],
             ["CB", "CG", "ND2"],
@@ -90,6 +115,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "OD2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "OD1"],
             ["CB", "CG", "OD2"],
@@ -103,13 +129,14 @@ sidechain_chemistry_per_residue = OrderedDict(
     ),
     CYS=dict(
         bonds=[["CA", "CB"], ["CB", "SG"]],
-        angles=[["N", "CA", "CB"], ["CA", "CB", "SG"]],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"], ["CA", "CB", "SG"]],
         dihedrals=[["C", "N", "CA", "CB"], ["N", "CA", "CB", "SG"]],
     ),
     GLN=dict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "NE2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD"],
             ["CG", "CD", "OE1"],
@@ -127,6 +154,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "OE2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD"],
             ["CG", "CD", "OE1"],
@@ -152,6 +180,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         ],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "ND1"],
             ["CG", "ND1", "CE1"],
@@ -171,6 +200,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG1"], ["CG1", "CD1"], ["CB", "CG2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG1"],
             ["CB", "CG1", "CD1"],
             ["CA", "CB", "CG2"],
@@ -186,6 +216,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD1"], ["CG", "CD2"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD1"],
             ["CB", "CG", "CD2"],
@@ -201,6 +232,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "CE"], ["CE", "NZ"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD"],
             ["CG", "CD", "CE"],
@@ -218,6 +250,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "SD"], ["SD", "CE"]],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "SD"],
             ["CG", "SD", "CE"],
@@ -241,6 +274,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         ],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD1"],
             ["CG", "CD1", "CE1"],
@@ -260,7 +294,7 @@ sidechain_chemistry_per_residue = OrderedDict(
     ),
     PRO=dict(
         bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"]],
-        angles=[["N", "CA", "CB"], ["CA", "CB", "CG"], ["CB", "CG", "CD"]],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"], ["CA", "CB", "CG"], ["CB", "CG", "CD"]],
         dihedrals=[
             ["C", "N", "CA", "CB"],
             ["N", "CA", "CB", "CG"],
@@ -269,12 +303,12 @@ sidechain_chemistry_per_residue = OrderedDict(
     ),
     SER=dict(
         bonds=[["CA", "CB"], ["CB", "OG"]],
-        angles=[["N", "CA", "CB"], ["CA", "CB", "OG"]],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"], ["CA", "CB", "OG"]],
         dihedrals=[["C", "N", "CA", "CB"], ["N", "CA", "CB", "OG"]],
     ),
     THR=dict(
         bonds=[["CA", "CB"], ["CB", "OG1"], ["CB", "CG2"]],
-        angles=[["N", "CA", "CB"], ["CA", "CB", "OG1"], ["CA", "CB", "CG2"]],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"], ["CA", "CB", "OG1"], ["CA", "CB", "CG2"]],
         dihedrals=[
             ["C", "N", "CA", "CB"],
             ["N", "CA", "CB", "OG1"],
@@ -298,6 +332,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         ],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD1"],
             ["CG", "CD1", "NE1"],
@@ -307,6 +342,11 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CZ2", "CH2", "CZ3"],
             ["CH2", "CZ3", "CE3"],
             ["CZ3", "CE3", "CD2"],
+            ["CE3", "CD2", "CG"],
+            ["CE3", "CD2", "CE2"],
+            ["CD1", "CG", "CD2"],
+            ["CD2", "CE2", "CZ2"],
+            ["CZ2", "CE2", "NE1"]
         ],
         dihedrals=[
             ["C", "N", "CA", "CB"],
@@ -319,6 +359,15 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CE2", "CZ2", "CH2", "CZ3"],
             ["CZ2", "CH2", "CZ3", "CE3"],
             ["CH2", "CZ3", "CE3", "CD2"],
+            ["CE3","CD2", "CE2", "CZ2"],
+            ["CE3","CD2", "CE2", "NE1"],
+            ["CG","CD2", "CE2", "CZ2"],
+            ["CG","CD2", "CE2", "NE1"],
+            ["CZ3","CE3", "CD2", "CG"],
+            ["CZ3","CE3", "CD2", "CE2"],
+            ["CE3","CD2", "CG", "CB"],
+            ["CE2","CD2", "CG", "CD1"],
+            ["CD1","NE1", "CE2", "CD2"],
         ],
     ),
     TYR=dict(
@@ -335,6 +384,7 @@ sidechain_chemistry_per_residue = OrderedDict(
         ],
         angles=[
             ["N", "CA", "CB"],
+            ["C", "CA", "CB"],
             ["CA", "CB", "CG"],
             ["CB", "CG", "CD1"],
             ["CG", "CD1", "CE1"],
@@ -342,6 +392,7 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CE1", "CZ", "OH"],
             ["CE1", "CZ", "CE2"],
             ["CZ", "CE2", "CD2"],
+            ["CD1", "CG", "CD2"], 
         ],
         dihedrals=[
             ["C", "N", "CA", "CB"],
@@ -352,11 +403,15 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CD1", "CE1", "CZ", "OH"],
             ["CD1", "CE1", "CZ", "CE2"],
             ["CE1", "CZ", "CE2", "CD2"],
+            ["CZ", "CE2", "CD2", "CG"],
+            ["CE2", "CD2", "CG", "CD1"],
+            ["CA", "CB", "CG", "CD2"],
+            ["CD2", "CG", "CD1", "CE1"],
         ],
     ),
     VAL=dict(
         bonds=[["CA", "CB"], ["CB", "CG1"], ["CB", "CG2"]],
-        angles=[["N", "CA", "CB"], ["CA", "CB", "CG1"], ["CA", "CB", "CG2"]],
+        angles=[["N", "CA", "CB"], ['C', 'CA', 'CB'], ["CA", "CB", "CG1"], ["CA", "CB", "CG2"]],
         dihedrals=[
             ["C", "N", "CA", "CB"],
             ["N", "CA", "CB", "CG1"],

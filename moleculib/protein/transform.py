@@ -138,6 +138,7 @@ class ListAngles(ProteinTransform):
         return datum
 
 
+
 class ListDihedrals(ProteinTransform):
     def __init__(self, buffer_size):
         self.buffer_size = buffer_size
@@ -161,7 +162,7 @@ class ListDihedrals(ProteinTransform):
         # kill bonds for which atom_mask flags lack record
         p, q, u, v = dihedrals_list.T
         atom_mask = rearrange(datum.atom_mask, "r a -> (r a)")
-        angles_list = dihedrals_list[
+        dihedrals_list = dihedrals_list[
             atom_mask[p] & atom_mask[q] & atom_mask[u] & atom_mask[v]
         ]
 
@@ -169,8 +170,8 @@ class ListDihedrals(ProteinTransform):
         buffer = np.zeros((self.buffer_size, 4), dtype=np.int32)
         buffer_mask = np.zeros((self.buffer_size,)).astype(np.bool_)
 
-        buffer[: len(angles_list), :] = angles_list
-        buffer_mask[: len(angles_list)] = True
+        buffer[: len(dihedrals_list), :] = dihedrals_list
+        buffer_mask[: len(dihedrals_list)] = True
 
         datum.dihedrals_list = buffer
         datum.dihedrals_mask = buffer_mask
@@ -197,9 +198,47 @@ class DescribeChemistry(ProteinTransform):
         return datum
 
 
+def normalize(vector):
+    norms_sqr = np.sum(vector**2, axis=-1, keepdims=True)
+    norms = np.where(norms_sqr == 0.0, 1.0, norms_sqr) ** 0.5
+    return vector / norms
+
+def measure_chirality(coords):
+    n = coords[:, backbone_atoms.index("N")]
+    ca = coords[:, backbone_atoms.index("CA")]
+    c = coords[:, backbone_atoms.index("C")]
+    cb = coords[:, len(backbone_atoms)]
+
+    mask = (cb.sum(-1) != 0.0) & (ca.sum(-1) != 0.0)
+    mask &= (c.sum(-1) != 0.0) & (n.sum(-1) != 0.0)
+
+    # Cahn Ingold Prelog Priority Rule, but using plane where Cb is behind
+    axis = normalize(ca - cb)
+    
+    n_clock = (n - ca) - (axis * (n - ca)).sum(-1)[..., None] * axis
+    c_clock = (c - ca) - (axis * (c - ca)).sum(-1)[..., None] * axis
+
+    # https://stackoverflow.com/questions/14066933/
+    # direct-way-of-computing-clockwise-angle-between-2-vectors
+    determinant = (axis * np.cross(n_clock, c_clock)).sum(-1)
+    dot = (n_clock * c_clock).sum(-1)
+    angle = np.arctan2(determinant, dot)
+    
+    mask &= np.isfinite(angle)
+    mean_chirality = (angle[mask] > 0.0).sum(-1) / (mask.sum(-1) + 1e-6)
+    
+    return mean_chirality
+
+
 class MaybeMirror(ProteinTransform):
-    def __init__(self, crop_size):
-        self.crop_size = crop_size
+
+    def __init__(self, hand='left'):
+        self.hand = hand
 
     def transform(self, datum):
+        mean_chirality = measure_chirality(datum.atom_coord) 
+        datum_hand = 'right' if (mean_chirality < 0.5) else 'left'
+        if datum_hand != self.hand:
+            datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0] 
         return datum
+
