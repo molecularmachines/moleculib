@@ -1,5 +1,6 @@
 from .datum import ProteinDatum
 from .alphabet import (
+    all_atoms,
     backbone_atoms,
     bonds_arr,
     bonds_mask,
@@ -7,6 +8,8 @@ from .alphabet import (
     angles_mask,
     dihedrals_arr,
     dihedrals_mask,
+    flippable_arr,
+    flippable_mask,
 )
 import numpy as np
 from einops import rearrange
@@ -30,7 +33,7 @@ class ProteinCrop(ProteinTransform):
         self.crop_size = crop_size
 
     def transform(self, datum):
-        return ProteinDatum(
+        new_datum = ProteinDatum(
             idcode=datum.idcode,
             resolution=datum.resolution,
             residue_index=datum.residue_index[: self.crop_size],
@@ -42,6 +45,8 @@ class ProteinCrop(ProteinTransform):
             atom_coord=datum.atom_coord[: self.crop_size],
             atom_mask=datum.atom_mask[: self.crop_size],
         )
+        new_datum.crop_size = self.crop_size
+        return new_datum
 
 
 class ListBonds(ProteinTransform):
@@ -138,7 +143,6 @@ class ListAngles(ProteinTransform):
         return datum
 
 
-
 class ListDihedrals(ProteinTransform):
     def __init__(self, buffer_size):
         self.buffer_size = buffer_size
@@ -156,8 +160,24 @@ class ListDihedrals(ProteinTransform):
         dihedrals_list = dihedrals_list[dihedrals_mask_per_residue]
         dihedrals_list = dihedrals_list.astype(np.int32)
 
-        # solve for inter-residue dihedrals
-        # TODO(Allan): Not sure if we should include psi, phi and omega here
+        def prev_(atom):
+            page = num_atoms * np.arange(0, len(datum.atom_coord) - 1)
+            return page + all_atoms.index(atom)
+
+        def next_(atom):
+            page = num_atoms * np.arange(1, len(datum.atom_coord))
+            return page + all_atoms.index(atom)
+
+        psi = np.stack((prev_("N"), prev_("CA"), prev_("C"), next_("N"))).T
+        omega = np.stack((prev_("CA"), prev_("C"), next_("N"), next_("CA"))).T
+        phi = np.stack((prev_("C"), next_("N"), next_("CA"), next_("C"))).T
+        dihedrals_list = np.concatenate((dihedrals_list, psi, phi, omega), axis=0)
+
+        mirror_break = np.stack((prev_("C"), next_("N"), next_("CA"), next_("CB"))).T
+        mirror_break2 = np.stack((prev_("CB"), prev_("CA"), prev_("C"), next_("N"))).T
+        dihedrals_list = np.concatenate(
+            (dihedrals_list, mirror_break, mirror_break2), axis=0
+        )
 
         # kill bonds for which atom_mask flags lack record
         p, q, u, v = dihedrals_list.T
@@ -179,6 +199,35 @@ class ListDihedrals(ProteinTransform):
         return datum
 
 
+class ListMirrorFlips(ProteinTransform):
+    def __init__(self, buffer_size):
+        self.buffer_size = buffer_size
+
+    def transform(self, datum):
+        # solve for intra-residue angles
+        num_atoms = datum.atom_coord.shape[-2]
+        count = num_atoms * np.expand_dims(
+            np.arange(0, len(datum.residue_token)), axis=(-1, -2)
+        )
+        flips_per_residue = flippable_arr[datum.residue_token]
+
+        flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)
+        flips_list = (flips_per_residue + count)[flips_mask_per_residue].astype(
+            np.int32
+        )
+        # used fixed-size buffer for sake of jit-friendliness
+        buffer = np.zeros((self.buffer_size, 2), dtype=np.int32)
+        buffer_mask = np.zeros((self.buffer_size,)).astype(np.bool_)
+
+        buffer[: len(flips_list), :] = flips_list
+        buffer_mask[: len(flips_list)] = True
+
+        datum.flips_list = buffer
+        datum.flips_mask = buffer_mask
+
+        return datum
+
+
 class DescribeChemistry(ProteinTransform):
     """
     Augments ProteinDatum with bonds_list and angles_list a list of atomic indexes connected by bonds and angles
@@ -186,15 +235,23 @@ class DescribeChemistry(ProteinTransform):
     Note that indexing is performed at atom level, that is, as residue_dim atom_dim -> (residue_dim atom_dim)
     """
 
-    def __init__(self, bond_buffer_size, angle_buffer_size, dihedral_buffer_size):
+    def __init__(
+        self,
+        bond_buffer_size,
+        angle_buffer_size,
+        dihedral_buffer_size,
+        flips_buffer_size,
+    ):
         self.bond_transform = ListBonds(bond_buffer_size)
         self.angle_transform = ListAngles(angle_buffer_size)
         self.dihedral_transform = ListDihedrals(dihedral_buffer_size)
+        self.flip_transform = ListMirrorFlips(flips_buffer_size)
 
     def transform(self, datum):
         datum = self.bond_transform.transform(datum)
         datum = self.angle_transform.transform(datum)
         datum = self.dihedral_transform.transform(datum)
+        datum = self.flip_transform.transform(datum)
         return datum
 
 
@@ -202,6 +259,7 @@ def normalize(vector):
     norms_sqr = np.sum(vector**2, axis=-1, keepdims=True)
     norms = np.where(norms_sqr == 0.0, 1.0, norms_sqr) ** 0.5
     return vector / norms
+
 
 def measure_chirality(coords):
     n = coords[:, backbone_atoms.index("N")]
@@ -214,7 +272,7 @@ def measure_chirality(coords):
 
     # Cahn Ingold Prelog Priority Rule, but using plane where Cb is behind
     axis = normalize(ca - cb)
-    
+
     n_clock = (n - ca) - (axis * (n - ca)).sum(-1)[..., None] * axis
     c_clock = (c - ca) - (axis * (c - ca)).sum(-1)[..., None] * axis
 
@@ -223,22 +281,20 @@ def measure_chirality(coords):
     determinant = (axis * np.cross(n_clock, c_clock)).sum(-1)
     dot = (n_clock * c_clock).sum(-1)
     angle = np.arctan2(determinant, dot)
-    
+
     mask &= np.isfinite(angle)
     mean_chirality = (angle[mask] > 0.0).sum(-1) / (mask.sum(-1) + 1e-6)
-    
+
     return mean_chirality
 
 
 class MaybeMirror(ProteinTransform):
-
-    def __init__(self, hand='left'):
+    def __init__(self, hand="left"):
         self.hand = hand
 
     def transform(self, datum):
-        mean_chirality = measure_chirality(datum.atom_coord) 
-        datum_hand = 'right' if (mean_chirality < 0.5) else 'left'
+        mean_chirality = measure_chirality(datum.atom_coord)
+        datum_hand = "right" if (mean_chirality < 0.5) else "left"
         if datum_hand != self.hand:
-            datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0] 
+            datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0]
         return datum
-
