@@ -13,6 +13,8 @@ from .alphabet import (
 )
 import numpy as np
 from einops import rearrange
+from .utils import pad_array
+from functools import partial
 
 
 class ProteinTransform:
@@ -29,22 +31,40 @@ class ProteinTransform:
 
 
 class ProteinCrop(ProteinTransform):
-    def __init__(self, crop_size):
+    def __init__(self, crop_size, pad=True):
         self.crop_size = crop_size
+        if pad:
+            self.padding = partial(pad_array, total_size=crop_size)
 
     def transform(self, datum):
-        new_datum = ProteinDatum(
-            idcode=datum.idcode,
-            resolution=datum.resolution,
-            residue_index=datum.residue_index[: self.crop_size],
-            sequence=datum.sequence[: self.crop_size],
-            residue_token=datum.residue_token[: self.crop_size],
-            residue_mask=datum.residue_mask[: self.crop_size],
-            chain_token=datum.chain_token[: self.crop_size],
-            atom_token=datum.atom_token[: self.crop_size],
-            atom_coord=datum.atom_coord[: self.crop_size],
-            atom_mask=datum.atom_mask[: self.crop_size],
-        )
+        seq_len = datum.residue_index.shape[0]
+        if seq_len <= self.crop_size and hasattr(self, "padding"):
+            new_datum = ProteinDatum(
+                idcode=datum.idcode,
+                resolution=datum.resolution,
+                sequence=datum.sequence,
+                residue_index=self.padding(datum.residue_index),
+                residue_token=self.padding(datum.residue_token),
+                residue_mask=self.padding(datum.residue_mask),
+                chain_token=self.padding(datum.chain_token),
+                atom_token=self.padding(datum.atom_token),
+                atom_coord=self.padding(datum.atom_coord),
+                atom_mask=self.padding(datum.atom_mask),
+            )
+        else:
+            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
+            new_datum = ProteinDatum(
+                idcode=datum.idcode,
+                resolution=datum.resolution,
+                sequence=datum.sequence[cut : cut + self.crop_size],
+                residue_index=datum.residue_index[cut : cut + self.crop_size],
+                residue_token=datum.residue_token[cut : cut + self.crop_size],
+                residue_mask=datum.residue_mask[cut : cut + self.crop_size],
+                chain_token=datum.chain_token[cut : cut + self.crop_size],
+                atom_token=datum.atom_token[cut : cut + self.crop_size],
+                atom_coord=datum.atom_coord[cut : cut + self.crop_size],
+                atom_mask=datum.atom_mask[cut : cut + self.crop_size],
+            )
         new_datum.crop_size = self.crop_size
         return new_datum
 

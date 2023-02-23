@@ -4,6 +4,8 @@ from pathlib import Path
 from biotite.structure import filter_amino_acids
 from biotite.structure.io.pdb import PDBFile
 
+import numpy as np
+
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 
@@ -22,3 +24,15 @@ def pids_file_to_list(pids_path):
     with open(pids_path) as f:
         pids_str = f.read()
     return pids_str.rstrip().split(",")
+
+
+def pad_array(array, total_size):
+    shape = array.shape[1:]
+    size = len(array)
+    diff = total_size - size
+    assert diff >= 0
+    if diff == 0:
+        return array
+
+    pad = np.zeros((diff, *shape), dtype=array.dtype)
+    return np.concatenate((array, pad), axis=0)

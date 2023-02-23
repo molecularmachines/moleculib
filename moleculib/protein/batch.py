@@ -61,18 +61,6 @@ class ProteinCollator:
         return dict_
 
 
-def pad_array(array, total_size):
-    shape = array.shape[1:]
-    size = len(array)
-    diff = total_size - size
-    assert diff >= 0
-    if diff == 0:
-        return array
-
-    pad = np.zeros((diff, *shape), dtype=array.dtype)
-    return np.concatenate((array, pad), axis=0)
-
-
 class PadBatch(ProteinCollator):
     def __init__(self, pad_mask, **kwargs):
         super().__init__()
@@ -156,7 +144,7 @@ class GeometricBatch(ProteinCollator):
         unique_type = reduce(lambda _, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
 
-        num_nodes = np.array([len(datum.sequence) for datum in data_list])
+        num_nodes = np.array([len(datum.residue_index) for datum in data_list])
         nodes_cumsum = np.cumsum([0] + list(num_nodes[:-1]))
         batch_index = [
             np.full((size), fill_value=idx) for idx, size in enumerate(num_nodes)
