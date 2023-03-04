@@ -59,10 +59,10 @@ class MoleculeDataset(Dataset):
             self.metadata = self.metadata[self.metadata["resolution"] <= max_resolution]
 
         if min_atom_count is not None:
-            self.metadata = self.metadata[self.metadata["num_res_0"] >= min_atom_count]
+            self.metadata = self.metadata[self.metadata["atom_count"] >= min_atom_count]
 
         if max_atom_count is not None:
-            self.metadata = self.metadata[self.metadata["num_res_0"] <= max_atom_count]
+            self.metadata = self.metadata[self.metadata["atom_count"] <= max_atom_count]
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
@@ -72,10 +72,13 @@ class MoleculeDataset(Dataset):
             "idcode",
             "resolution",
             "chain_id",
+            "res_id",
             "res_name",
             "atom_token",
             "atom_coord",
-            "atom_mask",
+            "atom_name",
+            "b_factor",
+            "molecule_mask",
         ]
 
         if attrs == "all":
@@ -117,8 +120,9 @@ class MoleculeDataset(Dataset):
                 idcode=datum.idcode,
                 resolution=datum.resolution,
                 chain_id=datum.chain_id[mask][0],
+                res_id=datum.res_id[mask][0],
                 res_name=datum.res_name[mask][0],
-                num_atoms=len(datum.atom_token[mask]),
+                atom_count=len(datum.atom_token[mask]),
                 molecule_idx=i,
             )
             for i, mask in enumerate(datum.molecule_mask)

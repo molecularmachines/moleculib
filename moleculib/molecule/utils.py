@@ -21,6 +21,7 @@ def pdb_to_atom_array(pdb_path):
         extra_fields=["atom_id", "b_factor", "occupancy", "charge"],
         include_bonds=True,
     )
+    # keep only molecular atoms
     atom_array = atom_array[~filter_amino_acids(atom_array)]
     atom_array = atom_array[~filter_nucleotides(atom_array)]
     atom_array = atom_array[~filter_monoatomic_ions(atom_array)]
