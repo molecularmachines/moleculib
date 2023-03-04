@@ -1,9 +1,13 @@
 import os
 from pathlib import Path
 
-from biotite.structure import filter_amino_acids
+from biotite.structure import (
+    filter_amino_acids,
+    filter_monoatomic_ions,
+    filter_nucleotides,
+    filter_solvent,
+)
 from biotite.structure.io.pdb import PDBFile
-
 import numpy as np
 
 home_dir = str(Path.home())
@@ -13,10 +17,14 @@ config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 def pdb_to_atom_array(pdb_path):
     pdb_file = PDBFile.read(pdb_path)
     atom_array = pdb_file.get_structure(
-        model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
+        model=1,
+        extra_fields=["atom_id", "b_factor", "occupancy", "charge"],
+        include_bonds=True,
     )
-    aa_filter = filter_amino_acids(atom_array)
-    atom_array = atom_array[aa_filter]
+    atom_array = atom_array[~filter_amino_acids(atom_array)]
+    atom_array = atom_array[~filter_nucleotides(atom_array)]
+    atom_array = atom_array[~filter_monoatomic_ions(atom_array)]
+    atom_array = atom_array[~filter_solvent(atom_array)]
     return atom_array
 
 

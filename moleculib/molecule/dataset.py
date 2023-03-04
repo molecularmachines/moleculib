@@ -7,52 +7,41 @@ from tempfile import gettempdir
 from typing import List, Union
 
 import biotite
-import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
-from .alphabet import UNK_TOKEN
-from .datum import ProteinDatum
-from .transform import ProteinTransform
+from .datum import MoleculeDatum
+from .transform import MoleculeTransform
 from .utils import pids_file_to_list
 
-MAX_COMPLEX_SIZE = 32
-PDB_METADATA_FIELDS = [
-    ("idcode", str),
-    ("num_res", int),
-    ("standard", bool),
-    ("resolution", float),
-]
-PDB_METADATA_FIELDS += [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
 
-
-class ProteinDataset(Dataset):
+class MoleculeDataset(Dataset):
     """
-    Holds ProteinDatum dataset with specified PDB IDs
+    Holds MoleculeDatum dataset with specified PDB IDs
 
     Arguments:
     ----------
     base_path : str
         directory to store all PDB files
     pdb_ids : List[str]
-        list of all protein IDs that should be in the dataset
+        list of all Molecule IDs that should be in the dataset
     format : str
         the file format for each PDB file, either "npz" or "pdb"
     attrs : Union[str, List[str]]
-        a partial list of protein attributes that should be in each protein
+        a partial list of Molecule attributes that should be in each Molecule
     """
 
     def __init__(
         self,
         base_path: str,
-        transform: ProteinTransform = None,
+        transform: MoleculeTransform = None,
         attrs: Union[List[str], str] = "all",
         metadata: pd.DataFrame = None,
         max_resolution: float = None,
-        min_sequence_length: int = None,
-        max_sequence_length: int = None,
+        min_atom_count: int = None,
+        max_atom_count: int = None,
         frac: float = 1.0,
         preload: bool = False,
         preload_num_workers: int = 10,
@@ -69,82 +58,77 @@ class ProteinDataset(Dataset):
         if max_resolution is not None:
             self.metadata = self.metadata[self.metadata["resolution"] <= max_resolution]
 
-        if min_sequence_length is not None:
-            self.metadata = self.metadata[
-                self.metadata["num_res_0"] >= min_sequence_length
-            ]
+        if min_atom_count is not None:
+            self.metadata = self.metadata[self.metadata["num_res_0"] >= min_atom_count]
 
-        if max_sequence_length is not None:
-            self.metadata = self.metadata[
-                self.metadata["num_res_0"] <= max_sequence_length
-            ]
+        if max_atom_count is not None:
+            self.metadata = self.metadata[self.metadata["num_res_0"] <= max_atom_count]
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
 
-        # specific protein attributes
-        protein_attrs = [
+        # specific Molecule attributes
+        molecule_attrs = [
             "idcode",
             "resolution",
-            "residue_token",
-            "residue_index",
-            "residue_token",
-            "residue_mask",
-            "chain_token",
+            "chain_id",
+            "res_name",
             "atom_token",
             "atom_coord",
             "atom_mask",
         ]
 
         if attrs == "all":
-            self.attrs = protein_attrs
+            self.attrs = molecule_attrs
         else:
             for attr in attrs:
-                if attr not in protein_attrs:
+                if attr not in molecule_attrs:
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
         self.preload = preload
         if self.preload:
-            proteins = []
+            molecules = []
             for idx in range(len(self.metadata.index)):
-                proteins.append(self.load_index(idx))
-            self.proteins = proteins
+                molecules.append(self.load_index(idx))
+            self.molecules = molecules
 
     def load_index(self, idx):
         pdb_id = self.metadata.iloc[idx]["idcode"]
+        molecule_idx = self.metadata.iloc[idx]["molecule_idx"]
         filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
-        protein = ProteinDatum.from_filepath(filepath)
-        return protein
+        molecule = MoleculeDatum.from_filepath(filepath, molecule_idx=molecule_idx)
+        return molecule
 
     def __len__(self):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        protein = self.proteins[idx] if self.preload else self.load_index(idx)
+        molecule = self.molecules[idx] if self.preload else self.load_index(idx)
         if self.transform is not None:
             for transformation in self.transform:
-                protein = transformation.transform(protein)
-        return protein
+                molecule = transformation.transform(molecule)
+        return molecule
 
     @staticmethod
     def _extract_datum_row(datum):
-        is_standard = not (datum.residue_token == UNK_TOKEN).all()
-        metrics = dict(
-            idcode=datum.idcode,
-            standard=is_standard,
-            resolution=datum.resolution,
-            num_res=len(datum.sequence),
-        )
-        for chain in range(np.max(datum.chain_token)):
-            num_residues = (datum.chain_token == chain).sum()
-            metrics[f"num_res_{chain}"] = num_residues
-        return Series(metrics).to_frame().T
+        metrics = [
+            dict(
+                idcode=datum.idcode,
+                resolution=datum.resolution,
+                chain_id=datum.chain_id[mask][0],
+                res_name=datum.res_name[mask][0],
+                num_atoms=len(datum.atom_token[mask]),
+                molecule_idx=i,
+            )
+            for i, mask in enumerate(datum.molecule_mask)
+        ]
+        return pd.concat(list(map(Series, metrics)), axis=1).T
 
     @staticmethod
     def _maybe_fetch_and_extract(pdb_id, save_path):
         try:
-            datum = ProteinDatum.fetch_pdb_id(pdb_id, save_path=save_path)
+            datum = MoleculeDatum.fetch_pdb_id(pdb_id, save_path=save_path)
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
@@ -154,9 +138,9 @@ class ProteinDataset(Dataset):
         except (biotite.database.RequestError) as request_error:
             print(request_error)
             return None
-        if len(datum.sequence) == 0:
+        if len(datum.atom_token) == 0:
             return None
-        return ProteinDataset._extract_datum_row(datum)
+        return MoleculeDataset._extract_datum_row(datum)
 
     @classmethod
     def build(
@@ -177,9 +161,6 @@ class ProteinDataset(Dataset):
         if save_path is None:
             save_path = gettempdir()
 
-        series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
-        metadata = DataFrame(series)
-
         extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
         if max_workers > 1:
             rows = process_map(
@@ -189,7 +170,7 @@ class ProteinDataset(Dataset):
             rows = list(map(extractor, pdb_ids))
         rows = filter(lambda row: row is not None, rows)
 
-        metadata = pd.concat((metadata, *rows), axis=0)
+        metadata = pd.concat(rows, axis=0).reset_index(drop=True)
         if save:
             with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
                 pickle.dump(metadata, file)

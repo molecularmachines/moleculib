@@ -1,109 +1,57 @@
 import numpy as np
 from Bio.PDB import parse_pdb_header
+from biotite.structure import get_molecule_masks
 from biotite.database import rcsb
-from biotite.sequence import ProteinSequence
-from biotite.structure import (
-    apply_chain_wise,
-    apply_residue_wise,
-    get_chain_count,
-    get_residue_count,
-    get_residues,
-    spread_chain_wise,
-    spread_residue_wise,
-)
-
-from .alphabet import (
-    all_atoms,
-    all_residues,
-    atom_index,
-    atom_to_residues_index,
-    get_residue_index,
-)
+from mendeleev.fetch import fetch_table
 from .utils import pdb_to_atom_array
 
 
-class ProteinDatum:
+class MoleculeDatum:
     """
-    Incorporates protein sequence data to MolecularDatum
-    and reshapes atom arrays to residue-based representation
+    Incorporates molecular data to MoleculeDatum
     """
 
     def __init__(
         self,
         idcode: str,
         resolution: float,
-        sequence: ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
+        chain_id: np.ndarray,
+        res_name: np.ndarray,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
+        atom_name: np.ndarray,
+        molecule_mask: np.ndarray,
     ):
         self.idcode = idcode
         self.resolution = resolution
-        self.sequence = sequence
-        self.residue_token = residue_token
-        self.residue_index = residue_index
-        self.residue_mask = residue_mask
-        self.chain_token = chain_token
+        self.chain_id = chain_id
+        self.res_name = res_name
         self.atom_token = atom_token
         self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-
-    @classmethod
-    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
-        residue_count = get_residue_count(atom_array)
-
-        extraction = dict()
-        mask = np.zeros((residue_count, 14)).astype(bool)
-        for attr in attrs:
-            attr_shape = getattr(atom_array, attr).shape
-            if len(attr_shape) == 1:
-                attr_reshape = np.zeros((residue_count, 14))
-            else:
-                attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
-            extraction[attr] = attr_reshape
-
-        def _atom_slice(atom_array, atom):
-            atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
-            res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
-            atom_indices = atom_to_residues_index[atom_token][res_tokens]
-            for attr in attrs:
-                attr_tensor = getattr(atom_array_, attr)
-                extraction[attr][seq_id, atom_indices, ...] = attr_tensor
-            mask[seq_id, atom_indices] = True
-
-        for atom_name in all_atoms:
-            atom_token = all_atoms.index(atom_name)
-            _atom_slice(atom_array, atom_token)
-
-        return extraction, mask
+        self.atom_name = atom_name
+        self.molecule_mask = molecule_mask
 
     def __len__(self):
         return len(self.sequence)
 
     @classmethod
-    def empty_protein(cls):
+    def empty_molecule(cls):
         return cls(
             idcode="",
             resolution=0.0,
-            sequence=ProteinSequence(""),
-            residue_index=np.array([]),
-            residue_token=np.array([]),
-            residue_mask=np.array([]),
-            chain_token=np.array([]),
+            chain_id=np.array([]),
+            res_name=np.array([]),
             atom_token=np.array([]),
             atom_coord=np.array([]),
-            atom_mask=np.array([]),
+            atom_name=np.array([]),
+            molecule_mask=np.array([]),
         )
 
     @classmethod
-    def from_filepath(cls, filepath):
+    def from_filepath(cls, filepath, molecule_idx=None):
         atom_array = pdb_to_atom_array(filepath)
         header = parse_pdb_header(filepath)
-        return cls.from_atom_array(atom_array, header=header)
+        return cls.from_atom_array(atom_array, header=header, molecule_idx=molecule_idx)
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
@@ -111,76 +59,43 @@ class ProteinDatum:
         return cls.from_filepath(filepath)
 
     @classmethod
-    def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
+    def from_atom_array(cls, atom_array, header, molecule_idx=None):
         if atom_array.array_length() == 0:
-            return cls.empty_protein()
+            return cls.empty_molecule()
 
-        res_ids, res_names = get_residues(atom_array)
-        res_names = [
-            ("UNK" if (name not in all_residues) else name) for name in res_names
-        ]
-        sequence = ProteinSequence(list(res_names))
+        # (Ilan) to add other attributes from mendeleev for atoms
+        # atom_attrs = ["spin", "mass_number",...] #other attributes from mendeleev
+        # atom_extract = dict()
+        # for attr in atom_attrs:
+        #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
 
-        atom_array.add_annotation("seq_uid", int)
-        atom_array.seq_uid = spread_residue_wise(
-            atom_array, np.arange(0, get_residue_count(atom_array))
+        elements = fetch_table("elements").assign(
+            symbol=lambda df: df.symbol.str.upper()
         )
-
-        atom_array.add_annotation("token", int)
-        atom_array.token = np.array(
-            list(map(lambda atom: atom_index(atom), atom_array.atom_name))
+        orig_indexes = (
+            elements.reset_index().set_index("symbol").loc[atom_array.element, "index"]
         )
+        atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
 
-        residue_token = np.array(
-            list(map(lambda res: get_residue_index(res), atom_array.res_name))
-        )
-        residue_mask = np.ones_like(residue_token).astype(bool)
-
-        atom_array.add_annotation("residue_token", int)
-        atom_array.residue_token = residue_token
-        chain_token = spread_chain_wise(
-            atom_array, np.arange(0, get_chain_count(atom_array))
-        )
-
-        atom_array.add_annotation("res_uid", int)
-
-        def _count_residues_per_chain(chain_atom_array, axis=0):
-            return get_residue_count(chain_atom_array)
-
-        chain_res_sizes = apply_chain_wise(
-            atom_array, atom_array, _count_residues_per_chain, axis=0
-        )
-        chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1]))
-        atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
-
-        atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
-            atom_array, ["coord", "token"]
-        )
-
-        def _pool_residue_token(atom_residue_tokens, axis=0):
-            representative = atom_residue_tokens[0]
-            return representative
-
-        def _reshape_residue_attr(attr):
-            return apply_residue_wise(atom_array, attr, _pool_residue_token, axis=0)
-
-        residue_token = _reshape_residue_attr(residue_token)
-        residue_index = np.arange(0, residue_token.shape[0])
-        residue_mask = _reshape_residue_attr(residue_mask)
-        chain_token = _reshape_residue_attr(chain_token)
-
-        atom_extract = dict(
-            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
-        )
-
+        molecule_mask = get_molecule_masks(atom_array)
+        if molecule_idx is not None:
+            return cls(
+                idcode=header["idcode"],
+                resolution=header["resolution"],
+                chain_id=atom_array.chain_id[molecule_mask[molecule_idx]][0],
+                res_name=atom_array.res_name[molecule_mask[molecule_idx]][0],
+                atom_token=atom_token[molecule_mask[molecule_idx]],
+                atom_coord=atom_array.coord[molecule_mask[molecule_idx]],
+                atom_name=atom_array.atom_name[molecule_mask[molecule_idx]],
+                molecule_mask=np.full(np.sum(molecule_mask[molecule_idx]), True),
+            )
         return cls(
             idcode=header["idcode"],
-            sequence=sequence,
             resolution=header["resolution"],
-            residue_token=residue_token,
-            residue_index=residue_index,
-            residue_mask=residue_mask,
-            chain_token=chain_token,
-            **atom_extract,
-            atom_mask=atom_mask,
+            chain_id=atom_array.chain_id,
+            res_name=atom_array.res_name,
+            atom_token=atom_token,
+            atom_coord=atom_array.coord,
+            atom_name=atom_array.atom_name,
+            molecule_mask=molecule_mask,
         )
