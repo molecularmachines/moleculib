@@ -2,9 +2,8 @@ import numpy as np
 from Bio.PDB import parse_pdb_header
 from biotite.structure import get_molecule_masks
 from biotite.database import rcsb
-from mendeleev.fetch import fetch_table
 from .utils import pdb_to_atom_array
-
+from .alphabet import elements
 
 class MoleculeDatum:
     """
@@ -75,9 +74,7 @@ class MoleculeDatum:
         # for attr in atom_attrs:
         #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
 
-        elements = fetch_table("elements").assign(
-            symbol=lambda df: df.symbol.str.upper()
-        )
+        
         orig_indexes = (
             elements.reset_index().set_index("symbol").loc[atom_array.element, "index"]
         )
