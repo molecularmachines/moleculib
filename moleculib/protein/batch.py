@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from functools import partial, reduce
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
-from einops import rearrange, repeat
 
-from .alphabet import backbone_atoms
 from .datum import ProteinDatum
+from .utils import pad_array
 
 from .utils import pad_array
 

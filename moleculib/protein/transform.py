@@ -12,6 +12,7 @@ from .alphabet import (
     flippable_mask,
 )
 import numpy as np
+from biotite.sequence import ProteinSequence
 from einops import rearrange
 from .utils import pad_array
 from functools import partial
@@ -318,3 +319,42 @@ class MaybeMirror(ProteinTransform):
         if datum_hand != self.hand:
             datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0]
         return datum
+
+
+class RemoveUnks(ProteinTransform):
+    def __init__(self):
+        super().__init__()
+
+    def transform(self, datum):
+        # identify non-unk indices
+        idx = [i for i in range(len(datum.sequence)) if datum.sequence[i] != 'X']
+
+        # construct new sequence without unks
+        old_seq = str(datum.sequence)
+        new_seq = [old_seq[i] for i in range(len(old_seq)) if i in idx]
+        new_seq = ProteinSequence(new_seq)
+
+        # construct all data attrs accordingly
+        ri = np.arange(0, len(new_seq))
+        rt = datum.residue_token[idx]
+        rm = datum.residue_mask[idx]
+        ct = datum.chain_token[idx]
+        at = datum.atom_token[idx]
+        ac = datum.atom_coord[idx]
+        am = datum.atom_mask[idx]
+
+        # build new datum
+        new_datum = ProteinDatum(
+            idcode=datum.idcode,
+            resolution=datum.resolution,
+            sequence=new_seq,
+            residue_index=ri,
+            residue_token=rt,
+            residue_mask=rm,
+            chain_token=ct,
+            atom_token=at,
+            atom_coord=ac,
+            atom_mask=am,
+        )
+
+        return new_datum
