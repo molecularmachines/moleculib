@@ -66,18 +66,16 @@ class ProteinDatum:
                 attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
-        def _atom_slice(atom_name, atom_array, atom):
-            atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
+        def _atom_slice(atom_name, atom_array, atom_token):
+            atom_array_ = atom_array[(atom_array.atom_name == atom_name) & (atom_array.residue_token > 1)]
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_residues_index[atom_token][res_tokens]
-            # TODO(Allan): need to mask UNK tokens here in order not to substitute
-            # Nitrogen (index 0) when UNK has a valid atom from all_atoms
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
-        for atom_name in all_atoms:
+        for atom_name in all_atoms[::-1]:
             atom_token = all_atoms.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
 
@@ -136,7 +134,7 @@ class ProteinDatum:
         residue_token = np.array(
             list(map(lambda res: get_residue_index(res), atom_array.res_name))
         )
-        residue_mask = np.ones_like(residue_token).astype(bool)
+        residue_mask = np.zeros_like(residue_token).astype(bool)
 
         atom_array.add_annotation("residue_token", int)
         atom_array.residue_token = residue_token

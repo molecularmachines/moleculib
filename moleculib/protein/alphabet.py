@@ -480,11 +480,11 @@ for token in special_tokens:
     atoms_per_residue[token] = []
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
-all_atoms = special_tokens + all_atoms
+all_atoms = all_atoms + special_tokens
 all_atoms_tokens = np.arange(len(all_atoms))
 
 all_residues = list(sidechain_atoms_per_residue.keys())
-all_residues = special_tokens + all_residues
+all_residues = all_residues + special_tokens
 all_residues_tokens = np.arange(len(all_residues))
 
 # and base vocabularies for chemistry
