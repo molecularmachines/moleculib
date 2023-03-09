@@ -1,7 +1,7 @@
 import numpy as np
 from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
-from biotite.sequence import ProteinSequence
+from biotite.sequence import ProteinSequence, NucleotideSequence
 from biotite.structure import (
     apply_chain_wise,
     apply_residue_wise,
@@ -19,6 +19,8 @@ from .alphabet import (
     atom_index,
     atom_to_residues_index,
     get_residue_index,
+    get_nucleotide_index,
+    MAX_DNA_ATOMS,
 )
 from .utils import pdb_to_atom_array
 
@@ -189,4 +191,103 @@ class ProteinDatum:
             chain_token=chain_token,
             **atom_extract,
             atom_mask=atom_mask,
+        )
+
+
+class ProteinDNADatum(ProteinDatum):
+    """
+    Data class for proteins and DNA complexes
+    """
+
+    def __init__(
+        self,
+        idcode: str,
+        resolution: float,
+        sequence: ProteinSequence,
+        residue_token: np.ndarray,
+        residue_index: np.ndarray,
+        residue_mask: np.ndarray,
+        chain_token: np.ndarray,
+        atom_token: np.ndarray,
+        atom_coord: np.ndarray,
+        atom_mask: np.ndarray,
+        dna_sequence: NucleotideSequence,
+        dna_token: np.ndarray,
+        dna_coord: np.ndarray,
+        dna_mask: np.ndarray,
+    ):
+        super().__init__(
+            idcode=idcode,
+            resolution=resolution,
+            sequence=sequence,
+            residue_token=residue_token,
+            residue_index=residue_index,
+            residue_mask=residue_mask,
+            chain_token=chain_token,
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=atom_mask
+        )
+
+        self.dna_sequence = dna_sequence
+        self.dna_token = dna_token
+        self.dna_coord = dna_coord
+        self.dna_mask = dna_mask
+
+    @classmethod
+    def from_filepath(cls, filepath):
+        dna_array = pdb_to_atom_array(filepath, dna=True)
+        res_array = pdb_to_atom_array(filepath, dna=False)
+        header = parse_pdb_header(filepath)
+        return cls.from_atom_arrays(res_array, dna_array, header=header)
+
+    @classmethod
+    def from_atom_arrays(cls, res_array, dna_array, header, query_atoms=all_atoms):
+        # residues are the same as ProteinDatum
+        p = super().from_atom_array(res_array, header, query_atoms)
+
+        # retrieve data from dna atom array
+        _, nuc_names = get_residues(dna_array)
+        nuc_names = [n[1] for n in nuc_names]  # in PDB nucleotides start with D
+        dna_sequence = NucleotideSequence("".join(nuc_names))
+        dna_token = np.array([get_nucleotide_index(n) for n in nuc_names])
+
+        # identify individual nucleotide atoms from array
+        nuc_atom_indices = []
+        curr_nuc_id = dna_array[0].res_id
+        num_atoms = len(dna_array)
+        for i in range(num_atoms):
+            if dna_array[i].res_id != curr_nuc_id:
+                nuc_atom_indices.append(i)
+                curr_nuc_id = dna_array[i].res_id
+        nuc_atom_indices.append(num_atoms)
+
+        # retrieve atoms per nucleotide and masks
+        dna_atoms = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
+        dna_mask = np.zeros((len(dna_sequence), MAX_DNA_ATOMS))
+        prev_idx = 0
+        for i, idx in enumerate(nuc_atom_indices):
+            # in case nucleotide has more than max atoms, trim last atoms
+            num_nuc_atoms = min(idx - prev_idx, MAX_DNA_ATOMS)
+            max_idx = min(idx, prev_idx + MAX_DNA_ATOMS)
+            curr_nuc_atoms = dna_array.coord[prev_idx:max_idx]
+            dna_atoms[i][:num_nuc_atoms] = curr_nuc_atoms
+            dna_mask[i][:num_nuc_atoms] = 1
+            prev_idx = idx
+        dna_mask = dna_mask.astype(bool)
+
+        # construct protein dna complex
+        return cls(
+            idcode=p.idcode,
+            sequence=p.sequence,
+            resolution=p.resolution,
+            residue_token=p.residue_token,
+            residue_index=p.residue_index,
+            residue_mask=p.residue_mask,
+            chain_token=p.chain_token,
+            atom_coord=p.atom_coord,
+            atom_token=p.atom_token,
+            atom_mask=p.atom_mask,
+            dna_sequence=dna_sequence,
+            dna_token=dna_token,
         )

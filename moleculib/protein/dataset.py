@@ -47,7 +47,7 @@ class ProteinDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        transform: ProteinTransform = None,
+        transform: List[ProteinTransform] = None,
         attrs: Union[List[str], str] = "all",
         metadata: pd.DataFrame = None,
         max_resolution: float = None,

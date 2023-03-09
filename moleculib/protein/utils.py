@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from biotite.structure import filter_amino_acids
+from biotite.structure import filter_amino_acids, filter_nucleotides
 from biotite.structure.io.pdb import PDBFile
 
 import numpy as np
@@ -10,13 +10,13 @@ home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 
 
-def pdb_to_atom_array(pdb_path):
+def pdb_to_atom_array(pdb_path, dna=False):
     pdb_file = PDBFile.read(pdb_path)
     atom_array = pdb_file.get_structure(
         model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
     )
-    aa_filter = filter_amino_acids(atom_array)
-    atom_array = atom_array[aa_filter]
+    keep_indices = filter_nucleotides(array) if dna else filter_amino_acids(atom_array)
+    atom_array = atom_array[keep_indices]
     return atom_array
 
 

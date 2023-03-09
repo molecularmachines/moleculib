@@ -5,6 +5,8 @@ import numpy as np
 from ordered_set import OrderedSet
 
 UNK_TOKEN = 1
+MAX_DNA_ATOMS = 34
+MAX_RES_ATOMS = 14
 
 # data collected by Jonathan King in
 # SidechainNet https://github.com/jonathanking/sidechainnet
@@ -486,6 +488,9 @@ all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
 
+all_nucleotides = ["A", "C", "G", "T"]
+all_nucleotides = special_tokens + all_nucleotides
+
 
 # and base vocabularies for chemistry
 def geometry_to_per_residue_indexing_array(property="bonds"):
@@ -557,6 +562,10 @@ def atom_index(atom: str) -> int:
 
 def get_residue_index(residue: str) -> int:
     return _index(all_residues, residue)
+
+
+def get_nucleotide_index(nucleotide: str) -> int:
+    return _index(all_nucleotides, nucleotide)
 
 
 atom_to_residues_index, atom_to_residues_mask = zip(
