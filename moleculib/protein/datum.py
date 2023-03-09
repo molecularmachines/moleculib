@@ -72,7 +72,7 @@ class ProteinDatum:
                 (atom_array.atom_name == atom_name) 
             ]
             if atom_name not in backbone_atoms:
-                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
+                atom_array_ = atom_array_[(atom_array_.residue_token < 20)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_residues_index[atom_token][res_tokens]
