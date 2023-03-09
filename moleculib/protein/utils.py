@@ -15,7 +15,7 @@ def pdb_to_atom_array(pdb_path, dna=False):
     atom_array = pdb_file.get_structure(
         model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
     )
-    keep_indices = filter_nucleotides(array) if dna else filter_amino_acids(atom_array)
+    keep_indices = filter_nucleotides(atom_array) if dna else filter_amino_acids(atom_array)
     atom_array = atom_array[keep_indices]
     return atom_array
 

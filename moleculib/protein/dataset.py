@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
 from .alphabet import UNK_TOKEN
-from .datum import ProteinDatum
+from .datum import ProteinDatum, ProteinDNADatum
 from .transform import ProteinTransform
 from .utils import pids_file_to_list
 
@@ -195,3 +195,12 @@ class ProteinDataset(Dataset):
                 pickle.dump(metadata, file)
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)
+
+
+class ProteinDNADataset(ProteinDataset):
+
+    def load_index(self, idx):
+        pdb_id = self.metadata.iloc[idx]["idcode"]
+        filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
+        protein = ProteinDNADatum.from_filepath(filepath)
+        return protein

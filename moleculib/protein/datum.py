@@ -244,7 +244,7 @@ class ProteinDNADatum(ProteinDatum):
     @classmethod
     def from_atom_arrays(cls, res_array, dna_array, header, query_atoms=all_atoms):
         # residues are the same as ProteinDatum
-        p = super().from_atom_array(res_array, header, query_atoms)
+        p = ProteinDatum.from_atom_array(res_array, header, query_atoms)
 
         # retrieve data from dna atom array
         _, nuc_names = get_residues(dna_array)
@@ -266,7 +266,7 @@ class ProteinDNADatum(ProteinDatum):
         nuc_atom_indices.append(num_atoms)
 
         # retrieve atoms per nucleotide and masks
-        dna_atoms = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
+        dna_coord = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
         dna_mask = np.zeros((len(dna_sequence), MAX_DNA_ATOMS))
         prev_idx = 0
         for i, idx in enumerate(nuc_atom_indices):
@@ -274,7 +274,7 @@ class ProteinDNADatum(ProteinDatum):
             num_nuc_atoms = min(idx - prev_idx, MAX_DNA_ATOMS)
             max_idx = min(idx, prev_idx + MAX_DNA_ATOMS)
             curr_nuc_atoms = dna_array.coord[prev_idx:max_idx]
-            dna_atoms[i][:num_nuc_atoms] = curr_nuc_atoms
+            dna_coord[i][:num_nuc_atoms] = curr_nuc_atoms
             dna_mask[i][:num_nuc_atoms] = 1
             prev_idx = idx
         dna_mask = dna_mask.astype(bool)
@@ -293,4 +293,6 @@ class ProteinDNADatum(ProteinDatum):
             atom_mask=p.atom_mask,
             dna_sequence=dna_sequence,
             dna_token=dna_token,
+            dna_coord=dna_coord,
+            dna_mask=dna_mask,
         )
