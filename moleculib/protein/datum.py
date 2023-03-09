@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
@@ -111,6 +112,9 @@ class ProteinDatum:
     def from_filepath(cls, filepath):
         atom_array = pdb_to_atom_array(filepath)
         header = parse_pdb_header(filepath)
+        idcode = os.path.basename(filepath)
+        idcode = os.path.splitext(idcode)[0]
+        header['idcode'] = idcode
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod

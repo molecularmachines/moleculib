@@ -26,6 +26,7 @@ PDB_METADATA_FIELDS = [
     ("resolution", float),
 ]
 PDB_METADATA_FIELDS += [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
+METADATA_FILE = "metadata.pyd"
 
 
 class ProteinDataset(Dataset):
@@ -61,7 +62,7 @@ class ProteinDataset(Dataset):
         super().__init__()
         self.base_path = Path(base_path)
         if metadata is None:
-            with open(str(self.base_path / "metadata.pyd"), "rb") as file:
+            with open(str(self.base_path / METADATA_FILE), "rb") as file:
                 metadata = pickle.load(file)
         self.metadata = metadata
         self.transform = transform
@@ -191,10 +192,33 @@ class ProteinDataset(Dataset):
 
         metadata = pd.concat((metadata, *rows), axis=0)
         if save:
-            with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
+            with open(str(Path(save_path) / METADATA_FILE), "wb") as file:
                 pickle.dump(metadata, file)
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)
+
+    @classmethod
+    def build_from_path(cls, path: str, **kwargs):
+        # build metadata frame
+        series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
+        metadata = DataFrame(series)
+
+        # extract information from all files in dirtectory
+        rows = []
+        for f in os.listdir(path):
+            if f.split(".")[-1] == "pdb":
+                fp = os.path.join(path, f)
+                datum = ProteinDatum.from_filepath(fp)
+                rows.append(cls._extract_datum_row(datum))
+
+        # add rows metadata
+        metadata = pd.concat((metadata, *rows), axis=0)
+
+        # save metadata file
+        with open(str(Path(path) / METADATA_FILE), "wb") as file:
+            pickle.dump(metadata, file)
+
+        return cls(base_path=path, metadata=metadata, **kwargs)
 
 
 class ProteinDNADataset(ProteinDataset):
