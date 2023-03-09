@@ -255,11 +255,14 @@ class ProteinDNADatum(ProteinDatum):
         # identify individual nucleotide atoms from array
         nuc_atom_indices = []
         curr_nuc_id = dna_array[0].res_id
+        curr_chain_id = dna_array[0].chain_id
         num_atoms = len(dna_array)
         for i in range(num_atoms):
-            if dna_array[i].res_id != curr_nuc_id:
+            atom = dna_array[i]
+            if atom.res_id != curr_nuc_id or atom.chain_id != curr_chain_id:
                 nuc_atom_indices.append(i)
-                curr_nuc_id = dna_array[i].res_id
+                curr_nuc_id = atom.res_id
+                curr_chain_id = atom.chain_id
         nuc_atom_indices.append(num_atoms)
 
         # retrieve atoms per nucleotide and masks
