@@ -476,15 +476,15 @@ atoms_per_residue = {
     res: backbone_atoms + sidechain_atoms
     for (res, sidechain_atoms) in sidechain_atoms_per_residue.items()
 }
-for token in special_tokens:
-    atoms_per_residue[token] = []
+atoms_per_residue['PAD'] = []
+atoms_per_residue['UNK'] = backbone_atoms 
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
-all_atoms = all_atoms 
+all_atoms =  all_atoms
 all_atoms_tokens = np.arange(len(all_atoms))
 
 all_residues = list(sidechain_atoms_per_residue.keys())
-all_residues = all_residues + special_tokens
+all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
 
 # and base vocabularies for chemistry
