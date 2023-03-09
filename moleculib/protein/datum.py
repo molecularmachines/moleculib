@@ -15,6 +15,7 @@ from biotite.structure import (
 from .alphabet import (
     all_atoms,
     all_residues,
+    backbone_atoms,
     atom_index,
     atom_to_residues_index,
     get_residue_index,
@@ -67,7 +68,12 @@ class ProteinDatum:
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_name, atom_array, atom_token):
-            atom_array_ = atom_array[(atom_array.atom_name == atom_name) & (atom_array.residue_token > 1)]
+            atom_array_ = atom_array[
+                (atom_array.atom_name == atom_name) 
+            ]
+            if atom_name not in backbone_atoms:
+                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
+
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_residues_index[atom_token][res_tokens]
             for attr in attrs:
@@ -75,7 +81,7 @@ class ProteinDatum:
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
-        for atom_name in all_atoms[::-1]:
+        for atom_name in all_atoms:
             atom_token = all_atoms.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
 
@@ -134,7 +140,7 @@ class ProteinDatum:
         residue_token = np.array(
             list(map(lambda res: get_residue_index(res), atom_array.res_name))
         )
-        residue_mask = np.zeros_like(residue_token).astype(bool)
+        residue_mask = np.ones_like(residue_token).astype(bool)
 
         atom_array.add_annotation("residue_token", int)
         atom_array.residue_token = residue_token
