@@ -250,38 +250,44 @@ class ProteinDNADatum(ProteinDatum):
         # residues are the same as ProteinDatum
         p = ProteinDatum.from_atom_array(res_array, header, query_atoms)
 
-        # retrieve data from dna atom array
-        _, nuc_names = get_residues(dna_array)
-        nuc_names = [n[1] for n in nuc_names]  # in PDB nucleotides start with D
-        dna_sequence = NucleotideSequence("".join(nuc_names))
-        dna_token = np.array([get_nucleotide_index(n) for n in nuc_names])
+        # support proteins without DNA atoms
+        if not len(dna_array):
+            dna_sequence = NucleotideSequence("")
+            dna_token, dna_coord, dna_mask = None, None, None
 
-        # identify individual nucleotide atoms from array
-        nuc_atom_indices = []
-        curr_nuc_id = dna_array[0].res_id
-        curr_chain_id = dna_array[0].chain_id
-        num_atoms = len(dna_array)
-        for i in range(num_atoms):
-            atom = dna_array[i]
-            if atom.res_id != curr_nuc_id or atom.chain_id != curr_chain_id:
-                nuc_atom_indices.append(i)
-                curr_nuc_id = atom.res_id
-                curr_chain_id = atom.chain_id
-        nuc_atom_indices.append(num_atoms)
+        else:
+            # retrieve data from dna atom array
+            _, nuc_names = get_residues(dna_array)
+            nuc_names = [n[1] for n in nuc_names]  # in PDB nucleotides start with D
+            dna_sequence = NucleotideSequence("".join(nuc_names))
+            dna_token = np.array([get_nucleotide_index(n) for n in nuc_names])
 
-        # retrieve atoms per nucleotide and masks
-        dna_coord = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
-        dna_mask = np.zeros((len(dna_sequence), MAX_DNA_ATOMS))
-        prev_idx = 0
-        for i, idx in enumerate(nuc_atom_indices):
-            # in case nucleotide has more than max atoms, trim last atoms
-            num_nuc_atoms = min(idx - prev_idx, MAX_DNA_ATOMS)
-            max_idx = min(idx, prev_idx + MAX_DNA_ATOMS)
-            curr_nuc_atoms = dna_array.coord[prev_idx:max_idx]
-            dna_coord[i][:num_nuc_atoms] = curr_nuc_atoms
-            dna_mask[i][:num_nuc_atoms] = 1
-            prev_idx = idx
-        dna_mask = dna_mask.astype(bool)
+            # identify individual nucleotide atoms from array
+            nuc_atom_indices = []
+            curr_nuc_id = dna_array[0].res_id
+            curr_chain_id = dna_array[0].chain_id
+            num_atoms = len(dna_array)
+            for i in range(num_atoms):
+                atom = dna_array[i]
+                if atom.res_id != curr_nuc_id or atom.chain_id != curr_chain_id:
+                    nuc_atom_indices.append(i)
+                    curr_nuc_id = atom.res_id
+                    curr_chain_id = atom.chain_id
+            nuc_atom_indices.append(num_atoms)
+
+            # retrieve atoms per nucleotide and masks
+            dna_coord = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
+            dna_mask = np.zeros((len(dna_sequence), MAX_DNA_ATOMS))
+            prev_idx = 0
+            for i, idx in enumerate(nuc_atom_indices):
+                # in case nucleotide has more than max atoms, trim last atoms
+                num_nuc_atoms = min(idx - prev_idx, MAX_DNA_ATOMS)
+                max_idx = min(idx, prev_idx + MAX_DNA_ATOMS)
+                curr_nuc_atoms = dna_array.coord[prev_idx:max_idx]
+                dna_coord[i][:num_nuc_atoms] = curr_nuc_atoms
+                dna_mask[i][:num_nuc_atoms] = 1
+                prev_idx = idx
+            dna_mask = dna_mask.astype(bool)
 
         # construct protein dna complex
         return cls(
