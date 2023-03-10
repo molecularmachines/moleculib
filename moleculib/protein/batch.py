@@ -4,6 +4,7 @@ from functools import partial, reduce
 from typing import List
 
 import numpy as np
+import torch
 
 from .datum import ProteinDatum
 from .utils import pad_array
@@ -33,7 +34,7 @@ class ProteinCollator:
 
     def to(self, device: str) -> ProteinCollator:
         for attr, obj in vars(self).items():
-            if type(obj) == np.ndarray:
+            if type(obj) == torch.Tensor:
                 setattr(self, attr, obj.to(device))
         return self
 
@@ -108,7 +109,7 @@ class PadBatch(ProteinCollator):
             [np.ones((len(datum.sequence),)) for datum in data_list]
         ).astype(bool)
 
-        return cls(pad_mask, **batch_attr)
+        return cls(pad_mask, **batch_attr).torch()
 
 
 class GeometricBatch(ProteinCollator):
