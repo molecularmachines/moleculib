@@ -81,7 +81,8 @@ class ProteinDataset(Dataset):
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
-
+        print(f"Loaded metadata with {len(self.metadata)} samples")
+        
         # specific protein attributes
         protein_attrs = [
             "idcode",
@@ -175,7 +176,8 @@ class ProteinDataset(Dataset):
             root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
         if save_path is None:
-            save_path = gettempdir()
+            save_path = "./metadata"
+            # save_path = gettempdir()
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)

@@ -5,7 +5,6 @@ from biotite.structure import (
     filter_amino_acids,
     filter_monoatomic_ions,
     filter_nucleotides,
-    filter_solvent,
 )
 from biotite.structure.io.pdb import PDBFile
 import numpy as np
@@ -13,6 +12,8 @@ import numpy as np
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 
+_solvent_list = ["DOD","HOH","SOL"] # added DOD
+_unknown_list = ["UNX", "UNL"] # unknown atom or ion, or ligand
 
 def pdb_to_atom_array(pdb_path):
     pdb_file = PDBFile.read(pdb_path)
@@ -25,7 +26,8 @@ def pdb_to_atom_array(pdb_path):
     atom_array = atom_array[~filter_amino_acids(atom_array)]
     atom_array = atom_array[~filter_nucleotides(atom_array)]
     atom_array = atom_array[~filter_monoatomic_ions(atom_array)]
-    atom_array = atom_array[~filter_solvent(atom_array)]
+    atom_array = atom_array[~np.isin(atom_array.res_name, _solvent_list)]
+    atom_array = atom_array[~np.isin(atom_array.res_name, _unknown_list)] # unknown atom or ion
     return atom_array
 
 

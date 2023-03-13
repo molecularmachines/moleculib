@@ -60,7 +60,7 @@ class MoleculeDatum:
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb", save_path)
+        filepath = rcsb.fetch(id, "pdb", save_path, verbose=False)
         return cls.from_filepath(filepath)
 
     @classmethod
@@ -74,13 +74,24 @@ class MoleculeDatum:
         # for attr in atom_attrs:
         #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
 
+
+        atom_array.element[atom_array.element == "D"] = "H" # set deuterium to hydrogen (use mass_number to differentiate later)
         
-        orig_indexes = (
-            elements.reset_index().set_index("symbol").loc[atom_array.element, "index"]
-        )
+        try:
+            orig_indexes = (
+                elements.reset_index().set_index("symbol").loc[atom_array.element, "index"]
+            )
+        except KeyError as e:
+            print(atom_array)
+            print(e)
+            raise e
         atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
 
         molecule_mask = get_molecule_masks(atom_array)
+        
+        # filter out molecules with 1 atom (which are not really molecules nor ions)
+        molecule_mask = molecule_mask[np.sum(molecule_mask, axis=1) > 1]
+
         if molecule_idx is not None:
             return cls(
                 idcode=header["idcode"],

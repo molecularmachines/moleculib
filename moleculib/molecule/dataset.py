@@ -66,6 +66,7 @@ class MoleculeDataset(Dataset):
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
+        print(f"Loaded metadata with {len(self.metadata)} samples")
 
         # specific Molecule attributes
         molecule_attrs = [
@@ -135,14 +136,20 @@ class MoleculeDataset(Dataset):
             datum = MoleculeDatum.fetch_pdb_id(pdb_id, save_path=save_path)
         except KeyboardInterrupt:
             exit()
-        except (ValueError, IndexError) as error:
+        except (ValueError, IndexError, biotite.InvalidFileError) as error:
             print(traceback.format_exc())
             print(error)
             return None
+        except KeyError as e:
+            print(e)
+            print(pdb_id)
+            exit()
         except (biotite.database.RequestError) as request_error:
             print(request_error)
             return None
         if len(datum.atom_token) == 0:
+            return None
+        if len(datum.molecule_mask) == 0:
             return None
         return MoleculeDataset._extract_datum_row(datum)
 
@@ -176,7 +183,7 @@ class MoleculeDataset(Dataset):
 
         metadata = pd.concat(rows, axis=0).reset_index(drop=True)
         if save:
-            with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
+            with open(str(Path(save_path) / "metadata_mol.pyd"), "wb") as file:
                 pickle.dump(metadata, file)
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)

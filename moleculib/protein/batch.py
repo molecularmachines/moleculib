@@ -9,7 +9,7 @@ from einops import rearrange, repeat
 
 from .alphabet import backbone_atoms
 from .datum import ProteinDatum
-
+from .utils import pad_array
 
 class ProteinCollator:
     """
