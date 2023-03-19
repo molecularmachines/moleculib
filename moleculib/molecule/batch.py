@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial, reduce
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import jax.numpy as jnp
 import numpy as np
@@ -53,8 +53,13 @@ class MoleculeCollator:
         for attr in attrs:
             obj = getattr(self, attr)
             # strings are not JAX types
+            if type(obj) == np.ndarray:
+                if not np.issubdtype(obj.dtype, np.number):
+                    continue
             if type(obj) in [list, tuple]:
-                if type(obj[0]) not in [int, float]:
+                if not any(
+                    map(lambda x: isinstance(obj[0], x), [float, int, np.number])
+                ):
                     continue
                 obj = jnp.array(obj)
             dict_[attr] = obj
@@ -62,9 +67,8 @@ class MoleculeCollator:
 
 
 class MoleculePadBatch(MoleculeCollator):
-    def __init__(self, pad_mask, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.pad_mask = pad_mask
         for attr, value in kwargs.items():
             setattr(self, attr, value)
 
@@ -74,8 +78,6 @@ class MoleculePadBatch(MoleculeCollator):
             mask = self.pad_mask[batch_index]
             data_attr = dict()
             for attr, obj in vars(self).items():
-                if attr == "pad_mask":
-                    continue
                 obj = obj[batch_index]
                 if type(obj) == np.ndarray:
                     obj = obj[mask]
@@ -105,11 +107,7 @@ class MoleculePadBatch(MoleculeCollator):
         values = list(map(_maybe_pad_and_stack, value_lists))
         batch_attr = dict(zip(keys, values))
 
-        pad_mask = _maybe_pad_and_stack(
-            [np.ones((len(datum.atom_token),)) for datum in data_list]
-        ).astype(bool)
-
-        return cls(pad_mask, **batch_attr)
+        return cls(**batch_attr)
 
 
 class MoleculeGeometricBatch(MoleculeCollator):

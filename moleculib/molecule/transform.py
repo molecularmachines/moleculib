@@ -38,24 +38,18 @@ class MoleculeCrop(MoleculeTransform):
             self.padding = partial(pad_array, total_size=crop_size)
 
     def transform(self, datum):
-        seq_len = datum.residue_index.shape[0]
-        if seq_len <= self.crop_size and hasattr(self, "padding"):
-            new_datum = MoleculeDatum(
-                idcode=datum.idcode,
-                resolution=datum.resolution,
-                atom_token=self.padding(datum.atom_token),
-                atom_coord=self.padding(datum.atom_coord),
-                atom_mask=self.padding(datum.atom_mask),
-            )
+        atom_count = len(datum.atom_token)
+        if atom_count <= self.crop_size and hasattr(self, "padding"):
+            new_datum = datum  # TODO change this to include important stuff
+            new_datum.atom_token = self.padding(datum.atom_token)
+            new_datum.atom_coord = self.padding(datum.atom_coord)
+            new_datum.b_factor = self.padding(datum.b_factor)
         else:
-            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
-            new_datum = MoleculeDatum(
-                idcode=datum.idcode,
-                resolution=datum.resolution,
-                atom_token=datum.atom_token[cut : cut + self.crop_size],
-                atom_coord=datum.atom_coord[cut : cut + self.crop_size],
-                atom_mask=datum.atom_mask[cut : cut + self.crop_size],
-            )
+            cut = np.random.randint(low=0, high=(atom_count - self.crop_size))
+            new_datum = datum
+            new_datum.atom_token = datum.atom_token[cut : cut + self.crop_size]
+            new_datum.atom_coord = datum.atom_coord[cut : cut + self.crop_size]
+            new_datum.b_factor = datum.b_factor[cut : cut + self.crop_size]
         new_datum.crop_size = self.crop_size
         return new_datum
 

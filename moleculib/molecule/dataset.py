@@ -46,11 +46,10 @@ class MoleculeDataset(Dataset):
         preload: bool = False,
         preload_num_workers: int = 10,
     ):
-
         super().__init__()
         self.base_path = Path(base_path)
         if metadata is None:
-            with open(str(self.base_path / "metadata.pyd"), "rb") as file:
+            with open(str(self.base_path / "metadata_mol.pyd"), "rb") as file:
                 metadata = pickle.load(file)
         self.metadata = metadata
         self.transform = transform
@@ -65,7 +64,8 @@ class MoleculeDataset(Dataset):
             self.metadata = self.metadata[self.metadata["atom_count"] <= max_atom_count]
 
         # shuffle and sample
-        self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
+        if frac < 1.0:
+            self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
         print(f"Loaded metadata with {len(self.metadata)} samples")
 
         # specific Molecule attributes
@@ -144,7 +144,7 @@ class MoleculeDataset(Dataset):
             print(e)
             print(pdb_id)
             exit()
-        except (biotite.database.RequestError) as request_error:
+        except biotite.database.RequestError as request_error:
             print(request_error)
             return None
         if len(datum.atom_token) == 0:
