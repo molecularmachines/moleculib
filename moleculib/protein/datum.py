@@ -23,7 +23,7 @@ from .alphabet import (
     get_nucleotide_index,
     MAX_DNA_ATOMS,
 )
-from .utils import pdb_to_atom_array
+from .utils import pdb_to_atom_array, pdb_to_dna_array
 
 
 class ProteinDatum:
@@ -240,8 +240,8 @@ class ProteinDNADatum(ProteinDatum):
 
     @classmethod
     def from_filepath(cls, filepath):
-        dna_array = pdb_to_atom_array(filepath, dna=True)
-        res_array = pdb_to_atom_array(filepath, dna=False)
+        dna_array = pdb_to_dna_array(filepath)
+        res_array = pdb_to_atom_array(filepath)
         header = parse_pdb_header(filepath)
         return cls.from_atom_arrays(res_array, dna_array, header=header)
 

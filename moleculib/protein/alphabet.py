@@ -5,7 +5,7 @@ import numpy as np
 from ordered_set import OrderedSet
 
 UNK_TOKEN = 1
-MAX_DNA_ATOMS = 34
+MAX_DNA_ATOMS = 11
 MAX_RES_ATOMS = 14
 
 # data collected by Jonathan King in
@@ -487,6 +487,14 @@ all_atoms_tokens = np.arange(len(all_atoms))
 all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
+
+# DNA atoms
+atom_per_base = OrderedDict(
+    A=['N9', 'C8', 'N7', 'C5', 'C6', 'N6', 'N1', 'C2', 'N3', 'C4'],
+    C=['N1', 'C2', 'O2', 'N3', 'C4', 'N4', 'C5', 'C6'],
+    G=['N9', 'C8', 'N7', 'C5', 'C6', 'O6', 'N1', 'C2', 'N2', 'N3', 'C4'],
+    T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
+)
 
 all_nucleotides = ["A", "C", "G", "T"]
 all_nucleotides = special_tokens + all_nucleotides
