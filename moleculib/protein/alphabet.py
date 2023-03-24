@@ -480,7 +480,7 @@ atoms_per_residue['PAD'] = []
 atoms_per_residue['UNK'] = backbone_atoms 
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
-all_atoms =  all_atoms
+all_atoms = special_tokens + all_atoms
 all_atoms_tokens = np.arange(len(all_atoms))
 
 all_residues = list(sidechain_atoms_per_residue.keys())
