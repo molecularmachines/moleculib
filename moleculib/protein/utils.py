@@ -22,11 +22,35 @@ def pdb_to_atom_array(pdb_path):
 
 
 def pdb_to_dna_array(pdb_path):
+    MAX_DNA_CHAINS = 2
     pdb_file = PDBFile.read(pdb_path)
     atom_array = pdb_file.get_structure(
         model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"]
     )
+
+    # filter nucleotides
     keep_indices = filter_nucleotides(atom_array)
+    atom_array = atom_array[keep_indices]
+
+    # filter max chains
+    curr_num_chains = 0
+    atom_idx = 0
+    curr_chain_id = atom_array[0].chain_id
+    while curr_num_chains < MAX_DNA_CHAINS:
+        # last atom is the last of a chain
+        if atom_idx == len(atom_array):
+            break
+        if atom_array[atom_idx].chain_id != curr_chain_id:
+            curr_chain_id = atom_array[atom_idx].chain_id
+            curr_num_chains += 1
+        atom_idx += 1
+    atom_array = atom_array[:atom_idx]
+
+    # filter only ACGT
+    dna_atom_types = ["DA", "DC", "DG", "DT"]
+    keep_indices = [i for i, atom in enumerate(atom_array) if atom.res_name in dna_atom_types]
+    if len(keep_indices) == 0:
+        return []
     atom_array = atom_array[keep_indices]
 
     def is_base_atom(atom_name):
@@ -45,6 +69,8 @@ def pdb_to_dna_array(pdb_path):
 
     # first pass for efficiency clear phosphate backbone atoms
     keep_indices = [i for i, atom in enumerate(atom_array) if is_base_atom(atom.atom_name)]
+    if len(keep_indices) == 0:
+        return []
     atom_array = atom_array[keep_indices]
 
     def atom_sorter(atom):
@@ -59,7 +85,8 @@ def pdb_to_dna_array(pdb_path):
     for i, atom in enumerate(atom_array):
         if atom.res_id != curr_res_id:
             # sort atoms of same res
-            curr_order = [carry + atom_sorter(atom) for atom in curr_atoms]
+            sorted_atoms = sorted(enumerate(curr_atoms), key=lambda x: atom_sorter(x[1]))
+            curr_order = [carry + s[0] for s in sorted_atoms]
             sorted_indices += curr_order
             # reset
             carry += len(curr_atoms)
@@ -69,7 +96,8 @@ def pdb_to_dna_array(pdb_path):
 
     # add last res
     if len(curr_atoms):
-        curr_order = [carry + atom_sorter(atom) for atom in curr_atoms]
+        sorted_atoms = sorted(enumerate(curr_atoms), key=lambda x: atom_sorter(x[1]))
+        curr_order = [carry + s[0] for s in sorted_atoms]
         sorted_indices += curr_order
 
     assert len(sorted_indices) == len(atom_array)
