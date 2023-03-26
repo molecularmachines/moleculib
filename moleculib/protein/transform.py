@@ -38,7 +38,9 @@ class ProteinCrop(ProteinTransform):
 
     def transform(self, datum):
         seq_len = datum.residue_index.shape[0]
-        if seq_len <= self.crop_size and hasattr(self, "padding"):
+        if seq_len == self.crop_size:
+            return datum
+        elif seq_len < self.crop_size and hasattr(self, "padding"):
             new_datum = ProteinDatum(
                 idcode=datum.idcode,
                 resolution=datum.resolution,
@@ -65,7 +67,7 @@ class ProteinCrop(ProteinTransform):
                 atom_coord=datum.atom_coord[cut : cut + self.crop_size],
                 atom_mask=datum.atom_mask[cut : cut + self.crop_size],
             )
-        new_datum.crop_size = self.crop_size
+
         return new_datum
 
 

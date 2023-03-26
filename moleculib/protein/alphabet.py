@@ -476,8 +476,8 @@ atoms_per_residue = {
     res: backbone_atoms + sidechain_atoms
     for (res, sidechain_atoms) in sidechain_atoms_per_residue.items()
 }
-atoms_per_residue['PAD'] = []
-atoms_per_residue['UNK'] = backbone_atoms 
+atoms_per_residue["PAD"] = []
+atoms_per_residue["UNK"] = backbone_atoms
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
 all_atoms = special_tokens + all_atoms
@@ -487,18 +487,19 @@ all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
 
+
 # and base vocabularies for chemistry
 def geometry_to_per_residue_indexing_array(property="bonds"):
     connecting_atoms_per_residue = OrderedDict()
     for token in special_tokens:
         connecting_atoms_per_residue[token] = []
-    for (res, sidechain_indices) in sidechain_chemistry_per_residue.items():
+    for res, sidechain_indices in sidechain_chemistry_per_residue.items():
         connecting_atoms_per_residue[res] = (
             backbone_chemistry[property] + sidechain_indices[property]
         )
 
     index_per_residue = OrderedDict()
-    for (res, residue_indices) in connecting_atoms_per_residue.items():
+    for res, residue_indices in connecting_atoms_per_residue.items():
         index_per_residue[res] = [
             [atoms_per_residue[res].index(i) for i in atom_indices]
             for atom_indices in residue_indices

@@ -19,9 +19,15 @@ from .transform import ProteinTransform
 from .utils import pids_file_to_list
 
 MAX_COMPLEX_SIZE = 32
-PDB_HEADER_FIELDS = [("idcode", str), ("num_res", int), ("standard", bool), ("resolution", float)]
+PDB_HEADER_FIELDS = [
+    ("idcode", str),
+    ("num_res", int),
+    ("standard", bool),
+    ("resolution", float),
+]
 CHAIN_COUNTER_FIELDS = [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
 PDB_METADATA_FIELDS = PDB_HEADER_FIELDS + CHAIN_COUNTER_FIELDS
+
 
 class PDBDataset(Dataset):
     """
@@ -52,7 +58,6 @@ class PDBDataset(Dataset):
         preload: bool = False,
         preload_num_workers: int = 10,
     ):
-
         super().__init__()
         self.base_path = Path(base_path)
         if metadata is None:
@@ -104,7 +109,7 @@ class PDBDataset(Dataset):
             data = []
             for idx in range(len(self.metadata.index)):
                 data.append(self.load_index(idx))
-            self.data = data 
+            self.data = data
 
     def __len__(self):
         return len(self.metadata)
@@ -117,14 +122,14 @@ class PDBDataset(Dataset):
         return self.parse(header, molecules)
 
     def parse(self, molecules):
-        raise NotImplementedError('PDBDataset is an abstract class')
+        raise NotImplementedError("PDBDataset is an abstract class")
 
     def __getitem__(self, idx):
         molecule = self.data[idx] if self.preload else self.load_index(idx)
         if self.transform is not None:
             for transformation in self.transform:
                 molecule = transformation.transform(molecule)
-        return molecule 
+        return molecule
 
     @staticmethod
     def _extract_datum_row(datum):
@@ -135,7 +140,7 @@ class PDBDataset(Dataset):
             resolution=datum.resolution,
             num_res=len(datum.sequence),
         )
-        for chain in range(np.max(datum.chain_token)):
+        for chain in range(np.max(datum.chain_token) + 1):
             num_residues = (datum.chain_token == chain).sum()
             metrics[f"num_res_{chain}"] = num_residues
         return Series(metrics).to_frame().T
@@ -150,7 +155,7 @@ class PDBDataset(Dataset):
             print(traceback.format_exc())
             print(error)
             return None
-        except (biotite.database.RequestError) as request_error:
+        except biotite.database.RequestError as request_error:
             print(request_error)
             return None
         if len(datum.sequence) == 0:
@@ -197,42 +202,46 @@ class PDBDataset(Dataset):
 
 
 class MonomerDataset(PDBDataset):
-
     def __init__(
         self,
         base_path: str,
-        metadata: str,
+        metadata: pd.DataFrame = None,
         **kwargs,
     ):
+        if metadata is None:
+            with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
+                metadata = pickle.load(file)
         metadata = metadata.reset_index()
         num_monomers = np.zeros((len(metadata)))
         chain_counter = [col for (col, _) in CHAIN_COUNTER_FIELDS]
         num_monomers = (metadata[chain_counter] > 0).sum(axis=1)
         filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)].reset_index()
-        filtered['chain_indexes'] = pd.Series(np.zeros((len(filtered)), dtype=np.int32))
-        for counter in range(MAX_COMPLEX_SIZE): 
-            filtered.loc[counter::MAX_COMPLEX_SIZE, 'num_res'] = filtered.iloc[counter::MAX_COMPLEX_SIZE][f'num_res_{counter}']
-            filtered.loc[counter::MAX_COMPLEX_SIZE, 'chain_indexes'] = counter
-        metadata = filtered[[col for (col, _) in PDB_HEADER_FIELDS] + ['chain_indexes']]
-        metadata = metadata[metadata['num_res'] > 0].reset_index()
+        filtered["chain_indexes"] = pd.Series(np.zeros((len(filtered)), dtype=np.int32))
+        for counter in range(MAX_COMPLEX_SIZE):
+            filtered.loc[counter::MAX_COMPLEX_SIZE, "num_res"] = filtered.iloc[
+                counter::MAX_COMPLEX_SIZE
+            ][f"num_res_{counter}"]
+            filtered.loc[counter::MAX_COMPLEX_SIZE, "chain_indexes"] = counter
+        metadata = filtered[[col for (col, _) in PDB_HEADER_FIELDS] + ["chain_indexes"]]
+        metadata = metadata[metadata["num_res"] > 0].reset_index()
         super().__init__(base_path=base_path, metadata=metadata, **kwargs)
-        
 
     def parse(self, header, datum):
         chain_filter = header.chain_indexes == datum.chain_token
         values = list(vars(datum).values())
         proxy = values[0]
-        
+
         if chain_filter.sum() == len(proxy):
             return datum
-        
+
         chain_indexes = np.nonzero(chain_filter.astype(np.int32))[0]
         slice_min, slice_max = chain_indexes.min(), chain_indexes.max()
+
         def _cut_chain(obj):
             if type(obj) != np.ndarray and type(obj) != list:
                 return obj
             return obj[slice_min:slice_max]
+
         values = list(map(_cut_chain, values))
 
         return ProteinDatum(*values)
-

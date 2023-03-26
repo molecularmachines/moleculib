@@ -68,9 +68,7 @@ class ProteinDatum:
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_name, atom_array, atom_token):
-            atom_array_ = atom_array[
-                (atom_array.atom_name == atom_name) 
-            ]
+            atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
             if atom_name not in backbone_atoms:
@@ -181,7 +179,7 @@ class ProteinDatum:
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
 
-        residue_mask = residue_mask & (atom_extract['atom_coord'].sum((-1, -2)) != 0)
+        residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
 
         return cls(
             idcode=header["idcode"],

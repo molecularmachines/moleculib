@@ -13,6 +13,7 @@ from .datum import ProteinDatum
 
 from .utils import pad_array
 
+
 class ProteinCollator:
     """
     Abstract class for collation of multiple ProteinDatum instances
@@ -91,9 +92,17 @@ class PadBatch(ProteinCollator):
         data_type = type(proxy)
         unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
-        max_size = max([len(datum.sequence) for datum in data_list])
+        max_size = max([len(datum.residue_token) for datum in data_list])
 
-        def _maybe_pad_and_stack(obj_list):
+        def _maybe_pad_and_stack(stream):
+            name, obj_list = stream
+            if (
+                ("bonds" in name)
+                or ("flippable" in name)
+                or ("dihedrals" in name)
+                or ("angles" in name)
+            ):
+                return np.stack(list(obj_list), axis=0)
             obj = obj_list[0]
             if type(obj) != np.ndarray:
                 return obj_list
@@ -101,14 +110,13 @@ class PadBatch(ProteinCollator):
             return np.stack(list(new_list), axis=0)
 
         keys = vars(proxy).keys()
-        assert "bonds_list" not in keys, "PadBatch does not support bonds"
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
-        values = list(map(_maybe_pad_and_stack, value_lists))
+        values = list(map(_maybe_pad_and_stack, zip(keys, value_lists)))
         batch_attr = dict(zip(keys, values))
 
         pad_mask = _maybe_pad_and_stack(
-            [np.ones((len(datum.sequence),)) for datum in data_list]
+            ("pad_mask", [np.ones((len(datum.atom_token),)) for datum in data_list])
         ).astype(bool)
 
         return cls(pad_mask, **batch_attr)
