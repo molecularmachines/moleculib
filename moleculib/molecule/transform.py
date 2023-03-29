@@ -44,14 +44,26 @@ class MoleculeCrop(MoleculeTransform):
             new_datum.atom_token = self.padding(datum.atom_token)
             new_datum.atom_coord = self.padding(datum.atom_coord)
             new_datum.b_factor = self.padding(datum.b_factor)
+            new_datum.molecule_mask = self.padding(datum.molecule_mask).astype(np.int32)
         else:
             cut = np.random.randint(low=0, high=(atom_count - self.crop_size))
             new_datum = datum
             new_datum.atom_token = datum.atom_token[cut : cut + self.crop_size]
             new_datum.atom_coord = datum.atom_coord[cut : cut + self.crop_size]
             new_datum.b_factor = datum.b_factor[cut : cut + self.crop_size]
+            new_datum.molecule_mask = datum.molecule_mask[
+                cut : cut + self.crop_size
+            ].astype(np.int32)
         new_datum.crop_size = self.crop_size
         return new_datum
+
+
+class Centralize(MoleculeTransform):
+    def transform(self, datum):
+        datum.atom_coord[datum.molecule_mask] = datum.atom_coord[
+            datum.molecule_mask
+        ] - datum.atom_coord[datum.molecule_mask].mean(axis=0)
+        return datum
 
 
 # class ListBonds(MoleculeTransform):
