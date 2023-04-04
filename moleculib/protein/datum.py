@@ -44,7 +44,7 @@ class ProteinDatum:
     ):
         self.idcode = idcode
         self.resolution = resolution
-        self.sequence = sequence
+        self.sequence = str(sequence)
         self.residue_token = residue_token
         self.residue_index = residue_index
         self.residue_mask = residue_mask
@@ -113,7 +113,7 @@ class ProteinDatum:
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb", save_path)
+        filepath = rcsb.fetch(id, "pdb")
         return cls.from_filepath(filepath)
 
     @classmethod

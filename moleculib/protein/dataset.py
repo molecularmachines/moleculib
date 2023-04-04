@@ -17,6 +17,7 @@ from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
 from .transform import ProteinTransform
 from .utils import pids_file_to_list
+from tqdm import tqdm
 
 MAX_COMPLEX_SIZE = 32
 PDB_HEADER_FIELDS = [
@@ -79,8 +80,7 @@ class PDBDataset(Dataset):
                 self.metadata["num_res"] <= max_sequence_length
             ]
 
-        # shuffle and sample
-        self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
+        self.metadata = self.metadata.reset_index(drop=True)
 
         # specific protein attributes
         protein_attrs = [
@@ -104,12 +104,8 @@ class PDBDataset(Dataset):
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
-        self.preload = preload
-        if self.preload:
-            data = []
-            for idx in range(len(self.metadata.index)):
-                data.append(self.load_index(idx))
-            self.data = data
+    def _is_in_filter(self, sample):
+        return int(sample["id"]) in self.shard_indices
 
     def __len__(self):
         return len(self.metadata)
@@ -125,7 +121,7 @@ class PDBDataset(Dataset):
         raise NotImplementedError("PDBDataset is an abstract class")
 
     def __getitem__(self, idx):
-        molecule = self.data[idx] if self.preload else self.load_index(idx)
+        molecule = self.data[idx] if hasattr(self, "data") else self.load_index(idx)
         if self.transform is not None:
             for transformation in self.transform:
                 molecule = transformation.transform(molecule)
@@ -160,7 +156,7 @@ class PDBDataset(Dataset):
             return None
         if len(datum.sequence) == 0:
             return None
-        return PDBDataset._extract_datum_row(datum)
+        return (datum, PDBDataset._extract_datum_row(datum))
 
     @classmethod
     def build(
@@ -186,14 +182,15 @@ class PDBDataset(Dataset):
 
         extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
         if max_workers > 1:
-            rows = process_map(
+            extraction = process_map(
                 extractor, pdb_ids, max_workers=max_workers, chunksize=50
             )
         else:
-            rows = list(map(extractor, pdb_ids))
-        rows = filter(lambda row: row is not None, rows)
+            extraction = list(map(extractor, pdb_ids))
 
-        metadata = pd.concat((metadata, *rows), axis=0)
+        extraction = filter(lambda x: x, extraction)
+        extraction = list(zip(*zip(*extraction)))
+
         if save:
             with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
                 pickle.dump(metadata, file)
@@ -208,22 +205,33 @@ class MonomerDataset(PDBDataset):
         metadata: pd.DataFrame = None,
         **kwargs,
     ):
+        # read from base path if metadata is not built
         if metadata is None:
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
                 metadata = pickle.load(file)
         metadata = metadata.reset_index()
+
+        # tile rows N times for considering each separate chain
         num_monomers = np.zeros((len(metadata)))
         chain_counter = [col for (col, _) in CHAIN_COUNTER_FIELDS]
         num_monomers = (metadata[chain_counter] > 0).sum(axis=1)
-        filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)].reset_index()
+
+        # flatten metadata with regards to num_res
+        filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)]
+        filtered["source"] = filtered.index
+        filtered = filtered.reset_index()
         filtered["chain_indexes"] = pd.Series(np.zeros((len(filtered)), dtype=np.int32))
         for counter in range(MAX_COMPLEX_SIZE):
             filtered.loc[counter::MAX_COMPLEX_SIZE, "num_res"] = filtered.iloc[
                 counter::MAX_COMPLEX_SIZE
             ][f"num_res_{counter}"]
             filtered.loc[counter::MAX_COMPLEX_SIZE, "chain_indexes"] = counter
-        metadata = filtered[[col for (col, _) in PDB_HEADER_FIELDS] + ["chain_indexes"]]
+        metadata = filtered[
+            [col for (col, _) in PDB_HEADER_FIELDS] + ["chain_indexes", "source"]
+        ]
         metadata = metadata[metadata["num_res"] > 0].reset_index()
+
+        # initialize PDBDataset
         super().__init__(base_path=base_path, metadata=metadata, **kwargs)
 
     def parse(self, header, datum):
