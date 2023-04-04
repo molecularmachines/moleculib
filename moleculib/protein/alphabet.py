@@ -285,6 +285,7 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CE1", "CZ"],
             ["CZ", "CE2"],
             ["CE2", "CD2"],
+            ["CD2", "CG"],
         ],
         angles=[
             ["N", "CA", "CB"],
