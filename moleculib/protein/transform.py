@@ -142,7 +142,7 @@ class ListAngles(ProteinTransform):
         second_angle = np.stack((prev_("C"), next_("N"), next_("CA"))).T
 
         peptide_angles = np.stack((first_angle, second_angle), axis=1)
-        peptide_mask = np.ones(peptide_angles.shape[:-1], dtype=np.bool)
+        peptide_mask = np.ones(peptide_angles.shape[:-1], dtype=np.bool_)
 
         peptide_angles = np.pad(peptide_angles, ((0, 1), (0, 0), (0, 0)), constant_values=0)
         peptide_mask = np.pad(peptide_mask, ((0, 1), (0, 0)), constant_values=False)
@@ -189,7 +189,7 @@ class ListDihedrals(ProteinTransform):
         phi = np.stack((prev_("C"), next_("N"), next_("CA"), next_("C"))).T
 
         peptide_dihedrals = np.stack((psi, phi, omega), axis=1)
-        peptide_mask = np.ones(peptide_dihedrals.shape[:-1], dtype=np.bool)
+        peptide_mask = np.ones(peptide_dihedrals.shape[:-1], dtype=np.bool_)
 
         peptide_dihedrals = np.pad(peptide_dihedrals, ((0, 1), (0, 0), (0, 0)), constant_values=0)
         peptide_mask = np.pad(peptide_mask, ((0, 1), (0, 0)), constant_values=False)
