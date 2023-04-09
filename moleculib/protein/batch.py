@@ -98,7 +98,7 @@ class PadBatch(ProteinCollator):
             name, obj_list = stream
             if (
                 ("bonds" in name)
-                or ("flippable" in name)
+                or ("flips" in name)
                 or ("dihedrals" in name)
                 or ("angles" in name)
             ):

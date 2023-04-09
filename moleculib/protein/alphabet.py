@@ -36,6 +36,17 @@ UNK_TOKEN = 1
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+van_der_walls_radii = OrderedDict(  # in angstroms
+    C=1.7,
+    H=1.2,
+    O=1.52,
+    N=1.55,
+    P=1.8,
+    S=1.8,
+    F=1.47,
+)
+
+
 sidechain_atoms_per_residue = OrderedDict(
     ALA=["CB"],
     ARG=["CB", "CG", "CD", "NE", "CZ", "NH1", "NH2"],
@@ -654,9 +665,21 @@ all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
 all_atoms = special_tokens + all_atoms
 all_atoms_tokens = np.arange(len(all_atoms))
 
+elements = list(OrderedSet([ atom[0] for atom in all_atoms ]))
+all_atoms_elements = np.array([ elements.index(atom[0]) for atom in all_atoms ])
+all_atoms_radii = np.array(
+    [ (van_der_walls_radii[atom[0]] 
+       if (atom[0] in van_der_walls_radii) 
+       else 0.0) for atom in all_atoms ])
+
 all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
+all_residues_atom_mask = np.array([
+    ([1] * len(atoms) + [0] * (14 - len(atoms))) for (_, atoms) in atoms_per_residue.items()
+]).astype(np.bool)
+
+
 
 
 # and base vocabularies for chemistry

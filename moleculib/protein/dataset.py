@@ -189,7 +189,8 @@ class PDBDataset(Dataset):
             extraction = list(map(extractor, pdb_ids))
 
         extraction = filter(lambda x: x, extraction)
-        extraction = list(zip(*zip(*extraction)))
+        data, metadata_ = list(map(list, zip(*extraction)))
+        metadata = pd.concat((metadata, *metadata_), axis=0)
 
         if save:
             with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
@@ -210,11 +211,6 @@ class MonomerDataset(PDBDataset):
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
                 metadata = pickle.load(file)
         metadata = metadata.reset_index()
-
-        # tile rows N times for considering each separate chain
-        num_monomers = np.zeros((len(metadata)))
-        chain_counter = [col for (col, _) in CHAIN_COUNTER_FIELDS]
-        num_monomers = (metadata[chain_counter] > 0).sum(axis=1)
 
         # flatten metadata with regards to num_res
         filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)]

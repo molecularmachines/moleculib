@@ -113,7 +113,7 @@ class ProteinDatum:
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb")
+        filepath = rcsb.fetch(id, "pdb", save_path)
         return cls.from_filepath(filepath)
 
     @classmethod
