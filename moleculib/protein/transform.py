@@ -94,7 +94,7 @@ class ListBonds(ProteinTransform):
         cs = num_atoms * np.arange(0, len(datum.atom_coord)-1) + c_page 
         
         peptide_bonds = np.stack((ns, cs)).T
-        peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool)
+        peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
         
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
         peptide_mask = np.pad(peptide_mask, ((0, 1)), constant_values=False)

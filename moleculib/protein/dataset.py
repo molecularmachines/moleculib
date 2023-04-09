@@ -3,7 +3,7 @@ import pickle
 import traceback
 from functools import partial
 from pathlib import Path
-from tempfile import gettempdir
+from tempfile import mkdtemp
 from typing import List, Union
 
 import biotite
@@ -175,7 +175,7 @@ class PDBDataset(Dataset):
             root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
         if save_path is None:
-            save_path = gettempdir()
+            save_path = mkdtemp()
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)

@@ -677,7 +677,7 @@ all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
 all_residues_atom_mask = np.array([
     ([1] * len(atoms) + [0] * (14 - len(atoms))) for (_, atoms) in atoms_per_residue.items()
-]).astype(np.bool)
+]).astype(np.bool_)
 
 
 
