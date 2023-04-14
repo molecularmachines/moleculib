@@ -17,6 +17,7 @@ from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum, ProteinDNADatum
 from .transform import ProteinTransform
 from .utils import pids_file_to_list
+from copy import deepcopy
 
 MAX_COMPLEX_SIZE = 32
 PDB_METADATA_FIELDS = [
@@ -122,7 +123,8 @@ class ProteinDataset(Dataset):
         return len(self.metadata)
 
     def __getitem__(self, idx):
-        protein = self.proteins[idx] if self.preload else self.load_index(idx)
+        p = self.proteins[idx] if self.preload else self.load_index(idx)
+        protein = deepcopy(p)
         if self.transform is not None:
             for transformation in self.transform:
                 protein = transformation.transform(protein)
