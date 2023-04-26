@@ -53,6 +53,43 @@ def pdb_to_dna_array(pdb_path):
         return []
     atom_array = atom_array[keep_indices]
 
+    # retrieve phosphate positions
+    curr_res = atom_array[0].res_id
+    phosphates = []
+    res_atoms = []
+    curr_phosphate = False
+    num_res = 1
+
+    for a in atom_array:
+        if a.res_id != curr_res:
+            # if no phosphate in nucleotide take centroid
+            if not curr_phosphate:
+                res_atoms = np.stack(res_atoms, axis=0)
+                centroid = np.mean(res_atoms, axis=0)
+                phosphates.append(centroid)
+                res_atoms = []
+            curr_phosphate = False
+            num_res += 1
+            curr_res = a.res_id
+
+        # found phosphate atom
+        if a.element == 'P':
+            if not curr_phosphate:
+                phosphates.append(a.coord)
+            curr_phosphate = True
+        # if not a phosphate the list to compute centroid
+        else:
+            res_atoms.append(a.coord)
+
+    # deal with last phosphate
+    if len(res_atoms) and not curr_phosphate:
+        res_atoms = np.stack(res_atoms, axis=0)
+        centroid = np.mean(res_atoms, axis=0)
+        phosphates.append(centroid)
+
+    assert num_res == len(phosphates)
+    phosphates = np.stack(phosphates, axis=0)
+
     def is_base_atom(atom_name):
         if atom_name[-1] == "'":
             return False
@@ -101,7 +138,7 @@ def pdb_to_dna_array(pdb_path):
         sorted_indices += curr_order
 
     assert len(sorted_indices) == len(atom_array)
-    return atom_array[sorted_indices]
+    return atom_array[sorted_indices], phosphates
 
 
 def pids_file_to_list(pids_path):
