@@ -252,6 +252,15 @@ class ProteinDNADatum(ProteinDatum):
         # residues are the same as ProteinDatum
         p = ProteinDatum.from_atom_array(res_array, header, query_atoms)
 
+        def _slice(crds):
+            half = crds.shape[0] // 2
+            top = crds[:half]
+            bottom = crds[half:]
+            return np.concatenate((top, bottom), axis=-1)
+
+        # slice phosphates into halves
+        phosphate = _slice(phosphate)
+
         # support proteins without DNA atoms
         if not len(dna_array):
             dna_sequence = NucleotideSequence("")
@@ -260,6 +269,7 @@ class ProteinDNADatum(ProteinDatum):
         else:
             # retrieve data from dna atom array
             _, nuc_names = get_residues(dna_array)
+            nuc_names = nuc_names[:len(nuc_names) // 2]  # double strand
             nuc_names = [n[1] for n in nuc_names]  # in PDB nucleotides start with D
             dna_sequence = NucleotideSequence("".join(nuc_names))
             dna_token = np.array([get_nucleotide_index(n) for n in nuc_names])
@@ -278,8 +288,8 @@ class ProteinDNADatum(ProteinDatum):
             nuc_atom_indices.append(num_atoms)
 
             # retrieve atoms per nucleotide and masks
-            dna_coord = np.zeros((len(dna_sequence), MAX_DNA_ATOMS, 3))
-            dna_mask = np.zeros((len(dna_sequence), MAX_DNA_ATOMS))
+            dna_coord = np.zeros((len(dna_sequence) * 2, MAX_DNA_ATOMS, 3))
+            dna_mask = np.zeros((len(dna_sequence) * 2, MAX_DNA_ATOMS))
             prev_idx = 0
             for i, idx in enumerate(nuc_atom_indices):
                 # in case nucleotide has more than max atoms, trim last atoms
@@ -290,6 +300,10 @@ class ProteinDNADatum(ProteinDatum):
                 dna_mask[i][:num_nuc_atoms] = 1
                 prev_idx = idx
             dna_mask = dna_mask.astype(bool)
+
+            # slice into halves for double strand representation
+            dna_coord = _slice(dna_coord)
+            dna_mask = dna_mask[:len(dna_mask) // 2]
 
         # construct protein dna complex
         return cls(

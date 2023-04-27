@@ -92,7 +92,7 @@ class PadBatch(ProteinCollator):
         max_size = max([len(datum.sequence) for datum in data_list])
         dna_max_size = max([len(datum.dna_sequence) for datum in data_list])
 
-        def _maybe_pad_and_stack(obj_list, size):
+        def _maybe_pad_and_stack(obj_list, size=None):
             obj = obj_list[0]
             if type(obj) != np.ndarray:
                 return obj_list
@@ -106,13 +106,14 @@ class PadBatch(ProteinCollator):
         value_lists = [[vars(datum)[k] for k in keys] for datum in data_list]
         dna_value_lists = [[vars(datum)[k] for k in dna_keys] for datum in data_list]
 
-        # value_lists = [vars(datum).values() for datum in data_list]
+        value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
         dna_value_lists = zip(*dna_value_lists)
 
+        # pad = partial(_maybe_pad_and_stack, size=max_size)
+        # values = list(map(pad, value_lists))
         values = [_maybe_pad_and_stack(v, max_size) for v in value_lists]
         dna_values = [_maybe_pad_and_stack(v, dna_max_size) for v in dna_value_lists]
-        # values = list(map(_maybe_pad_and_stack, value_lists))
         batch_attr = dict(zip(keys, values))
         dna_batch_attr = dict(zip(dna_keys, dna_values))
 
