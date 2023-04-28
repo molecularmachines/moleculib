@@ -219,7 +219,7 @@ class ProteinDNADatum(ProteinDatum):
         dna_token: np.ndarray,
         dna_coord: np.ndarray,
         dna_mask: np.ndarray,
-        dna_phosphate: np.ndarray,
+        dna_centroid: np.ndarray,
     ):
         super().__init__(
             idcode=idcode,
@@ -238,28 +238,19 @@ class ProteinDNADatum(ProteinDatum):
         self.dna_token = dna_token
         self.dna_coord = dna_coord
         self.dna_mask = dna_mask
-        self.dna_phosphate = dna_phosphate
+        self.dna_centroid = dna_centroid
 
     @classmethod
     def from_filepath(cls, filepath):
-        dna_array, phosphate = pdb_to_dna_array(filepath)
+        dna_array, centroid = pdb_to_dna_array(filepath)
         res_array = pdb_to_atom_array(filepath)
         header = parse_pdb_header(filepath)
-        return cls.from_atom_arrays(res_array, dna_array, phosphate, header=header)
+        return cls.from_atom_arrays(res_array, dna_array, centroid, header=header)
 
     @classmethod
-    def from_atom_arrays(cls, res_array, dna_array, phosphate, header, query_atoms=all_atoms):
+    def from_atom_arrays(cls, res_array, dna_array, centroid, header, query_atoms=all_atoms):
         # residues are the same as ProteinDatum
         p = ProteinDatum.from_atom_array(res_array, header, query_atoms)
-
-        def _slice(crds):
-            half = crds.shape[0] // 2
-            top = crds[:half]
-            bottom = crds[half:]
-            return np.concatenate((top, bottom), axis=-1)
-
-        # slice phosphates into halves
-        phosphate = _slice(phosphate)
 
         # support proteins without DNA atoms
         if not len(dna_array):
@@ -301,10 +292,6 @@ class ProteinDNADatum(ProteinDatum):
                 prev_idx = idx
             dna_mask = dna_mask.astype(bool)
 
-            # slice into halves for double strand representation
-            dna_coord = _slice(dna_coord)
-            dna_mask = dna_mask[:len(dna_mask) // 2]
-
         # construct protein dna complex
         return cls(
             idcode=p.idcode,
@@ -321,5 +308,5 @@ class ProteinDNADatum(ProteinDatum):
             dna_token=dna_token,
             dna_coord=dna_coord,
             dna_mask=dna_mask,
-            dna_phosphate=phosphate
+            dna_centroid=centroid
         )
