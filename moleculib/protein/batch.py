@@ -62,7 +62,7 @@ class ProteinCollator:
 
 
 class PadBatch(ProteinCollator):
-    def __init__(self, pad_mask, dna_pad_mask, **kwargs):
+    def __init__(self, pad_mask, **kwargs):
         super().__init__()
         self.pad_mask = pad_mask
         for attr, value in kwargs.items():
@@ -90,44 +90,26 @@ class PadBatch(ProteinCollator):
         unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
         max_size = max([len(datum.sequence) for datum in data_list])
-        dna_max_size = max([len(datum.dna_sequence) for datum in data_list])
 
-        def _maybe_pad_and_stack(obj_list, size=None):
+        def _maybe_pad_and_stack(obj_list):
             obj = obj_list[0]
             if type(obj) != np.ndarray:
                 return obj_list
-            new_list = map(partial(pad_array, total_size=size), obj_list)
+            new_list = map(partial(pad_array, total_size=max_size), obj_list)
             return np.stack(list(new_list), axis=0)
 
         keys = [x for x in vars(proxy).keys() if x[:3] != "dna"]
-        dna_keys = [x for x in vars(proxy).keys() if x[:3] == "dna"]
         assert "bonds_list" not in keys, "PadBatch does not support bonds"
-
-        value_lists = [[vars(datum)[k] for k in keys] for datum in data_list]
-        dna_value_lists = [[vars(datum)[k] for k in dna_keys] for datum in data_list]
-
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
-        dna_value_lists = zip(*dna_value_lists)
-
-        # pad = partial(_maybe_pad_and_stack, size=max_size)
-        # values = list(map(pad, value_lists))
-        values = [_maybe_pad_and_stack(v, max_size) for v in value_lists]
-        dna_values = [_maybe_pad_and_stack(v, dna_max_size) for v in dna_value_lists]
+        values = list(map(_maybe_pad_and_stack, value_lists))
         batch_attr = dict(zip(keys, values))
-        dna_batch_attr = dict(zip(dna_keys, dna_values))
 
         pad_mask = _maybe_pad_and_stack(
-            [np.ones((len(datum.sequence),)) for datum in data_list],
-            max_size
+            [np.ones((len(datum.sequence),)) for datum in data_list]
         ).astype(bool)
 
-        dna_pad_mask = _maybe_pad_and_stack(
-            [np.ones((len(datum.dna_sequence),)) for datum in data_list],
-            dna_max_size
-        ).astype(bool)
-
-        return cls(pad_mask, dna_pad_mask, **batch_attr, **dna_batch_attr).torch()
+        return cls(pad_mask, **batch_attr, ).torch()
 
 
 class GeometricBatch(ProteinCollator):
