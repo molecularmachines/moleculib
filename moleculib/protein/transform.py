@@ -38,7 +38,7 @@ class ProteinCrop(ProteinTransform):
         if pad:
             self.padding = partial(pad_array, total_size=crop_size)
 
-    def transform(self, datum):
+    def transform(self, datum, cut=None):
         seq_len = datum.residue_index.shape[0]
         if seq_len == self.crop_size:
             return datum
@@ -56,7 +56,8 @@ class ProteinCrop(ProteinTransform):
                 atom_mask=self.padding(datum.atom_mask),
             )
         else:
-            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
+            if cut is None:
+                cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
             new_datum = ProteinDatum(
                 idcode=datum.idcode,
                 resolution=datum.resolution,
@@ -292,7 +293,10 @@ class MaybeMirror(ProteinTransform):
         self.hand = hand
 
     def transform(self, datum):
-        mean_chirality = measure_chirality(datum.atom_coord)
+        try:
+            mean_chirality = measure_chirality(datum.atom_coord)
+        except:
+            breakpoint()
         datum_hand = "right" if (mean_chirality < 0.5) else "left"
         if datum_hand != self.hand:
             datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0]
