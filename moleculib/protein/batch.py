@@ -109,7 +109,46 @@ class PadBatch(ProteinCollator):
             [np.ones((len(datum.sequence),)) for datum in data_list]
         ).astype(bool)
 
-        return cls(pad_mask, **batch_attr, ).torch()
+        return cls(pad_mask, **batch_attr).torch()
+
+
+class PadComplexBatch(PadBatch):
+
+    def __init__(self, pad_mask, **kwargs):
+        super().__init__(pad_mask, **kwargs)
+
+    @classmethod
+    def collate(cls, data_list):
+        proxy = data_list[0]
+        data_type = type(proxy)
+        unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
+        assert unique_type, "all data must have same type"
+
+        def complex_len(datum):
+            return len(datum.sequence) + 2 * len(datum.dna_sequence)
+
+        # here max size is the double stranded dna and the protein
+        max_size = max([complex_len(datum) for datum in data_list])
+
+        def _maybe_pad_and_stack(obj_list):
+            obj = obj_list[0]
+            if type(obj) != np.ndarray:
+                return obj_list
+            new_list = map(partial(pad_array, total_size=max_size), obj_list)
+            return np.stack(list(new_list), axis=0)
+
+        keys = [x for x in vars(proxy).keys() if x[:3] != "dna"]
+        assert "bonds_list" not in keys, "PadBatch does not support bonds"
+        value_lists = [vars(datum).values() for datum in data_list]
+        value_lists = zip(*value_lists)
+        values = list(map(_maybe_pad_and_stack, value_lists))
+        batch_attr = dict(zip(keys, values))
+
+        pad_mask = _maybe_pad_and_stack(
+            [np.ones((complex_len(datum),)) for datum in data_list]
+        ).astype(bool)
+
+        return cls(pad_mask, **batch_attr).torch()
 
 
 class GeometricBatch(ProteinCollator):

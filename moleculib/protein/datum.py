@@ -22,6 +22,7 @@ from .alphabet import (
     get_residue_index,
     get_nucleotide_index,
     MAX_DNA_ATOMS,
+    MAX_RES_ATOMS
 )
 from .utils import pdb_to_atom_array, pdb_to_dna_array
 
@@ -219,7 +220,6 @@ class ProteinDNADatum(ProteinDatum):
         dna_token: np.ndarray,
         dna_coord: np.ndarray,
         dna_mask: np.ndarray,
-        dna_centroid: np.ndarray,
     ):
         super().__init__(
             idcode=idcode,
@@ -238,7 +238,6 @@ class ProteinDNADatum(ProteinDatum):
         self.dna_token = dna_token
         self.dna_coord = dna_coord
         self.dna_mask = dna_mask
-        self.dna_centroid = dna_centroid
 
     @classmethod
     def from_filepath(cls, filepath):
@@ -264,6 +263,7 @@ class ProteinDNADatum(ProteinDatum):
             nuc_names = [n[1] for n in nuc_names]  # in PDB nucleotides start with D
             dna_sequence = NucleotideSequence("".join(nuc_names))
             dna_token = np.array([get_nucleotide_index(n) for n in nuc_names])
+            seqlen = len(dna_sequence)
 
             # identify individual nucleotide atoms from array
             nuc_atom_indices = []
@@ -279,8 +279,8 @@ class ProteinDNADatum(ProteinDatum):
             nuc_atom_indices.append(num_atoms)
 
             # retrieve atoms per nucleotide and masks
-            dna_coord = np.zeros((len(dna_sequence) * 2, MAX_DNA_ATOMS, 3))
-            dna_mask = np.zeros((len(dna_sequence) * 2, MAX_DNA_ATOMS))
+            dna_coord = np.zeros((seqlen * 2, MAX_DNA_ATOMS, 3))
+            dna_mask = np.zeros((seqlen * 2, MAX_DNA_ATOMS))
             prev_idx = 0
             for i, idx in enumerate(nuc_atom_indices):
                 # in case nucleotide has more than max atoms, trim last atoms
@@ -292,6 +292,21 @@ class ProteinDNADatum(ProteinDatum):
                 prev_idx = idx
             dna_mask = dna_mask.astype(bool)
 
+            # calculate complex coords
+            centroid_atoms = np.zeros((2 * seqlen, 3))
+            for i in range(seqlen):
+                nuc_centroids = np.stack((centroid[i], centroid[i + seqlen]))
+                centroid_atoms[2 * i:2 * i + 2] = nuc_centroids
+
+            backbone = p.atom_coord[:, 1:2, :].squeeze()
+            complex_coord = np.concatenate((backbone, centroid_atoms))
+
+            complex_mask = np.ones(2 * seqlen + len(p.sequence))
+            complex_mask[-2 * seqlen:] = 0
+            complex_mask = complex_mask.astype(bool)
+            complex_token = np.ones(2 * seqlen + len(p.sequence))  # one is UNK
+            complex_token[-2 * seqlen:] = np.repeat(dna_token, 2)
+
         # construct protein dna complex
         return cls(
             idcode=p.idcode,
@@ -301,12 +316,11 @@ class ProteinDNADatum(ProteinDatum):
             residue_index=p.residue_index,
             residue_mask=p.residue_mask,
             chain_token=p.chain_token,
-            atom_coord=p.atom_coord,
-            atom_token=p.atom_token,
-            atom_mask=p.atom_mask,
+            atom_coord=complex_coord,
+            atom_token=complex_token,
+            atom_mask=complex_mask,
             dna_sequence=dna_sequence,
             dna_token=dna_token,
             dna_coord=dna_coord,
             dna_mask=dna_mask,
-            dna_centroid=centroid
         )
