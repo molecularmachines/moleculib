@@ -75,7 +75,6 @@ class ProteinCrop(ProteinTransform):
 
 
 class ListBonds(ProteinTransform):
-
     def transform(self, datum):
         # solve for intra-residue bonds
         num_atoms = datum.atom_coord.shape[-2]
@@ -83,38 +82,39 @@ class ListBonds(ProteinTransform):
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
         )
         bonds_per_residue = bonds_arr[datum.residue_token]
-       
+
         bond_list = (bonds_per_residue + count).astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
-        
+
         # add peptide bonds
         n_page = backbone_atoms.index("N")
         ns = num_atoms * np.arange(1, len(datum.atom_coord)) + n_page
         c_page = backbone_atoms.index("C")
-        cs = num_atoms * np.arange(0, len(datum.atom_coord)-1) + c_page 
-        
+        cs = num_atoms * np.arange(0, len(datum.atom_coord) - 1) + c_page
+
         peptide_bonds = np.stack((ns, cs)).T
         peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
-        
+
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
         peptide_mask = np.pad(peptide_mask, ((0, 1)), constant_values=False)
-        
+
         bond_list = np.concatenate((bond_list, peptide_bonds[:, None, :]), axis=1)
         bond_mask = np.concatenate((bond_mask, peptide_mask[:, None]), axis=1)
 
-        left, right = rearrange(bond_list, 's b i -> i (s b)')
+        left, right = rearrange(bond_list, "s b i -> i (s b)")
         atom_mask = rearrange(datum.atom_mask, "r a -> (r a)")
-        bond_mask &= rearrange(atom_mask[left] & atom_mask[right], "(s b) -> s b", b=bond_list.shape[1])
+        bond_mask &= rearrange(
+            atom_mask[left] & atom_mask[right], "(s b) -> s b", b=bond_list.shape[1]
+        )
 
         datum.bonds_list = bond_list
-        datum.bonds_mask = bond_mask 
+        datum.bonds_mask = bond_mask
 
         return datum
 
 
 class ListAngles(ProteinTransform):
-
     def transform(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
@@ -145,16 +145,22 @@ class ListAngles(ProteinTransform):
         peptide_angles = np.stack((first_angle, second_angle), axis=1)
         peptide_mask = np.ones(peptide_angles.shape[:-1], dtype=np.bool_)
 
-        peptide_angles = np.pad(peptide_angles, ((0, 1), (0, 0), (0, 0)), constant_values=0)
+        peptide_angles = np.pad(
+            peptide_angles, ((0, 1), (0, 0), (0, 0)), constant_values=0
+        )
         peptide_mask = np.pad(peptide_mask, ((0, 1), (0, 0)), constant_values=False)
 
         angle_list = np.concatenate((angle_list, peptide_angles), axis=1)
         angle_mask = np.concatenate((angle_mask, peptide_mask), axis=1)
 
         # kill bonds for which atom_mask flags lack record
-        i, j, k =  rearrange(angle_list, 's a i -> i (s a)')
+        i, j, k = rearrange(angle_list, "s a i -> i (s a)")
         atom_mask = rearrange(datum.atom_mask, "r a -> (r a)")
-        angle_mask &= rearrange(atom_mask[i] & atom_mask[j] & atom_mask[k], "(s b) -> s b", b=angle_list.shape[1])
+        angle_mask &= rearrange(
+            atom_mask[i] & atom_mask[j] & atom_mask[k],
+            "(s b) -> s b",
+            b=angle_list.shape[1],
+        )
 
         datum.angles_list = angle_list
         datum.angles_mask = angle_mask
@@ -163,7 +169,6 @@ class ListAngles(ProteinTransform):
 
 
 class ListDihedrals(ProteinTransform):
-
     def transform(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
@@ -184,7 +189,7 @@ class ListDihedrals(ProteinTransform):
         def next_(atom):
             page = num_atoms * np.arange(1, len(datum.atom_coord))
             return page + all_atoms.index(atom)
-        
+
         psi = np.stack((prev_("N"), prev_("CA"), prev_("C"), next_("N"))).T
         omega = np.stack((prev_("CA"), prev_("C"), next_("N"), next_("CA"))).T
         phi = np.stack((prev_("C"), next_("N"), next_("CA"), next_("C"))).T
@@ -192,18 +197,21 @@ class ListDihedrals(ProteinTransform):
         peptide_dihedrals = np.stack((psi, phi, omega), axis=1)
         peptide_mask = np.ones(peptide_dihedrals.shape[:-1], dtype=np.bool_)
 
-        peptide_dihedrals = np.pad(peptide_dihedrals, ((0, 1), (0, 0), (0, 0)), constant_values=0)
+        peptide_dihedrals = np.pad(
+            peptide_dihedrals, ((0, 1), (0, 0), (0, 0)), constant_values=0
+        )
         peptide_mask = np.pad(peptide_mask, ((0, 1), (0, 0)), constant_values=False)
 
         dihedral_list = np.concatenate((dihedral_list, peptide_dihedrals), axis=1)
         dihedral_mask = np.concatenate((dihedral_mask, peptide_mask), axis=1)
 
         # kill dihedrals for which atom_mask flags lack record
-        p, q, u, v = rearrange(dihedral_list, 's d i -> i (s d)')
+        p, q, u, v = rearrange(dihedral_list, "s d i -> i (s d)")
         atom_mask = rearrange(datum.atom_mask, "r a -> (r a)")
         dihedral_mask &= rearrange(
             atom_mask[p] & atom_mask[q] & atom_mask[u] & atom_mask[v],
-            "(s d) -> s d", d=dihedral_list.shape[1]
+            "(s d) -> s d",
+            d=dihedral_list.shape[1],
         )
 
         datum.dihedrals_list = dihedral_list
@@ -213,7 +221,6 @@ class ListDihedrals(ProteinTransform):
 
 
 class ListMirrorFlips(ProteinTransform):
-
     def transform(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
@@ -245,7 +252,7 @@ class DescribeChemistry(ProteinTransform):
         self.flip_transform = ListMirrorFlips()
 
     def transform(self, datum):
-        datum.atom_token = datum.atom_token.astype(np.int32) 
+        datum.atom_token = datum.atom_token.astype(np.int32)
         datum.atom_element = all_atoms_elements[datum.atom_token]
         datum.atom_radius = all_atoms_radii[datum.atom_token]
         datum = self.bond_transform.transform(datum)

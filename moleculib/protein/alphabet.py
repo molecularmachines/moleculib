@@ -665,21 +665,24 @@ all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
 all_atoms = special_tokens + all_atoms
 all_atoms_tokens = np.arange(len(all_atoms))
 
-elements = list(OrderedSet([ atom[0] for atom in all_atoms ]))
-all_atoms_elements = np.array([ elements.index(atom[0]) for atom in all_atoms ])
+elements = list(OrderedSet([atom[0] for atom in all_atoms]))
+all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 all_atoms_radii = np.array(
-    [ (van_der_walls_radii[atom[0]] 
-       if (atom[0] in van_der_walls_radii) 
-       else 0.0) for atom in all_atoms ])
+    [
+        (van_der_walls_radii[atom[0]] if (atom[0] in van_der_walls_radii) else 0.0)
+        for atom in all_atoms
+    ]
+)
 
 all_residues = list(sidechain_atoms_per_residue.keys())
 all_residues = special_tokens + all_residues
 all_residues_tokens = np.arange(len(all_residues))
-all_residues_atom_mask = np.array([
-    ([1] * len(atoms) + [0] * (14 - len(atoms))) for (_, atoms) in atoms_per_residue.items()
-]).astype(np.bool_)
-
-
+all_residues_atom_mask = np.array(
+    [
+        ([1] * len(atoms) + [0] * (14 - len(atoms)))
+        for (_, atoms) in atoms_per_residue.items()
+    ]
+).astype(np.bool_)
 
 
 # and base vocabularies for chemistry
