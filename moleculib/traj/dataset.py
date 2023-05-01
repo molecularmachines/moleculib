@@ -28,7 +28,11 @@ class MultiPadBatch(ProteinCollator):
     @classmethod
     def collate(cls, stream):
         sides = list(zip(*stream))
-        batches = [PadBatch.collate(side) for side in sides]
+        try:
+            batches = [PadBatch.collate(side) for side in sides]
+        except:
+            breakpoint()
+
         return batches
 
 
@@ -103,10 +107,9 @@ class MODELDataset(Dataset):
         # breakpoint()
 
         diff = datum_start.residue_token.shape[0] - self.crop_size
-        if diff > 0:
-            cut = np.random.randint(low=0, high=diff) if diff > 0 else None
-            datum_start = self.protein_crop.transform(datum_start, cut=cut)
-            datum_end = self.protein_crop.transform(datum_end, cut=cut)
+        cut = np.random.randint(low=0, high=diff) if diff > 0 else None
+        datum_start = self.protein_crop.transform(datum_start, cut=cut)
+        datum_end = self.protein_crop.transform(datum_end, cut=cut)
 
         if self.transform is not None:
             for transformation in self.transform:
