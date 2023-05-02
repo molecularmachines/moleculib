@@ -139,6 +139,7 @@ class PadComplexBatch(PadBatch):
 
         keys = [x for x in vars(proxy).keys() if x[:3] != "dna"]
         keys += ["dna_sequence"]
+        keys = [x for x in vars(proxy).keys()]
         assert "bonds_list" not in keys, "PadBatch does not support bonds"
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)

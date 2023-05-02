@@ -21,8 +21,7 @@ from .alphabet import (
     atom_to_residues_index,
     get_residue_index,
     get_nucleotide_index,
-    MAX_DNA_ATOMS,
-    MAX_RES_ATOMS
+    MAX_DNA_ATOMS
 )
 from .utils import pdb_to_atom_array, pdb_to_dna_array
 
@@ -216,6 +215,7 @@ class ProteinDNADatum(ProteinDatum):
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
+        complex_mask: np.ndarray,
         dna_sequence: NucleotideSequence,
         dna_token: np.ndarray,
         dna_coord: np.ndarray,
@@ -238,6 +238,7 @@ class ProteinDNADatum(ProteinDatum):
         self.dna_token = dna_token
         self.dna_coord = dna_coord
         self.dna_mask = dna_mask
+        self.complex_mask = complex_mask
 
     @classmethod
     def from_filepath(cls, filepath):
@@ -301,10 +302,12 @@ class ProteinDNADatum(ProteinDatum):
             backbone = p.atom_coord[:, 1:2, :].squeeze()
             complex_coord = np.concatenate((backbone, centroid_atoms))
 
-            complex_mask = np.ones(2 * seqlen + len(p.sequence))
-            complex_mask[-2 * seqlen:] = 0
-            complex_mask = complex_mask.astype(bool)
-            complex_token = np.ones(2 * seqlen + len(p.sequence))  # one is UNK
+            complex_len = 2 * seqlen + len(p.sequence)
+            atom_mask = np.ones(complex_len)
+            atom_mask[-2 * seqlen:] = 0
+            atom_mask = atom_mask.astype(bool)
+            complex_mask = np.ones(complex_len).astype(bool)
+            complex_token = np.ones(complex_len)  # one is UNK
             complex_token[-2 * seqlen:] = np.repeat(dna_token, 2)
 
         # construct protein dna complex
@@ -318,7 +321,8 @@ class ProteinDNADatum(ProteinDatum):
             chain_token=p.chain_token,
             atom_coord=complex_coord,
             atom_token=complex_token,
-            atom_mask=complex_mask,
+            atom_mask=atom_mask,
+            complex_mask=complex_mask,
             dna_sequence=dna_sequence,
             dna_token=dna_token,
             dna_coord=dna_coord,
