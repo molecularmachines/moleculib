@@ -654,12 +654,12 @@ backbone_chemistry = dict(
 )
 special_tokens = ["PAD", "UNK"]
 
-atoms_per_residue = {
-    res: backbone_atoms + sidechain_atoms
-    for (res, sidechain_atoms) in sidechain_atoms_per_residue.items()
-}
+atoms_per_residue = OrderedDict()
 atoms_per_residue["PAD"] = []
 atoms_per_residue["UNK"] = backbone_atoms
+for res, sidechain_atoms in sidechain_atoms_per_residue.items():
+    atoms_per_residue[res] = backbone_atoms + sidechain_atoms
+
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
 all_atoms = special_tokens + all_atoms

@@ -80,7 +80,8 @@ class PDBDataset(Dataset):
                 self.metadata["num_res"] <= max_sequence_length
             ]
 
-        self.metadata = self.metadata.reset_index(drop=True)
+        # shuffle and sample
+        self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
 
         # specific protein attributes
         protein_attrs = [

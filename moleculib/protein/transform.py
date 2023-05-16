@@ -224,13 +224,10 @@ class ListMirrorFlips(ProteinTransform):
     def transform(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
-        count = num_atoms * np.expand_dims(
-            np.arange(0, len(datum.residue_token)), axis=(-1, -2)
-        )
         flips_per_residue = flippable_arr[datum.residue_token]
 
         flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)
-        flips_list = (flips_per_residue + count).astype(np.int32)
+        flips_list = (flips_per_residue).astype(np.int32)
 
         datum.flips_list = flips_list
         datum.flips_mask = flips_mask_per_residue
@@ -259,6 +256,26 @@ class DescribeChemistry(ProteinTransform):
         datum = self.angle_transform.transform(datum)
         datum = self.dihedral_transform.transform(datum)
         datum = self.flip_transform.transform(datum)
+        return datum
+
+
+class TokenizeSequenceBoundaries(ProteinTransform):
+    """
+    Augments ProteinDatum with boundary_token and boundary_mask
+    """
+
+    def transform(self, datum):
+        boundary_token = np.zeros(len(datum.residue_token), dtype=np.int32)
+        boundary_mask = np.zeros(len(datum.residue_token), dtype=np.bool_)
+        boundary_token[0] = 1
+        boundary_token[-1] = 2
+
+        boundary_mask[0] = True & datum.atom_mask[0, 1]
+        boundary_mask[-1] = True & datum.atom_mask[-1, 1]
+
+        datum.boundary_token = boundary_token
+        datum.boundary_mask = boundary_mask
+
         return datum
 
 

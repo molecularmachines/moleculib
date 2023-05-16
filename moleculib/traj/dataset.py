@@ -54,7 +54,7 @@ class MODELDataset(Dataset):
         base_path: str,
         frac: float = 1.0,
         transform: list = [],
-        num_steps=10,
+        num_steps=5,
         crop_size: int = 64,
     ):
         super().__init__()
@@ -98,22 +98,19 @@ class MODELDataset(Dataset):
 
     def __getitem__(self, idx):
         start = np.random.randint(0, self.num_models_per_traj[idx] - self.num_steps)
-        end = start + self.num_steps
 
-        datum_start = ProteinDatum.from_filepath(self.models_per_traj[idx][start])
-        datum_end = ProteinDatum.from_filepath(self.models_per_traj[idx][end])
+        data = []
+        for i in range(self.num_steps):
+            datum = ProteinDatum.from_filepath(self.models_per_traj[idx][start + i])
+            data.append(datum)
 
-        # if datum_start.residue_token.sum() == 0.0:
-        # breakpoint()
-
-        diff = datum_start.residue_token.shape[0] - self.crop_size
+        proxy = data[0]
+        diff = proxy.residue_token.shape[0] - self.crop_size
         cut = np.random.randint(low=0, high=diff) if diff > 0 else None
-        datum_start = self.protein_crop.transform(datum_start, cut=cut)
-        datum_end = self.protein_crop.transform(datum_end, cut=cut)
+        data = map(partial(self.protein_crop.transform, cut=cut), data)
 
         if self.transform is not None:
             for transformation in self.transform:
-                datum_start = transformation.transform(datum_start)
-                datum_end = transformation.transform(datum_end)
+                data = map(transformation.transform, data)
 
-        return [datum_start, datum_end]
+        return list(data)
