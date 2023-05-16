@@ -69,8 +69,7 @@ class MODELDataset(Dataset):
         ]
         np.random.shuffle(self.traj)
         self.traj = self.traj[: int(frac * len(self.traj))]
-
-        models_per_traj = [os.listdir(traj_dir) for traj_dir in self.traj]
+        models_per_traj = [sorted(os.listdir(traj_dir)) for traj_dir in self.traj]
         self.models_per_traj = [
             [os.path.join(traj_dir, model) for model in models]
             for traj_dir, models in zip(self.traj, models_per_traj)
@@ -108,6 +107,60 @@ class MODELDataset(Dataset):
         diff = proxy.residue_token.shape[0] - self.crop_size
         cut = np.random.randint(low=0, high=diff) if diff > 0 else None
         data = map(partial(self.protein_crop.transform, cut=cut), data)
+
+        if self.transform is not None:
+            for transformation in self.transform:
+                data = map(transformation.transform, data)
+
+        return list(data)
+
+class AdKEqDataset(Dataset):
+    """
+    Holds ProteinDatum dataset across trajectories
+    as catalogued in Molecular Dynamics Extended Library (MODEL)
+
+    Arguments:
+    ----------
+    base_path : str
+        directory to store all PDB files
+    format : str
+        the file format for each PDB file, either "npz" or "pdb"
+    """
+
+    def __init__(
+        self,
+        base_path: str,
+        frac: float = 1.0,
+        transform: list = [],
+        num_steps=5,
+        split: str = "train"
+    ):
+        super().__init__()
+        self.base_path = Path(base_path)
+        self.num_steps = num_steps
+        self.transform = transform
+        self.crop_size = 214
+
+        self.models = sorted(os.listdir(self.base_path)) 
+        if split == "train":
+            self.models = self.models[:int(0.6*len(self.models))]
+        elif split == "val":
+            self.models = self.models[int(0.6*len(self.models)):int(0.8*len(self.models))]
+        elif split == "test":
+            self.models = self.models[int(0.8*len(self.models)):]
+
+        self.protein_crop = ProteinCrop(crop_size=self.crop_size)
+        self.num_models = len(self.models)
+
+    def __len__(self):
+        return len(self.models)
+
+    def __getitem__(self, idx):
+        start = np.random.randint(0, self.num_models - self.num_steps)
+        datum = ProteinDatum.from_filepath(self.base_path / self.models[start])
+        datum1 = ProteinDatum.from_filepath(self.base_path / self.models[start + self.num_steps])
+        
+        data = [datum, datum1]
 
         if self.transform is not None:
             for transformation in self.transform:
