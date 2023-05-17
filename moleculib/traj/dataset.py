@@ -132,7 +132,7 @@ class AdKEqDataset(Dataset):
         base_path: str,
         frac: float = 1.0,
         transform: list = [],
-        num_steps=5,
+        num_steps=15,
         split: str = "train"
     ):
         super().__init__()
@@ -141,7 +141,12 @@ class AdKEqDataset(Dataset):
         self.transform = transform
         self.crop_size = 214
 
-        self.models = sorted(os.listdir(self.base_path)) 
+        files = os.listdir(self.base_path)
+        files = [(int(file[file.index('_') + 1:file.index('.')]), file) for file in files if file.endswith(".pdb")]
+        files.sort()
+        files = [file[1] for file in files]
+
+        self.models = files
         if split == "train":
             self.models = self.models[:int(0.6*len(self.models))]
         elif split == "val":
@@ -156,14 +161,19 @@ class AdKEqDataset(Dataset):
         return len(self.models)
 
     def __getitem__(self, idx):
-        start = np.random.randint(0, self.num_models - self.num_steps)
+        start = np.random.randint(1, self.num_models - self.num_steps)
+        
+        datum_prev = ProteinDatum.from_filepath(self.base_path / self.models[start-1])
         datum = ProteinDatum.from_filepath(self.base_path / self.models[start])
         datum1 = ProteinDatum.from_filepath(self.base_path / self.models[start + self.num_steps])
-        
-        data = [datum, datum1]
 
+
+        data = [datum_prev, datum, datum1]
         if self.transform is not None:
             for transformation in self.transform:
                 data = map(transformation.transform, data)
 
-        return list(data)
+        data = list(data)
+        data[1].atom_velocity = data[1].atom_coord - data[0].atom_coord 
+
+        return data[1:]
