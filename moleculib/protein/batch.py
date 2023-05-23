@@ -4,7 +4,6 @@ from __future__ import annotations
 from functools import partial, reduce
 from typing import List, Tuple
 
-import jax.numpy as jnp
 import numpy as np
 from einops import rearrange, repeat
 
@@ -59,7 +58,7 @@ class ProteinCollator:
             if type(obj) in [list, tuple]:
                 if type(obj[0]) not in [int, float]:
                     continue
-                obj = jnp.array(obj)
+                obj = np.array(obj)
             dict_[attr] = obj
         return dict_
 
