@@ -1,5 +1,4 @@
 import numpy as np
-from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
 from biotite.sequence import ProteinSequence
 from biotite.structure import (
@@ -12,6 +11,10 @@ from biotite.structure import (
     spread_residue_wise,
 )
 
+from biotite.structure import filter_amino_acids
+
+import biotite.structure.io.mmtf as mmtf
+
 from .alphabet import (
     all_atoms,
     all_residues,
@@ -20,7 +23,6 @@ from .alphabet import (
     atom_to_residues_index,
     get_residue_index,
 )
-from .utils import pdb_to_atom_array
 
 
 class ProteinDatum:
@@ -107,13 +109,21 @@ class ProteinDatum:
 
     @classmethod
     def from_filepath(cls, filepath):
-        atom_array = pdb_to_atom_array(filepath)
-        header = parse_pdb_header(filepath)
+        mmtf_file = mmtf.MMTFFile.read(filepath)
+        atom_array = mmtf.get_structure(mmtf_file, model=1)
+        header = dict(
+            idcode=mmtf_file["structureId"],
+            resolution=None
+            if ("resolution" not in mmtf_file)
+            else mmtf_file["resolution"],
+        )
+        aa_filter = filter_amino_acids(atom_array)
+        atom_array = atom_array[aa_filter]
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb", save_path)
+        filepath = rcsb.fetch(id, "mmtf", save_path)
         return cls.from_filepath(filepath)
 
     @classmethod

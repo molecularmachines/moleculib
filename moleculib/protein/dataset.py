@@ -114,7 +114,7 @@ class PDBDataset(Dataset):
     def load_index(self, idx):
         header = self.metadata.iloc[idx]
         pdb_id = header["idcode"]
-        filepath = os.path.join(self.base_path, f"{pdb_id}.pdb")
+        filepath = os.path.join(self.base_path, f"{pdb_id}.mmtf")
         molecules = ProteinDatum.from_filepath(filepath)
         return self.parse(header, molecules)
 
