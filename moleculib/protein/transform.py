@@ -16,7 +16,6 @@ from .alphabet import (
 import numpy as np
 from einops import rearrange
 from .utils import pad_array
-from functools import partial
 
 
 class ProteinTransform:
@@ -33,44 +32,58 @@ class ProteinTransform:
 
 
 class ProteinCrop(ProteinTransform):
-    def __init__(self, crop_size, pad=True):
+    def __init__(self, crop_size):
         self.crop_size = crop_size
-        if pad:
-            self.padding = partial(pad_array, total_size=crop_size)
 
     def transform(self, datum, cut=None):
-        seq_len = datum.residue_index.shape[0]
-        if seq_len == self.crop_size:
+        seq_len = datum.residue_token.shape[0]
+        if seq_len <= self.crop_size:
             return datum
-        elif seq_len < self.crop_size and hasattr(self, "padding"):
-            new_datum = ProteinDatum(
-                idcode=datum.idcode,
-                resolution=datum.resolution,
-                sequence=datum.sequence,
-                residue_index=self.padding(datum.residue_index),
-                residue_token=self.padding(datum.residue_token),
-                residue_mask=self.padding(datum.residue_mask),
-                chain_token=self.padding(datum.chain_token),
-                atom_token=self.padding(datum.atom_token),
-                atom_coord=self.padding(datum.atom_coord),
-                atom_mask=self.padding(datum.atom_mask),
-            )
-        else:
-            if cut is None:
-                cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
-            new_datum = ProteinDatum(
-                idcode=datum.idcode,
-                resolution=datum.resolution,
-                sequence=datum.sequence[cut : cut + self.crop_size],
-                residue_index=datum.residue_index[cut : cut + self.crop_size],
-                residue_token=datum.residue_token[cut : cut + self.crop_size],
-                residue_mask=datum.residue_mask[cut : cut + self.crop_size],
-                chain_token=datum.chain_token[cut : cut + self.crop_size],
-                atom_token=datum.atom_token[cut : cut + self.crop_size],
-                atom_coord=datum.atom_coord[cut : cut + self.crop_size],
-                atom_mask=datum.atom_mask[cut : cut + self.crop_size],
-            )
+        if cut is None:
+            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
 
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:
+                new_datum_[attr] = obj[cut : cut + self.crop_size]
+            else:
+                new_datum_[attr] = obj
+
+        new_datum = ProteinDatum(**new_datum_)
+        return new_datum
+
+
+class ProteinPad(ProteinTransform):
+    def __init__(self, pad_size: int, random_position: bool = False):
+        self.pad_size = pad_size
+        self.random_position = random_position
+
+    def transform(self, datum: ProteinDatum) -> ProteinDatum:
+        seq_len = datum.residue_token.shape[0]
+        if seq_len >= self.pad_size:
+            datum.pad_mask = np.ones_like(datum.residue_token)
+            return datum
+
+        size_diff = self.pad_size - seq_len
+        shift = np.random.randint(0, size_diff) if size_diff > 0 else 0
+
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) == np.ndarray:
+                new_datum_[attr] = pad_array(obj, self.pad_size)
+                if self.random_position:
+                    obj = np.roll(obj, shift, axis=0)
+                    if attr in ["bonds_list", "angles_list", "dihedrals_list"]:
+                        obj += shift * 14
+            else:
+                new_datum_[attr] = obj
+
+        pad_mask = pad_array(np.ones_like(datum.residue_token), self.pad_size)
+        if self.random_position:
+            pad_mask = np.roll(pad_mask, shift, axis=0)
+        new_datum_["pad_mask"] = pad_mask
+
+        new_datum = ProteinDatum(**new_datum_)
         return new_datum
 
 
@@ -81,8 +94,8 @@ class ListBonds(ProteinTransform):
         count = num_atoms * np.expand_dims(
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
         )
-        bonds_per_residue = bonds_arr[datum.residue_token]
 
+        bonds_per_residue = bonds_arr[datum.residue_token]
         bond_list = (bonds_per_residue + count).astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
@@ -222,8 +235,6 @@ class ListDihedrals(ProteinTransform):
 
 class ListMirrorFlips(ProteinTransform):
     def transform(self, datum):
-        # solve for intra-residue angles
-        num_atoms = datum.atom_coord.shape[-2]
         flips_per_residue = flippable_arr[datum.residue_token]
 
         flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)

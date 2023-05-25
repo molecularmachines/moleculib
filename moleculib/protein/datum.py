@@ -43,6 +43,7 @@ class ProteinDatum:
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
+        **kwargs,
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -54,6 +55,8 @@ class ProteinDatum:
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @classmethod
     def _extract_reshaped_atom_attr(cls, atom_array, attrs):
@@ -110,6 +113,7 @@ class ProteinDatum:
     @classmethod
     def from_filepath(cls, filepath):
         mmtf_file = mmtf.MMTFFile.read(filepath)
+        # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
         header = dict(
             idcode=mmtf_file["structureId"],
@@ -127,11 +131,16 @@ class ProteinDatum:
         return cls.from_filepath(filepath)
 
     @classmethod
-    def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
+    def from_atom_array(
+        cls,
+        atom_array,
+        header,
+        query_atoms=all_atoms,
+    ):
         if atom_array.array_length() == 0:
             return cls.empty_protein()
 
-        res_ids, res_names = get_residues(atom_array)
+        _, res_names = get_residues(atom_array)
         res_names = [
             ("UNK" if (name not in all_residues) else name) for name in res_names
         ]
