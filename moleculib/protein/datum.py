@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch
 from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
 from biotite.sequence import ProteinSequence, NucleotideSequence
@@ -11,6 +12,8 @@ from biotite.structure import (
     get_residues,
     spread_chain_wise,
     spread_residue_wise,
+    Atom,
+    array
 )
 
 from .alphabet import (
@@ -243,6 +246,57 @@ class ProteinDNADatum(ProteinDatum):
         self.complex_mask = complex_mask
 
     @classmethod
+    def empty_protein(cls):
+        return cls(
+            idcode="",
+            resolution=0.0,
+            sequence=ProteinSequence(""),
+            residue_index=np.array([]),
+            residue_token=np.array([]),
+            residue_mask=np.array([]),
+            chain_token=np.array([]),
+            atom_token=np.array([]),
+            atom_coord=np.array([]),
+            atom_mask=np.array([]),
+            complex_mask=np.array([]),
+            dna_sequence=NucleotideSequence(""),
+            dna_token=np.array([]),
+            dna_coord=np.array([]),
+            dna_mask=np.array([]),
+        )
+
+    @classmethod
+    def from_pt(cls, filepath):
+        instance = torch.load(filepath)
+        p = cls.empty_protein()
+        p.idcode = os.path.splitext(os.path.basename(filepath))[0]
+        p.sequence = ProteinSequence(instance['seq'])
+        coords = instance['xyz']
+        mask = instance['mask'].bool()
+        p.residue_mask = mask
+        atoms = []
+        header = {'idcode': p.idcode, 'resolution': 0.0}
+
+        # create atom array from coordinates
+        for res_id, res in enumerate(p.sequence):
+            for xyz in coords[res_id]:
+                xyz = xyz.numpy()
+                xyz = np.nan_to_num(xyz)
+                res_name = ProteinSequence.convert_letter_1to3(res)
+                atom = Atom(xyz, chain_id="A",
+                            res_id=res_id + 1,
+                            res_name=res_name,
+                            hetero=False)
+                atoms.append(atom)
+
+        # init atom arrays
+        res_array = array(atoms)
+        dna_array = np.array([])
+        centroid = np.array([])
+
+        return cls.from_atom_arrays(res_array, dna_array, centroid, header=header)
+
+    @classmethod
     def from_filepath(cls, filepath):
         dna_array, centroid = pdb_to_dna_array(filepath)
         res_array = pdb_to_atom_array(filepath)
@@ -257,7 +311,13 @@ class ProteinDNADatum(ProteinDatum):
         # support proteins without DNA atoms
         if not len(dna_array):
             dna_sequence = NucleotideSequence("")
-            dna_token, dna_coord, dna_mask = None, None, None
+            dna_token = np.array([]),
+            dna_coord = np.array([])
+            dna_mask = np.array([])
+            atom_mask = np.ones(len(p.sequence)).astype(bool)
+            complex_mask = np.ones(len(p.sequence)).astype(bool)
+            complex_coord = p.atom_coord[:, 1:2, :].squeeze()
+            complex_token = np.ones(len(p.sequence))
 
         else:
             # retrieve data from dna atom array
