@@ -29,6 +29,8 @@ PDB_HEADER_FIELDS = [
 CHAIN_COUNTER_FIELDS = [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
 PDB_METADATA_FIELDS = PDB_HEADER_FIELDS + CHAIN_COUNTER_FIELDS
 
+SAMPLE_PDBS = ["1C5E", "1C9O", "1CKU", "1CSE", "7ZKR", "7ZYS", "8AJQ", "8AQL", "8DCH"]
+
 
 class PDBDataset(Dataset):
     """
@@ -172,6 +174,7 @@ class PDBDataset(Dataset):
         Builds dataset from scratch given specified pdb_ids, prepares
         data and metadata for later use.
         """
+        print(f"Extracting {len(pdb_ids)} PDB IDs with {max_workers} workers...")
         if pdb_ids is None:
             root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
@@ -204,9 +207,18 @@ class MonomerDataset(PDBDataset):
     def __init__(
         self,
         base_path: str,
+        pdb_ids: List[str] = None,
         metadata: pd.DataFrame = None,
         **kwargs,
     ):
+        if base_path is None:
+            base_path = mkdtemp()
+            if pdb_ids is None:
+                raise ValueError("pdb_ids must be specified if base_path is None")
+            MonomerDataset.build(
+                pdb_ids=pdb_ids, save_path=base_path, save=True, **kwargs
+            )
+
         # read from base path if metadata is not built
         if metadata is None:
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:

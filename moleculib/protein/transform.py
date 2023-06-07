@@ -65,16 +65,17 @@ class ProteinPad(ProteinTransform):
             return datum
 
         size_diff = self.pad_size - seq_len
-        shift = np.random.randint(0, size_diff) if size_diff > 0 else 0
+        shift = np.random.randint(0, size_diff)
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
             if type(obj) == np.ndarray:
-                new_datum_[attr] = pad_array(obj, self.pad_size)
+                obj = pad_array(obj, self.pad_size)
                 if self.random_position:
                     obj = np.roll(obj, shift, axis=0)
                     if attr in ["bonds_list", "angles_list", "dihedrals_list"]:
                         obj += shift * 14
+                new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
 
@@ -278,11 +279,12 @@ class TokenizeSequenceBoundaries(ProteinTransform):
     def transform(self, datum):
         boundary_token = np.zeros(len(datum.residue_token), dtype=np.int32)
         boundary_mask = np.zeros(len(datum.residue_token), dtype=np.bool_)
-        boundary_token[0] = 1
-        boundary_token[-1] = 2
+        if len(boundary_token) != 0:
+            boundary_token[0] = 1
+            boundary_token[-1] = 2
 
-        boundary_mask[0] = True & datum.atom_mask[0, 1]
-        boundary_mask[-1] = True & datum.atom_mask[-1, 1]
+            boundary_mask[0] = True & datum.atom_mask[0, 1]
+            boundary_mask[-1] = True & datum.atom_mask[-1, 1]
 
         datum.boundary_token = boundary_token
         datum.boundary_mask = boundary_mask
@@ -335,4 +337,12 @@ class MaybeMirror(ProteinTransform):
         datum_hand = "right" if (mean_chirality < 0.5) else "left"
         if datum_hand != self.hand:
             datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0]
+        return datum
+
+
+class CastToBFloat(ProteinTransform):
+    def transform(self, datum):
+        for attr, obj in vars(datum).items():
+            if type(obj) == np.ndarray and obj.dtype == np.float32:
+                setattr(datum, attr, obj.astype(np.bfloat16))
         return datum
