@@ -211,3 +211,19 @@ class ProteinDatum:
             **atom_extract,
             atom_mask=atom_mask,
         )
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_

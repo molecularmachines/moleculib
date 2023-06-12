@@ -17,6 +17,8 @@ import numpy as np
 from einops import rearrange
 from .utils import pad_array
 
+import jax.numpy as jnp
+
 
 class ProteinTransform:
     """
@@ -342,7 +344,9 @@ class MaybeMirror(ProteinTransform):
 
 class CastToBFloat(ProteinTransform):
     def transform(self, datum):
+        new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray and obj.dtype == np.float32:
-                setattr(datum, attr, obj.astype(np.bfloat16))
-        return datum
+            if type(obj) == np.ndarray and (obj.dtype in [np.float32, np.float64]):
+                obj = obj.astype(jnp.bfloat16)
+            new_datum_[attr] = obj
+        return ProteinDatum(**new_datum_)
