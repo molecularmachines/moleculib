@@ -27,7 +27,7 @@ from .alphabet import (
 
 class ProteinDatum:
     """
-    Incorporates protein sequence data to MolecularDatum
+    Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
 
@@ -123,7 +123,7 @@ class ProteinDatum:
         )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
-        return cls.from_atom_array(atom_array, header=header)
+        return cls.from_atom_array(atom_array, header=header)        
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
