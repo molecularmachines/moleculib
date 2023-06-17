@@ -1,5 +1,4 @@
 import numpy as np
-from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
 from biotite.sequence import ProteinSequence
 from biotite.structure import (
@@ -12,19 +11,23 @@ from biotite.structure import (
     spread_residue_wise,
 )
 
+from biotite.structure import filter_amino_acids
+
+import biotite.structure.io.mmtf as mmtf
+
 from .alphabet import (
     all_atoms,
     all_residues,
+    backbone_atoms,
     atom_index,
     atom_to_residues_index,
     get_residue_index,
 )
-from .utils import pdb_to_atom_array
 
 
 class ProteinDatum:
     """
-    Incorporates protein sequence data to MolecularDatum
+    Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
 
@@ -40,10 +43,11 @@ class ProteinDatum:
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
+        **kwargs,
     ):
         self.idcode = idcode
         self.resolution = resolution
-        self.sequence = sequence
+        self.sequence = str(sequence)
         self.residue_token = residue_token
         self.residue_index = residue_index
         self.residue_mask = residue_mask
@@ -51,6 +55,8 @@ class ProteinDatum:
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @classmethod
     def _extract_reshaped_atom_attr(cls, atom_array, attrs):
@@ -66,8 +72,13 @@ class ProteinDatum:
                 attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
-        def _atom_slice(atom_array, atom):
+        def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
+            # kill pads and kill unks that are not backbone
+            atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
+            if atom_name not in backbone_atoms:
+                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
+
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_residues_index[atom_token][res_tokens]
             for attr in attrs:
@@ -77,7 +88,7 @@ class ProteinDatum:
 
         for atom_name in all_atoms:
             atom_token = all_atoms.index(atom_name)
-            _atom_slice(atom_array, atom_token)
+            _atom_slice(atom_name, atom_array, atom_token)
 
         return extraction, mask
 
@@ -101,21 +112,35 @@ class ProteinDatum:
 
     @classmethod
     def from_filepath(cls, filepath):
-        atom_array = pdb_to_atom_array(filepath)
-        header = parse_pdb_header(filepath)
-        return cls.from_atom_array(atom_array, header=header)
+        mmtf_file = mmtf.MMTFFile.read(filepath)
+        # Note(Allan): come back here, remove model=1 and set dynamically
+        atom_array = mmtf.get_structure(mmtf_file, model=1)
+        header = dict(
+            idcode=mmtf_file["structureId"],
+            resolution=None
+            if ("resolution" not in mmtf_file)
+            else mmtf_file["resolution"],
+        )
+        aa_filter = filter_amino_acids(atom_array)
+        atom_array = atom_array[aa_filter]
+        return cls.from_atom_array(atom_array, header=header)        
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb", save_path)
+        filepath = rcsb.fetch(id, "mmtf", save_path)
         return cls.from_filepath(filepath)
 
     @classmethod
-    def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
+    def from_atom_array(
+        cls,
+        atom_array,
+        header,
+        query_atoms=all_atoms,
+    ):
         if atom_array.array_length() == 0:
             return cls.empty_protein()
 
-        res_ids, res_names = get_residues(atom_array)
+        _, res_names = get_residues(atom_array)
         res_names = [
             ("UNK" if (name not in all_residues) else name) for name in res_names
         ]
@@ -173,6 +198,8 @@ class ProteinDatum:
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
 
+        residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
+
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
@@ -184,3 +211,19 @@ class ProteinDatum:
             **atom_extract,
             atom_mask=atom_mask,
         )
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+
 from functools import partial, reduce
 from typing import List, Tuple
 
-import jax.numpy as jnp
 import numpy as np
 from einops import rearrange, repeat
 
 from .alphabet import backbone_atoms
 from .datum import ProteinDatum
+
 from .utils import pad_array
+
 
 class ProteinCollator:
     """
@@ -56,15 +58,14 @@ class ProteinCollator:
             if type(obj) in [list, tuple]:
                 if type(obj[0]) not in [int, float]:
                     continue
-                obj = jnp.array(obj)
+                obj = np.array(obj)
             dict_[attr] = obj
         return dict_
 
 
 class PadBatch(ProteinCollator):
-    def __init__(self, pad_mask, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.pad_mask = pad_mask
         for attr, value in kwargs.items():
             setattr(self, attr, value)
 
@@ -87,29 +88,24 @@ class PadBatch(ProteinCollator):
     def collate(cls, data_list):
         proxy = data_list[0]
         data_type = type(proxy)
-        unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
+        unique_type = reduce(lambda _, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
-        max_size = max([len(datum.sequence) for datum in data_list])
 
-        def _maybe_pad_and_stack(obj_list):
-            obj = obj_list[0]
-            if type(obj) != np.ndarray:
-                return obj_list
-            new_list = map(partial(pad_array, total_size=max_size), obj_list)
-            return np.stack(list(new_list), axis=0)
+        def _maybe_stack(stream):
+            key, obj_list = stream
+            proxy_obj = obj_list[0]
+            if type(proxy_obj) != np.ndarray:
+                return key, obj_list
+            return key, np.stack(list(obj_list), axis=0)
 
         keys = vars(proxy).keys()
-        assert "bonds_list" not in keys, "PadBatch does not support bonds"
-        value_lists = [vars(datum).values() for datum in data_list]
-        value_lists = zip(*value_lists)
-        values = list(map(_maybe_pad_and_stack, value_lists))
-        batch_attr = dict(zip(keys, values))
+        value_lists = [
+            (key, [getattr(datum, key) for datum in data_list]) for key in keys
+        ]
+        value_lists = map(_maybe_stack, value_lists)
+        batch_attr = dict(value_lists)
 
-        pad_mask = _maybe_pad_and_stack(
-            [np.ones((len(datum.sequence),)) for datum in data_list]
-        ).astype(bool)
-
-        return cls(pad_mask, **batch_attr)
+        return cls(**batch_attr)
 
 
 class GeometricBatch(ProteinCollator):
