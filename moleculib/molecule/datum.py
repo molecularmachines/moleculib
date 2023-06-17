@@ -4,6 +4,8 @@ from biotite.structure import get_molecule_masks
 from biotite.database import rcsb
 from .utils import pdb_to_atom_array
 from .alphabet import elements
+import biotite.structure.io.mmtf as mmtf
+
 
 class MoleculeDatum:
     """
@@ -54,13 +56,19 @@ class MoleculeDatum:
 
     @classmethod
     def from_filepath(cls, filepath, molecule_idx=None):
-        atom_array = pdb_to_atom_array(filepath)
-        header = parse_pdb_header(filepath)
+        mmtf_file = mmtf.MMTFFile.read(filepath)
+        atom_array = pdb_to_atom_array(mmtf_file)
+        header = dict(
+            idcode=mmtf_file["structureId"],
+            resolution=None
+            if ("resolution" not in mmtf_file)
+            else mmtf_file["resolution"],
+        )
         return cls.from_atom_array(atom_array, header=header, molecule_idx=molecule_idx)
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "pdb", save_path, verbose=False)
+        filepath = rcsb.fetch(id, "mmtf", save_path, verbose=False)
         return cls.from_filepath(filepath)
 
     @classmethod

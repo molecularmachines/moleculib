@@ -6,8 +6,9 @@ from biotite.structure import (
     filter_monoatomic_ions,
     filter_nucleotides,
 )
-from biotite.structure.io.pdb import PDBFile
+
 import numpy as np
+import biotite.structure.io.mmtf as mmtf
 
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
@@ -15,9 +16,9 @@ config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
 _solvent_list = ["DOD","HOH","SOL"] # added DOD
 _unknown_list = ["UNX", "UNL"] # unknown atom or ion, or ligand
 
-def pdb_to_atom_array(pdb_path):
-    pdb_file = PDBFile.read(pdb_path)
-    atom_array = pdb_file.get_structure(
+def pdb_to_atom_array(mmtf_file):
+    atom_array = mmtf.get_structure(
+        mmtf_file,
         model=1,
         extra_fields=["atom_id", "b_factor", "occupancy", "charge"],
         include_bonds=True,
