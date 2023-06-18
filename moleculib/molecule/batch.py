@@ -54,11 +54,13 @@ class MoleculeCollator:
             obj = getattr(self, attr)
             # strings are not JAX types
             if type(obj) == np.ndarray:
-                if not np.issubdtype(obj.dtype, np.number):
+                if not (
+                    np.issubdtype(obj.dtype, np.number) or obj.dtype == jnp.bfloat16
+                ):
                     continue
             if type(obj) in [list, tuple]:
                 if not any(
-                    map(lambda x: isinstance(obj[0], x), [float, int, np.number])
+                    map(lambda x: isinstance(obj[0], x), [float, int, np.number, jnp.bfloat16])
                 ):
                     continue
                 obj = jnp.array(obj)
@@ -101,7 +103,6 @@ class MoleculePadBatch(MoleculeCollator):
             return np.stack(list(new_list), axis=0)
 
         keys = vars(proxy).keys()
-        assert "bonds_list" not in keys, "PadBatch does not support bonds"
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
         values = list(map(_maybe_pad_and_stack, value_lists))

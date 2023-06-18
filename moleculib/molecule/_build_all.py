@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 path = "/mas/projects/molecularmachines/db/PDB"
 # MoleculeDataset.build(save_path=path, max_workers=30)
-
+# 
 
 ds = MoleculeDataset(path)  
 a = ds.metadata.atom_count.hist(bins=1022)

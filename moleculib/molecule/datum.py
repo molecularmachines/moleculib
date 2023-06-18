@@ -23,7 +23,7 @@ class MoleculeDatum:
         atom_coord: np.ndarray,
         atom_name: np.ndarray,
         b_factor: np.ndarray,
-        molecule_mask: np.ndarray,
+        atom_mask: np.ndarray,
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -34,7 +34,7 @@ class MoleculeDatum:
         self.atom_coord = atom_coord
         self.atom_name = atom_name
         self.b_factor = b_factor
-        self.molecule_mask = molecule_mask
+        self.atom_mask = atom_mask
 
     def __len__(self):
         return len(self.sequence)
@@ -51,7 +51,7 @@ class MoleculeDatum:
             atom_coord=np.array([]),
             atom_name=np.array([]),
             b_factor=np.array([]),
-            molecule_mask=np.array([]),
+            atom_mask=np.array([]),
         )
 
     @classmethod
@@ -95,23 +95,23 @@ class MoleculeDatum:
             raise e
         atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
 
-        molecule_mask = get_molecule_masks(atom_array)
+        atom_mask = get_molecule_masks(atom_array)
         
         # filter out molecules with 1 atom (which are not really molecules nor ions)
-        molecule_mask = molecule_mask[np.sum(molecule_mask, axis=1) > 1]
+        atom_mask = atom_mask[np.sum(atom_mask, axis=1) > 1]
 
         if molecule_idx is not None:
             return cls(
                 idcode=header["idcode"],
                 resolution=header["resolution"],
-                chain_id=atom_array.chain_id[molecule_mask[molecule_idx]][0],
-                res_id=atom_array.res_id[molecule_mask[molecule_idx]][0],
-                res_name=atom_array.res_name[molecule_mask[molecule_idx]][0],
-                atom_token=atom_token[molecule_mask[molecule_idx]],
-                atom_coord=atom_array.coord[molecule_mask[molecule_idx]],
-                atom_name=atom_array.atom_name[molecule_mask[molecule_idx]],
-                b_factor=atom_array.b_factor[molecule_mask[molecule_idx]],
-                molecule_mask=np.full(np.sum(molecule_mask[molecule_idx]), True),
+                chain_id=atom_array.chain_id[atom_mask[molecule_idx]][0],
+                res_id=atom_array.res_id[atom_mask[molecule_idx]][0],
+                res_name=atom_array.res_name[atom_mask[molecule_idx]][0],
+                atom_token=atom_token[atom_mask[molecule_idx]],
+                atom_coord=atom_array.coord[atom_mask[molecule_idx]],
+                atom_name=atom_array.atom_name[atom_mask[molecule_idx]],
+                b_factor=atom_array.b_factor[atom_mask[molecule_idx]],
+                atom_mask=np.full(np.sum(atom_mask[molecule_idx]), 1),
             )
         return cls(
             idcode=header["idcode"],
@@ -123,5 +123,5 @@ class MoleculeDatum:
             atom_coord=atom_array.coord,
             atom_name=atom_array.atom_name,
             b_factor=atom_array.b_factor,
-            molecule_mask=molecule_mask,
+            atom_mask=atom_mask,
         )

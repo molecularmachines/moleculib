@@ -16,7 +16,7 @@ import numpy as np
 from einops import rearrange
 from .utils import pad_array
 from functools import partial
-
+import jax.numpy as jnp
 
 class MoleculeTransform:
     """
@@ -30,41 +30,54 @@ class MoleculeTransform:
         """
         raise NotImplementedError("method transform must be implemented")
 
+class MoleculePad(MoleculeTransform):
+    def __init__(self, pad_size: int, random_position: bool = False):
+        self.pad_size = pad_size
+        self.random_position = random_position
 
-class MoleculeCrop(MoleculeTransform):
-    def __init__(self, crop_size, pad=True):
-        self.crop_size = crop_size
-        if pad:
-            self.padding = partial(pad_array, total_size=crop_size)
+    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
+        mol_size = datum.atom_token.shape[0]
+        if mol_size >= self.pad_size:
+            datum.pad_mask = np.ones_like(datum.atom_token)
+            return datum
 
-    def transform(self, datum):
-        atom_count = len(datum.atom_token)
-        if atom_count <= self.crop_size and hasattr(self, "padding"):
-            new_datum = datum  # TODO change this to include important stuff
-            new_datum.atom_token = self.padding(datum.atom_token)
-            new_datum.atom_coord = self.padding(datum.atom_coord)
-            new_datum.b_factor = self.padding(datum.b_factor)
-            new_datum.molecule_mask = self.padding(datum.molecule_mask).astype(np.int32)
-        else:
-            cut = np.random.randint(low=0, high=(atom_count - self.crop_size))
-            new_datum = datum
-            new_datum.atom_token = datum.atom_token[cut : cut + self.crop_size]
-            new_datum.atom_coord = datum.atom_coord[cut : cut + self.crop_size]
-            new_datum.b_factor = datum.b_factor[cut : cut + self.crop_size]
-            new_datum.molecule_mask = datum.molecule_mask[
-                cut : cut + self.crop_size
-            ].astype(np.int32)
-        new_datum.crop_size = self.crop_size
+        size_diff = self.pad_size - mol_size
+        shift = np.random.randint(0, size_diff)
+
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) == np.ndarray:
+                obj = pad_array(obj, self.pad_size)
+                if self.random_position:
+                    obj = np.roll(obj, shift, axis=0)
+                new_datum_[attr] = obj
+            else:
+                new_datum_[attr] = obj
+
+        pad_mask = pad_array(np.ones_like(datum.atom_token), self.pad_size)
+        if self.random_position:
+            pad_mask = np.roll(pad_mask, shift, axis=0)
+        new_datum_["pad_mask"] = pad_mask
+
+        new_datum = MoleculeDatum(**new_datum_)
         return new_datum
 
 
 class Centralize(MoleculeTransform):
     def transform(self, datum):
-        datum.atom_coord[datum.molecule_mask] = datum.atom_coord[
-            datum.molecule_mask
-        ] - datum.atom_coord[datum.molecule_mask].mean(axis=0)
+        datum.atom_coord[datum.atom_mask] = datum.atom_coord[
+            datum.atom_mask
+        ] - datum.atom_coord[datum.atom_mask].mean(axis=0)
         return datum
 
+class CastToBFloat(MoleculeTransform):
+    def transform(self, datum):
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) == np.ndarray and (obj.dtype in [np.float32, np.float64]):
+                obj = obj.astype(jnp.bfloat16)
+            new_datum_[attr] = obj
+        return MoleculeDatum(**new_datum_)
 
 # class ListBonds(MoleculeTransform):
 #     def __init__(self, buffer_size):

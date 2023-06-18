@@ -3,7 +3,7 @@ __version__ = "0.1.0"
 from .protein.batch import PadBatch, GeometricBatch
 from .protein.datum import ProteinDatum
 from .protein.dataset import MonomerDataset, PDBDataset
-from .molecule.batch import MoleculePadBatch, MoleculeGeometricBatch
+from .molecule.batch import MoleculePadBatch
 from .molecule.datum import MoleculeDatum
 from .molecule.dataset import MoleculeDataset
 
@@ -13,7 +13,6 @@ __all__ = [
     "ProteinDatum",
     "ProteinDataset",
     "MoleculePadBatch",
-    "MoleculeGeometricBatch",
     "MoleculeDatum",
     "MoleculeDataset",
 ]

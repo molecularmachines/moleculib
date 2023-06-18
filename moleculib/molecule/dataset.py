@@ -126,7 +126,7 @@ class MoleculeDataset(Dataset):
                 atom_count=len(datum.atom_token[mask]),
                 molecule_idx=i,
             )
-            for i, mask in enumerate(datum.molecule_mask)
+            for i, mask in enumerate(datum.atom_mask)
         ]
         return pd.concat(list(map(Series, metrics)), axis=1).T
 
@@ -149,7 +149,7 @@ class MoleculeDataset(Dataset):
             return None
         if len(datum.atom_token) == 0:
             return None
-        if len(datum.molecule_mask) == 0:
+        if len(datum.atom_mask) == 0:
             return None
         return MoleculeDataset._extract_datum_row(datum)
 
