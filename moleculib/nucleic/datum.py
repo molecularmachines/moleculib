@@ -20,7 +20,7 @@ from .alphabet import (
     all_nucs,
     backbone_atoms,
     atom_index,
-    atom_to_residues_index,
+    atom_to_nucs_index,
     get_nucleotide_index,
 )
 
@@ -89,8 +89,8 @@ class NucleicDatum:
                 atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
 
             nuc_tokens, seq_id = atom_array_.nuc_token, atom_array_.seq_uid
-            ###TODO change atom to residue in alphabet
-            atom_indices = atom_to_residues_index[atom_token][nuc_tokens]
+            ###TODO change atom to nuc in alphabet
+            atom_indices = atom_to_nucs_index[atom_token][nuc_tokens]
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor # what ... does?
