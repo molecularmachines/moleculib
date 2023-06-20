@@ -17,11 +17,11 @@ import biotite.structure.io.mmtf as mmtf
 
 from .alphabet import (
     all_atoms,
-    all_residues,
+    all_nucs,
     backbone_atoms,
     atom_index,
     atom_to_residues_index,
-    get_residue_index,
+    get_nucleotide_index,
 )
 
 class NucleicDatum:
@@ -35,9 +35,9 @@ class NucleicDatum:
         idcode: str,
         resolution: float,
         sequence: NucleotideSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
+        nuc_token: np.ndarray,
+        nuc_index: np.ndarray,
+        nuc_mask: np.ndarray,
         chain_token: np.ndarray,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
@@ -54,17 +54,27 @@ class NucleicDatum:
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
     
+    @classmethod
+    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
+        residue_count = get_residue_count(atom_array)
+        extraction = dict()
+        mask = np.zeros((residue_count, 14)).astype(bool)
+
 
     def __len__(self):
         return len(self.sequence)
 
     @classmethod
     def _extract_reshaped_atom_attr(cls, atom_array, attrs):
-        chain_count = get_chain_count(atom_array)
+        """
+        Given the alphabet, it will extract all atoms of a residue in the alphabets order
+        if theres more atoms than the largest alphabet size, it will pad
+        """
+        chain_count = get_chain_count(atom_array) #numbrer of chains
         extraction = dict()
-        mask= np.zeros((chain_count, 14)).astype(bool) #why 14?
+        mask= np.zeros((chain_count, 14)).astype(bool) #why 14? # array of Falses
         for attr in attrs:
-            attr_shape = getattr(atom_array, attr).shape
+            attr_shape = getattr(atom_array, attr).shape 
             if len(attr_shape) == 1:
                 attr_reshape = np.zeros((chain_count, 14))
             else:
@@ -74,6 +84,23 @@ class NucleicDatum:
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
+            atom_array_ = atom_array_[(atom_array_.nuc_token > 0)]
+            if atom_name not in backbone_atoms:
+                atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
+
+            nuc_tokens, seq_id = atom_array_.nuc_token, atom_array_.seq_uid
+            ###TODO change atom to residue in alphabet
+            atom_indices = atom_to_residues_index[atom_token][nuc_tokens]
+            for attr in attrs:
+                attr_tensor = getattr(atom_array_, attr)
+                extraction[attr][seq_id, atom_indices, ...] = attr_tensor # what ... does?
+            mask[seq_id, atom_indices] = True
+
+        for atom_name in all_atoms:
+            atom_token = all_atoms.index(atom_name)
+            _atom_slice(atom_name, atom_array, atom_token)
+
+        return extraction, mask
             
 
     @classmethod
@@ -127,8 +154,49 @@ class NucleicDatum:
             # atom_mask=np.array([])
             # ) i
 
-#checking git
 
+import plotly.graph_objects as go
+def _scatter(name, ca_coord, atom_coord, atom_mask, color, visible=True):
+    sc_coords = []
+    for ca, atoms, mask in zip(ca_coord, atom_coord, atom_mask):
+        for atom in atoms[mask]:
+            sc_coords.append(ca)
+            sc_coords.append(atom)
+            sc_coords.append([None, None, None])
+
+    sc_coords = np.array(sc_coords)
+    bb_x, bb_y, bb_z = ca_coord.T
+    sc_x, sc_y, sc_z = sc_coords.T
+
+    data = [go.Scatter3d(
+            name=name + " coord",
+            x=bb_x,
+            y=bb_y,
+            z=bb_z,
+            marker=dict(
+                size=7,
+                colorscale="Viridis",
+            ),
+            line=dict(color=color, width=4),
+            visible="legendonly" if not visible else True,
+        ),
+        go.Scatter3d(
+            name=name + " vecs",
+            x=sc_x,
+            y=sc_y,
+            z=sc_z,
+            marker=dict(size=2, colorscale="Viridis"),
+            line=dict(
+                color=color,
+                width=2,
+            ),
+            visible="legendonly",
+        )]
+    return data
+
+if __name__ == '__main__':
+    dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
+    
     
     
 

@@ -60,6 +60,10 @@ class ProteinDatum:
 
     @classmethod
     def _extract_reshaped_atom_attr(cls, atom_array, attrs):
+        """
+        Given the alphabet, it will extract all atoms of a residue in the alphabets order
+        if there’s more atoms than the largest alphabet size, it will pad
+        """
         residue_count = get_residue_count(atom_array)
 
         extraction = dict()
