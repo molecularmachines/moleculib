@@ -5,8 +5,8 @@ import numpy as np
 from ordered_set import OrderedSet
 
 UNK_TOKEN = 1
-MAX_DNA_ATOMS = 11 #5 carbon atoms 8 hydrogen atoms 1 nitrogen atom (in the base) 
-                   # 1 phosphorus atom (in the phosphate group) 4 oxygen atoms (in the sugar and phosphate group)
+#5 carbon atoms 8 hydrogen atoms 1 nitrogen atom (in the base) 
+# 1 phosphorus atom (in the phosphate group) 4 oxygen atoms (in the sugar and phosphate group)
 MAX_RES_ATOMS = 14
 # from https://x3dna.org/articles/name-of-base-atoms-in-pdb-formats#:~:text=Canonical%20bases%20(A%2C%20C%2C,%2C%20C8%2C%20N9)%20respectively.
 
@@ -20,25 +20,24 @@ base_atoms_per_nuc = OrderedDict(
         C=["N1", "C2", "O2", "N3", "C4", "C5", "C6"] #Calman had extra N4
 )
 
-
-backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] ########TODO TODO check it
-
+# backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] ########TODO TODO check it
 ### TODO: Should it be the same as below (from alphabet protein)?
-backbone_chemistry = dict(
-    bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
-    angles=[["CA", "C", "O"], ["N", "CA", "C"]],
-    dihedrals=[["N", "CA", "C", "O"]],
-    flippable=[],
-)
+# backbone_chemistry = dict(
+#     bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
+#     angles=[["CA", "C", "O"], ["N", "CA", "C"]],
+#     dihedrals=[["N", "CA", "C", "O"]],
+#     flippable=[],
+# )
 special_tokens = ["PAD", "UNK"] #what do whese represent?
 
 atoms_per_nuc = OrderedDict()
 atoms_per_nuc["PAD"] = []
-atoms_per_nuc["UNK"] = backbone_atoms
+atoms_per_nuc["UNK"] = [] # backbone_atoms
 ##TODO check the DUPLICATES situation
 #for every nuc we add the base and backbone atoms
 for nuc, base_atoms in base_atoms_per_nuc.items():
-    atoms_per_nuc[nuc] = backbone_atoms + base_atoms
+    atoms_per_nuc[nuc] = base_atoms
+MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
 all_atoms = special_tokens + all_atoms
@@ -56,9 +55,10 @@ all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 all_nucs = list(base_atoms_per_nuc.keys())
 all_nucs = special_tokens + all_nucs
 all_nucs_tokens = np.arange(len(all_nucs))
+breakpoint()
 all_nucs_atom_mask = np.array(
     [
-        ([1] * len(atoms) + [0] * (14 - len(atoms)))
+        ([1] * len(atoms) + [0] * (MAX_DNA_ATOMS - len(atoms)))
         for (_, atoms) in atoms_per_nuc.items()
     ]
 ).astype(np.bool_)

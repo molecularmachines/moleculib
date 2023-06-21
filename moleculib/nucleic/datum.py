@@ -19,7 +19,7 @@ import biotite.structure.io.mmtf as mmtf
 from alphabet import (
     all_atoms,
     all_nucs,
-    backbone_atoms,
+    # backbone_atoms,
     atom_index,
     atom_to_nucs_index,
     get_nucleotide_index,
@@ -81,9 +81,9 @@ class NucleicDatum:
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
-            atom_array_ = atom_array_[(atom_array_.nuc_token > 0)]
-            if atom_name not in backbone_atoms:
-                atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
+            # atom_array_ = atom_array_[(atom_array_.nuc_token > 0)]
+            # if atom_name not in backbone_atoms:
+                # atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
 
             nuc_tokens, seq_id = atom_array_.nuc_token, atom_array_.seq_uid
             atom_indices = atom_to_nucs_index[atom_token][nuc_tokens]
@@ -128,7 +128,6 @@ class NucleicDatum:
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
         filepath = rcsb.fetch(id, "pdb", save_path)
-        print(filepath)
         return cls.from_filepath(filepath)
 
     @classmethod
@@ -140,62 +139,138 @@ class NucleicDatum:
             return cls.empty_nuc()
 
         chain_id = get_chains(atom_array)
+    @classmethod
+    def from_atom_array(
+        cls,
+        atom_array,
+        header,
+    ):
+        """
+        Reshapes atom array to residue-indexed representation to
+        build a protein datum.
+        """
 
-        #### TODO check with Allan names for chains#####
+        if atom_array.array_length() == 0:
+            return cls.empty_protein()
         
+        breakpoint()
+        _, res_names = get_residues(atom_array)
+        res_names = [
+            ("UNK" if (name not in all_nucs) else name) for name in res_names
+        ]
+        sequence = ProteinSequence(list(res_names))
 
-        # return cls(
-            # idcode="",
-            # resolution=0.0,
-            # sequence=ProteinSequence(""),
-            # nuc_index=np.array([]),
-            # nuc_token=np.array([]),
-            # nuc_mask=np.array([]),
-            # chain_token=np.array([]),
-            # atom_token=np.array([]),
-            # atom_coord=np.array([]),
-            # atom_mask=np.array([])
-            # ) i
+        # index residues globally
+        atom_array.add_annotation("seq_uid", int)
+        atom_array.seq_uid = spread_residue_wise(
+            atom_array, np.arange(0, get_residue_count(atom_array))
+        )
+
+        # tokenize atoms
+        atom_array.add_annotation("token", int)
+        atom_array.token = np.array(
+            list(map(lambda atom: atom_index(atom), atom_array.atom_name))
+        )
+
+        # tokenize residues
+        residue_token = np.array(
+            list(map(lambda res: get_residue_index(res), atom_array.res_name))
+        )
+        residue_mask = np.ones_like(residue_token).astype(bool)
+
+        atom_array.add_annotation("residue_token", int)
+        atom_array.residue_token = residue_token
+        chain_token = spread_chain_wise(
+            atom_array, np.arange(0, get_chain_count(atom_array))
+        )
+
+        # count number of residues per chain
+        # and index residues per chain using cumulative sum
+        atom_array.add_annotation("res_uid", int)
+
+        def _count_residues_per_chain(chain_atom_array, axis=0):
+            return get_residue_count(chain_atom_array)
+
+        chain_res_sizes = apply_chain_wise(
+            atom_array, atom_array, _count_residues_per_chain, axis=0
+        )
+        chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1]))
+        atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
+
+        # reshape atom attributes to residue-based representation
+        # with the correct ordering
+        # [N * 14, ...] -> [N, 14, ...]
+        atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
+            atom_array, ["coord", "token"]
+        )
+        atom_extract = dict(
+            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
+        )
+
+        # pool residue attributes and create residue features
+        # [N * 14, ...] -> [N, ...]
+        def _pool_residue_token(atom_residue_tokens, axis=0):
+            representative = atom_residue_tokens[0]
+            return representative
+
+        def _reshape_residue_attr(attr):
+            return apply_residue_wise(atom_array, attr, _pool_residue_token, axis=0)
+
+        residue_token = _reshape_residue_attr(residue_token)
+        residue_index = np.arange(0, residue_token.shape[0])
+
+        residue_mask = _reshape_residue_attr(residue_mask)
+        residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
+
+        chain_token = _reshape_residue_attr(chain_token)
+
+        return cls(
+            idcode=header["idcode"],
+            sequence=sequence,
+            resolution=header["resolution"],
+            residue_token=residue_token,
+            residue_index=residue_index,
+            residue_mask=residue_mask,
+            chain_token=chain_token,
+            **atom_extract,
+            atom_mask=atom_mask,
+        )
 
 
 import plotly.graph_objects as go
-def _scatter(name, ca_coord, atom_coord, atom_mask, color, visible=True):
+def _scatter_coord(name, coord, color='black', visible=True):
     sc_coords = []
-    for ca, atoms, mask in zip(ca_coord, atom_coord, atom_mask):
-        for atom in atoms[mask]:
-            sc_coords.append(ca)
-            sc_coords.append(atom)
-            sc_coords.append([None, None, None])
-
-    sc_coords = np.array(sc_coords)
-    bb_x, bb_y, bb_z = ca_coord.T
-    sc_x, sc_y, sc_z = sc_coords.T
-
-    data = [go.Scatter3d(
+    x, y, z = coord.T
+    data = [
+        go.Scatter3d(
             name=name + " coord",
-            x=bb_x,
-            y=bb_y,
-            z=bb_z,
+            x=x,
+            y=y,
+            z=z,
             marker=dict(
                 size=7,
                 colorscale="Viridis",
             ),
+            
+            hovertemplate="<b>%{text}</b><extra></extra>",
+            text=np.arange(0, len(coord)),
+            
             line=dict(color=color, width=4),
             visible="legendonly" if not visible else True,
-        ),
-        go.Scatter3d(
-            name=name + " vecs",
-            x=sc_x,
-            y=sc_y,
-            z=sc_z,
-            marker=dict(size=2, colorscale="Viridis"),
-            line=dict(
-                color=color,
-                width=2,
-            ),
-            visible="legendonly",
-        )]
-    return data
+        )
+    ]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        width=650,
+        height=750,
+    )
+    fig.update_scenes(
+        xaxis_visible=False, 
+        yaxis_visible=False, 
+        zaxis_visible=False
+    )
+
+    return fig
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
