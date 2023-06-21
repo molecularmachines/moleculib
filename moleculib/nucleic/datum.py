@@ -62,42 +62,48 @@ class NucleicDatum:
         return len(self.sequence)
 
     @classmethod
-    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
-        """
-        Given the alphabet, it will extract all atoms of a residue in the alphabets order
-        if theres more atoms than the largest alphabet size, it will pad
-        """
-        chain_count = get_chain_count(atom_array) #numbrer of chains
+    def _extract_reshaped_atom_attr(
+        cls,
+        atom_array,
+        atom_alphabet=all_atoms,
+        atom_to_indices=atom_to_residues_index,
+        attrs=["coord", "token"],
+    ):
+        # NOTE(Dana): Need to remove magic number 14
+        residue_count = get_residue_count(atom_array)
+
         extraction = dict()
-        mask= np.zeros((chain_count, 14)).astype(bool) #why 14? # array of Falses
+        mask = np.zeros((residue_count, 14)).astype(bool)
         for attr in attrs:
-            attr_shape = getattr(atom_array, attr).shape 
+            attr_shape = getattr(atom_array, attr).shape
             if len(attr_shape) == 1:
-                attr_reshape = np.zeros((chain_count, 14))
+                attr_reshape = np.zeros((residue_count, 14))
             else:
-                attr_reshape = np.zeros((chain_count, 14, attr_shape[-1]))
+                attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
-            # atom_array_ = atom_array_[(atom_array_.nuc_token > 0)]
-            # if atom_name not in backbone_atoms:
-                # atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
+            atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
+            
+            # NOTE(Dana): this will throw an error eventually
+            if atom_name not in backbone_atoms:
+                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
-            nuc_tokens, seq_id = atom_array_.nuc_token, atom_array_.seq_uid
-            atom_indices = atom_to_nucs_index[atom_token][nuc_tokens]
+            res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
+            atom_indices = atom_to_indices[atom_token][res_tokens]
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
-                extraction[attr][seq_id, atom_indices, ...] = attr_tensor # what ... does?
+                extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
-        for atom_name in all_atoms:
-            atom_token = all_atoms.index(atom_name)
+        for atom_name in atom_alphabet:
+            atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
 
         return extraction, mask
-            
+
 
     @classmethod
     def empty_nuc(cls):
@@ -130,15 +136,6 @@ class NucleicDatum:
         filepath = rcsb.fetch(id, "pdb", save_path)
         return cls.from_filepath(filepath)
 
-    @classmethod
-    def from_atom_array(cls, atom_array, header, query_atoms=all_atoms):
-        """
-        creates a NucleicDatum from atom array
-        """
-        if atom_array.array_length() == 0:
-            return cls.empty_nuc()
-
-        chain_id = get_chains(atom_array)
     @classmethod
     def from_atom_array(
         cls,
