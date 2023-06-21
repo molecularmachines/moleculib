@@ -59,7 +59,13 @@ class ProteinDatum:
             setattr(self, key, value)
 
     @classmethod
-    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
+    def _extract_reshaped_atom_attr(
+        cls,
+        atom_array,
+        atom_alphabet=all_atoms,
+        atom_to_indices=atom_to_residues_index,
+        attrs=["coord", "token"],
+    ):
         residue_count = get_residue_count(atom_array)
 
         extraction = dict()
@@ -80,14 +86,14 @@ class ProteinDatum:
                 atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
-            atom_indices = atom_to_residues_index[atom_token][res_tokens]
+            atom_indices = atom_to_indices[atom_token][res_tokens]
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
-        for atom_name in all_atoms:
-            atom_token = all_atoms.index(atom_name)
+        for atom_name in atom_alphabet:
+            atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
 
         return extraction, mask
@@ -123,7 +129,7 @@ class ProteinDatum:
         )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
-        return cls.from_atom_array(atom_array, header=header)        
+        return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
@@ -137,6 +143,11 @@ class ProteinDatum:
         header,
         query_atoms=all_atoms,
     ):
+        """
+        Reshapes atom array to residue-indexed representation to
+        build a protein datum.
+        """
+
         if atom_array.array_length() == 0:
             return cls.empty_protein()
 
@@ -146,16 +157,19 @@ class ProteinDatum:
         ]
         sequence = ProteinSequence(list(res_names))
 
+        # index residues globally
         atom_array.add_annotation("seq_uid", int)
         atom_array.seq_uid = spread_residue_wise(
             atom_array, np.arange(0, get_residue_count(atom_array))
         )
 
+        # tokenize atoms
         atom_array.add_annotation("token", int)
         atom_array.token = np.array(
             list(map(lambda atom: atom_index(atom), atom_array.atom_name))
         )
 
+        # tokenize residues
         residue_token = np.array(
             list(map(lambda res: get_residue_index(res), atom_array.res_name))
         )
@@ -167,6 +181,8 @@ class ProteinDatum:
             atom_array, np.arange(0, get_chain_count(atom_array))
         )
 
+        # count number of residues per chain
+        # and index residues per chain using cumulative sum
         atom_array.add_annotation("res_uid", int)
 
         def _count_residues_per_chain(chain_atom_array, axis=0):
@@ -178,10 +194,18 @@ class ProteinDatum:
         chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1]))
         atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
 
+        # reshape atom attributes to residue-based representation
+        # with the correct ordering
+        # [N * 14, ...] -> [N, 14, ...]
         atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
             atom_array, ["coord", "token"]
         )
+        atom_extract = dict(
+            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
+        )
 
+        # pool residue attributes and create residue features
+        # [N * 14, ...] -> [N, ...]
         def _pool_residue_token(atom_residue_tokens, axis=0):
             representative = atom_residue_tokens[0]
             return representative
@@ -191,14 +215,11 @@ class ProteinDatum:
 
         residue_token = _reshape_residue_attr(residue_token)
         residue_index = np.arange(0, residue_token.shape[0])
+
         residue_mask = _reshape_residue_attr(residue_mask)
-        chain_token = _reshape_residue_attr(chain_token)
-
-        atom_extract = dict(
-            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
-        )
-
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
+
+        chain_token = _reshape_residue_attr(chain_token)
 
         return cls(
             idcode=header["idcode"],
