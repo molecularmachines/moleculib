@@ -59,7 +59,7 @@ all_nucs_tokens = np.arange(len(all_nucs))
 all_nucs_atom_mask = np.array(
     [
         ([1] * len(atoms) + [0] * (14 - len(atoms)))
-        for (_, atoms) in atoms_per_residue.items()
+        for (_, atoms) in atoms_per_nuc.items()
     ]
 ).astype(np.bool_)
 

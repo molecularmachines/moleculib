@@ -8,14 +8,15 @@ from biotite.structure import (
     get_chain_count,
     get_residue_count,
     get_residues,
+    get_chains,
     spread_chain_wise,
     spread_residue_wise,
 )
 from biotite.structure import filter_nucleotides
-
+import os
 import biotite.structure.io.mmtf as mmtf
 
-from .alphabet import (
+from alphabet import (
     all_atoms,
     all_nucs,
     backbone_atoms,
@@ -23,6 +24,8 @@ from .alphabet import (
     atom_to_nucs_index,
     get_nucleotide_index,
 )
+
+from utils import  pdb_to_atom_array
 
 class NucleicDatum:
     """
@@ -54,12 +57,6 @@ class NucleicDatum:
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
     
-    @classmethod
-    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
-        residue_count = get_residue_count(atom_array)
-        extraction = dict()
-        mask = np.zeros((residue_count, 14)).astype(bool)
-
 
     def __len__(self):
         return len(self.sequence)
@@ -89,7 +86,6 @@ class NucleicDatum:
                 atom_array_ = atom_array_[(atom_array_.nuc_token > 1)]
 
             nuc_tokens, seq_id = atom_array_.nuc_token, atom_array_.seq_uid
-            ###TODO change atom to nuc in alphabet
             atom_indices = atom_to_nucs_index[atom_token][nuc_tokens]
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
@@ -123,6 +119,7 @@ class NucleicDatum:
         atom_array =  pdb_to_atom_array(filepath) #filters pdb to only nucleotides
         header = parse_pdb_header(filepath)
         #from Ido's code: (not sure necassary)
+        print(filepath,type(filepath))
         # idcode = os.path.basename(filepath)
         # idcode = os.path.splitext(idcode)[0]
         # header['idcode'] = idcode
@@ -131,6 +128,7 @@ class NucleicDatum:
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
         filepath = rcsb.fetch(id, "pdb", save_path)
+        print(filepath)
         return cls.from_filepath(filepath)
 
     @classmethod
@@ -140,7 +138,12 @@ class NucleicDatum:
         """
         if atom_array.array_length() == 0:
             return cls.empty_nuc()
-        #### TODO #####
+
+        chain_id = get_chains(atom_array)
+
+        #### TODO check with Allan names for chains#####
+        
+
         # return cls(
             # idcode="",
             # resolution=0.0,
@@ -196,7 +199,9 @@ def _scatter(name, ca_coord, atom_coord, atom_mask, color, visible=True):
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
-    
+    print(dna_datum)
+    coords = dna_datum.atom_coord
+    print(coords)
     
     
 
