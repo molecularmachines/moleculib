@@ -1,7 +1,7 @@
 import numpy as np
 from Bio.PDB import parse_pdb_header
 from biotite.database import rcsb
-from biotite.sequence import ProteinSequence, NucleotideSequence
+from biotite.sequence import ProteinSequence, NucleotideSequence, GeneralSequence, Alphabet
 from biotite.structure import (
     apply_chain_wise,
     apply_residue_wise,
@@ -66,20 +66,19 @@ class NucleicDatum:
         cls,
         atom_array,
         atom_alphabet=all_atoms,
-        atom_to_indices=atom_to_residues_index,
+        atom_to_indices=atom_to_nucs_index,
         attrs=["coord", "token"],
     ):
-        # NOTE(Dana): Need to remove magic number 14
         residue_count = get_residue_count(atom_array)
 
         extraction = dict()
-        mask = np.zeros((residue_count, 14)).astype(bool)
+        mask = np.zeros((residue_count, 11)).astype(bool)
         for attr in attrs:
             attr_shape = getattr(atom_array, attr).shape
             if len(attr_shape) == 1:
-                attr_reshape = np.zeros((residue_count, 14))
+                attr_reshape = np.zeros((residue_count, 11))
             else:
-                attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
+                attr_reshape = np.zeros((residue_count, 11, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_name, atom_array, atom_token):
@@ -88,8 +87,8 @@ class NucleicDatum:
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
             
             # NOTE(Dana): this will throw an error eventually
-            if atom_name not in backbone_atoms:
-                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
+            # if atom_name not in backbone_atoms:
+            #     atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_indices[atom_token][res_tokens]
@@ -110,7 +109,7 @@ class NucleicDatum:
         return cls(
             idcode="",
             resolution=0.0,
-            sequence=ProteinSequence(""),
+            sequence=NucleotideSequence(""),
             nuc_index=np.array([]),
             nuc_token=np.array([]),
             nuc_mask=np.array([]),
@@ -125,10 +124,10 @@ class NucleicDatum:
         atom_array =  pdb_to_atom_array(filepath) #filters pdb to only nucleotides
         header = parse_pdb_header(filepath)
         #from Ido's code: (not sure necassary)
-        print(filepath,type(filepath))
         # idcode = os.path.basename(filepath)
         # idcode = os.path.splitext(idcode)[0]
         # header['idcode'] = idcode
+        
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
@@ -148,14 +147,16 @@ class NucleicDatum:
         """
 
         if atom_array.array_length() == 0:
-            return cls.empty_protein()
+            return cls.empty_nuc()
         
-        breakpoint()
+        # breakpoint()
         _, res_names = get_residues(atom_array)
         res_names = [
             ("UNK" if (name not in all_nucs) else name) for name in res_names
         ]
-        sequence = ProteinSequence(list(res_names))
+
+        # breakpoint()
+        sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
 
         # index residues globally
         atom_array.add_annotation("seq_uid", int)
@@ -171,7 +172,7 @@ class NucleicDatum:
 
         # tokenize residues
         residue_token = np.array(
-            list(map(lambda res: get_residue_index(res), atom_array.res_name))
+            list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
         )
         residue_mask = np.ones_like(residue_token).astype(bool)
 
@@ -193,7 +194,7 @@ class NucleicDatum:
         )
         chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1]))
         atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
-
+        
         # reshape atom attributes to residue-based representation
         # with the correct ordering
         # [N * 14, ...] -> [N, 14, ...]
@@ -220,21 +221,35 @@ class NucleicDatum:
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
 
         chain_token = _reshape_residue_attr(chain_token)
-
+        breakpoint()
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
             resolution=header["resolution"],
-            residue_token=residue_token,
-            residue_index=residue_index,
-            residue_mask=residue_mask,
+            nuc_token=residue_token,
+            nuc_index=residue_index,
+            nuc_mask=residue_mask,
             chain_token=chain_token,
             **atom_extract,
             atom_mask=atom_mask,
         )
 
 
+
+        #  self.idcode = idcode
+        # self.resolution = resolution
+        # self.sequence = str(sequence)
+        # self.nuc_token = nuc_token
+        # self.nuc_index = nuc_index #do we need that
+        # self.nuc_mask = nuc_mask
+        # self.chain_token = chain_token
+        # self.atom_token = atom_token
+        # self.atom_coord = atom_coord
+        # self.atom_mask = atom_mask
+
+
 import plotly.graph_objects as go
+import plotly.offline as pyo
 def _scatter_coord(name, coord, color='black', visible=True):
     sc_coords = []
     x, y, z = coord.T
@@ -266,14 +281,21 @@ def _scatter_coord(name, coord, color='black', visible=True):
         yaxis_visible=False, 
         zaxis_visible=False
     )
-
+    fig.show()
     return fig
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
-    print(dna_datum)
+    # print(dna_datum)
     coords = dna_datum.atom_coord
-    print(coords)
+    breakpoint()
+    # _scatter_coord('59fr', coords, color='black', visible=True)
+    # print(coords)
+    # breakpoint()
+    _scatter_coord('59fr', coords, color='black', visible=True)
+    
+    # Display the plot in a separate window
+    
     
     
 

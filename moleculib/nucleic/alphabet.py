@@ -14,7 +14,7 @@ MAX_RES_ATOMS = 14
 base_atoms_per_nuc = OrderedDict(
         A=["N1","C2","N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"],
         U=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"], 
-        T=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M but had: T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
+        RT=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M but had: T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
         G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], 
         C=["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], 
         I = [], #from gpt: I=["N1", "C2", "N3", "C4", "C5", "C6"]
@@ -22,7 +22,7 @@ base_atoms_per_nuc = OrderedDict(
         DC =["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"],
         DG =["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"],
         DI =[],
-        DT= ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"]
+        DT = ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"],
         DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
 )
 
@@ -63,7 +63,7 @@ all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 all_nucs = list(base_atoms_per_nuc.keys())
 all_nucs = special_tokens + all_nucs
 all_nucs_tokens = np.arange(len(all_nucs))
-breakpoint()
+# breakpoint()
 all_nucs_atom_mask = np.array(
     [
         ([1] * len(atoms) + [0] * (MAX_DNA_ATOMS - len(atoms)))
