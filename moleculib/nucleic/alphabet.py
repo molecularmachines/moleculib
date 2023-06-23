@@ -12,15 +12,23 @@ MAX_RES_ATOMS = 14
 
 #ensure order and keep track of what atoms are present or missing
 base_atoms_per_nuc = OrderedDict(
-        A=["N1","C2","N3", "C4", "C5", "C6", "N7", "C8", "N9"], #calman had N6
-        U=["N1", "C2", "O2", "N3", "C4", "C5", "C6"], #
-        T=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M but had:
-        #T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
-        G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], #same
-        C=["N1", "C2", "O2", "N3", "C4", "C5", "C6"] #Calman had extra N4
+        A=["N1","C2","N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"],
+        U=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"], 
+        T=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M but had: T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
+        G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], 
+        C=["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], 
+        I = [], #from gpt: I=["N1", "C2", "N3", "C4", "C5", "C6"]
+        DA = ["N1A","C2A", "N3A", "C4A", "C5A", "N6A", "C6A", "N7A","C8A","N9A"],
+        DC =["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"],
+        DG =["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"],
+        DI =[],
+        DT= ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"]
+        DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
 )
 
-# backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] ########TODO TODO check it
+backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #add "" for carbons and Oxygens as in the file
+backbone_atoms_RNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] 
+
 ### TODO: Should it be the same as below (from alphabet protein)?
 # backbone_chemistry = dict(
 #     bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
