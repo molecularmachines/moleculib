@@ -25,6 +25,9 @@ from alphabet import (
     get_nucleotide_index,
 )
 
+#NOTE: fix it to come from alphabet
+backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] 
+
 from utils import  pdb_to_atom_array
 
 class NucleicDatum:
@@ -81,14 +84,15 @@ class NucleicDatum:
                 attr_reshape = np.zeros((residue_count, 11, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
+        # breakpoint()
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
             
             # NOTE(Dana): this will throw an error eventually
-            # if atom_name not in backbone_atoms:
-            #     atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
+            if atom_name not in backbone_atoms:
+                atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_indices[atom_token][res_tokens]
@@ -140,7 +144,7 @@ class NucleicDatum:
         cls,
         atom_array,
         header,
-    ):
+        ):
         """
         Reshapes atom array to residue-indexed representation to
         build a protein datum.
@@ -199,8 +203,11 @@ class NucleicDatum:
         # with the correct ordering
         # [N * 14, ...] -> [N, 14, ...]
         atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
-            atom_array, ["coord", "token"]
+            atom_array, atom_alphabet=all_atoms, atom_to_indices=atom_to_nucs_index, attrs=["coord", "token"]
         )
+
+
+
         atom_extract = dict(
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
@@ -221,7 +228,7 @@ class NucleicDatum:
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
 
         chain_token = _reshape_residue_attr(chain_token)
-        breakpoint()
+        # breakpoint()
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
@@ -281,20 +288,32 @@ def _scatter_coord(name, coord, color='black', visible=True):
         yaxis_visible=False, 
         zaxis_visible=False
     )
-    fig.show()
+    
     return fig
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
     # print(dna_datum)
     coords = dna_datum.atom_coord
-    breakpoint()
-    # _scatter_coord('59fr', coords, color='black', visible=True)
-    # print(coords)
     # breakpoint()
-    _scatter_coord('59fr', coords, color='black', visible=True)
-    
-    # Display the plot in a separate window
+
+    # fig = _scatter_coord('59fr', coords, color='black', visible=True)
+    import plotly.graph_objects as go
+    x, y, z = coords.reshape(-1, 3).T
+    fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='markers')])
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        ),
+        width=800,
+        height=800,
+        title='3D Scatter Plot of Atom Coordinates'
+    )
+
+    fig.show()
+    # 
     
     
     
