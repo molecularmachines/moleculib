@@ -27,7 +27,7 @@ base_atoms_per_nuc = OrderedDict(
 )
 
 backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #add "" for carbons and Oxygens as in the file
-backbone_atoms_RNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] 
+backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"]  #_RNA
 
 ### TODO: Should it be the same as below (from alphabet protein)?
 # backbone_chemistry = dict(
@@ -44,8 +44,9 @@ atoms_per_nuc["UNK"] = [] # backbone_atoms
 ##TODO check the DUPLICATES situation
 #for every nuc we add the base and backbone atoms
 for nuc, base_atoms in base_atoms_per_nuc.items():
-    atoms_per_nuc[nuc] = base_atoms
+    atoms_per_nuc[nuc] = base_atoms + backbone_atoms
 MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])
+print(MAX_DNA_ATOMS)
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
 all_atoms = special_tokens + all_atoms

@@ -23,9 +23,11 @@ from alphabet import (
     atom_index,
     atom_to_nucs_index,
     get_nucleotide_index,
+    MAX_DNA_ATOMS
 )
 
 #NOTE: fix it to come from alphabet
+#NOTE: extra ' for carbons in sugar backbone
 backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] 
 
 from utils import  pdb_to_atom_array
@@ -75,16 +77,16 @@ class NucleicDatum:
         residue_count = get_residue_count(atom_array)
 
         extraction = dict()
-        mask = np.zeros((residue_count, 11)).astype(bool)
+        mask = np.zeros((residue_count, MAX_DNA_ATOMS)).astype(bool)
         for attr in attrs:
             attr_shape = getattr(atom_array, attr).shape
             if len(attr_shape) == 1:
-                attr_reshape = np.zeros((residue_count, 11))
+                attr_reshape = np.zeros((residue_count, MAX_DNA_ATOMS))
             else:
-                attr_reshape = np.zeros((residue_count, 11, attr_shape[-1]))
+                attr_reshape = np.zeros((residue_count, MAX_DNA_ATOMS, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
-        # breakpoint()
+        
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
@@ -96,6 +98,8 @@ class NucleicDatum:
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_indices[atom_token][res_tokens]
+            # if atom_name == "C8":
+            #     breakpoint()    
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
@@ -153,13 +157,11 @@ class NucleicDatum:
         if atom_array.array_length() == 0:
             return cls.empty_nuc()
         
-        # breakpoint()
         _, res_names = get_residues(atom_array)
         res_names = [
             ("UNK" if (name not in all_nucs) else name) for name in res_names
         ]
 
-        # breakpoint()
         sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
 
         # index residues globally
@@ -228,7 +230,6 @@ class NucleicDatum:
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
 
         chain_token = _reshape_residue_attr(chain_token)
-        # breakpoint()
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
@@ -243,16 +244,7 @@ class NucleicDatum:
 
 
 
-        #  self.idcode = idcode
-        # self.resolution = resolution
-        # self.sequence = str(sequence)
-        # self.nuc_token = nuc_token
-        # self.nuc_index = nuc_index #do we need that
-        # self.nuc_mask = nuc_mask
-        # self.chain_token = chain_token
-        # self.atom_token = atom_token
-        # self.atom_coord = atom_coord
-        # self.atom_mask = atom_mask
+
 
 
 import plotly.graph_objects as go
@@ -293,10 +285,8 @@ def _scatter_coord(name, coord, color='black', visible=True):
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
-    # print(dna_datum)
     coords = dna_datum.atom_coord
-    # breakpoint()
-
+    
     # fig = _scatter_coord('59fr', coords, color='black', visible=True)
     import plotly.graph_objects as go
     x, y, z = coords.reshape(-1, 3).T
