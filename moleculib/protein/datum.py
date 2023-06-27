@@ -197,7 +197,7 @@ class ProteinDatum:
         # with the correct ordering
         # [N * 14, ...] -> [N, 14, ...]
         atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
-            atom_array, ["coord", "token"]
+            atom_array, attrs=["coord", "token"]
         )
         atom_extract = dict(
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
