@@ -70,30 +70,30 @@ class CountClashes(ProteinMetric):
         )
 
 
-class BondDeviation(ProteinMetric):
-    def __call__(self, datum: ProteinDatum):
-        coords = rearrange(coords, "r a c -> (r a) c")
-        i, j = rearrange(coords[indices], "... b c -> b ... c")
-        norms = safe_norm((i - j))
-        return norms
-        indices, mask = ground[f"{self.key}_list"], ground[f"{self.key}_mask"]
+# class BondDeviation(ProteinMetric):
+#     def __call__(self, datum: ProteinDatum):
+#         coords = rearrange(coords, "r a c -> (r a) c")
+#         i, j = rearrange(coords[indices], "... b c -> b ... c")
+#         norms = safe_norm((i - j))
+#         return norms
+#         indices, mask = ground[f"{self.key}_list"], ground[f"{self.key}_mask"]
 
-        target = jax.vmap(self.measure)(ground_coords, indices)
-        prediction = jax.vmap(self.measure)(coords, indices)
+#         target = jax.vmap(self.measure)(ground_coords, indices)
+#         prediction = jax.vmap(self.measure)(coords, indices)
 
-        difference = target - prediction
-        if self.key == "dihedrals":
-            alternative = (2 * jnp.pi - target) - prediction
-            difference = jnp.where(
-                jnp.abs(difference) < jnp.abs(alternative), difference, alternative
-            )
+#         difference = target - prediction
+#         if self.key == "dihedrals":
+#             alternative = (2 * jnp.pi - target) - prediction
+#             difference = jnp.where(
+#                 jnp.abs(difference) < jnp.abs(alternative), difference, alternative
+#             )
 
-        sqr_error = jnp.square(difference)
-        sqr_error = sqr_error * mask.astype(sqr_error.dtype)
-        mse = sqr_error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
-        mse = mse.mean()
+#         sqr_error = jnp.square(difference)
+#         sqr_error = sqr_error * mask.astype(sqr_error.dtype)
+#         mse = sqr_error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
+#         mse = mse.mean()
 
-        return model_output, mse, {f"{self.key}_loss": mse}
+#         return model_output, mse, {f"{self.key}_loss": mse}
 
 
 if __name__ == "__main__":
