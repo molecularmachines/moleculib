@@ -269,7 +269,6 @@ def sec_struc(pdb_file, visualize=False):
                 else:
                     sse_list.append("c")
 
-            print(chain + " Visualization")
             visualize_secondary_structure(np.array(sse_list, dtype="<U1"), 1, chain)
 
     return ss_by_struc, ss_meta, sequence_dictionary, aa_repeats
