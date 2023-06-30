@@ -92,7 +92,7 @@ class NucleicDatum:
             # kill pads and kill unks that are not backbone
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
             
-            # NOTE(Dana): this will throw an error eventually
+            
             if atom_name not in backbone_atoms:
                 atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
@@ -108,7 +108,7 @@ class NucleicDatum:
         for atom_name in atom_alphabet:
             atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
-
+        
         return extraction, mask
 
 
@@ -289,8 +289,48 @@ if __name__ == '__main__':
     
     # fig = _scatter_coord('59fr', coords, color='black', visible=True)
     import plotly.graph_objects as go
+    # breakpoint()
+    # nuc_index: np.ndarray,
+        # nuc_mask: np.ndarray,
+        # chain_token
+    atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(-1) #all_atoms[dna_datum.atom_token]
+    print(dna_datum.nuc_token.shape)
     x, y, z = coords.reshape(-1, 3).T
-    fig = go.Figure(data=[go.Scatter3d(x=x, y=y, z=z, mode='markers')])
+    print(dna_datum.chain_token)
+    color_mapping = {
+        0: 'rgb(31, 119, 180)',    # blue
+        1: 'rgb(255, 127, 14)',    # orange
+        2: 'rgb(44, 160, 44)',     # green
+        3: 'rgb(214, 39, 40)',     # red
+        4: 'rgb(148, 103, 189)',   # purple
+        5: 'rgb(247, 182, 210)' ,  # light pink    
+        6: 'rgb(227, 119, 194)',   # pink
+        7: 'rgb(127, 127, 127)',   # gray
+        8: 'rgb(188, 189, 34)',    # yellow
+        9: 'rgb(23, 190, 207)',    # cyan
+        10: 'rgb(174, 199, 232)',  # light blue
+        11: 'rgb(255, 152, 150)',  # light red
+        12: 'rgb(197, 176, 213)',  # light purple
+        13: 'rgb(196, 156, 148)',  # light brown
+    }
+    colors = [color_mapping[token] for token in dna_datum.nuc_token for _ in range(24)]
+
+    
+    print(len(dna_datum))
+    print(dna_datum.nuc_token)
+    fig = go.Figure(data=[go.Scatter3d(mode='markers',
+    # name=name + " bonds",
+            x=x,
+            y=y,
+            z=z,
+            text=atom_names,
+            hovertemplate='<b>%{text}</b>',
+            marker=dict(size=3),
+            # color = dna_datum.nuc_token,
+            line=dict(
+                color=colors,
+                width=3,)
+                )])
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
@@ -301,7 +341,24 @@ if __name__ == '__main__':
         height=800,
         title='3D Scatter Plot of Atom Coordinates'
     )
+    
 
+# ...
+# # in your plotly:
+#         go.Scatter3d(
+#             name=name + " bonds",
+#             x=x,
+#             y=y,
+#             z=z,
+#             hovertemplate="<b>%{text}</b><extra></extra>",
+#             text=atom_names,
+#             marker=dict(size=3),
+#             color = datum.residue_token
+#             line=dict(
+#                 color=color,
+#                 width=3,
+#             ),
+#         ),
     fig.show()
     # 
     
