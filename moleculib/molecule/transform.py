@@ -18,6 +18,7 @@ from .utils import pad_array
 from functools import partial
 import jax.numpy as jnp
 
+
 class MoleculeTransform:
     """
     Abstract class for transformation of MoleculeDatum datapoints
@@ -29,6 +30,7 @@ class MoleculeTransform:
         the values in it and returns a new MoleculeDatum
         """
         raise NotImplementedError("method transform must be implemented")
+
 
 class MoleculePad(MoleculeTransform):
     def __init__(self, pad_size: int, random_position: bool = False):
@@ -65,10 +67,12 @@ class MoleculePad(MoleculeTransform):
 
 class Centralize(MoleculeTransform):
     def transform(self, datum):
-        datum.atom_coord[datum.atom_mask] = datum.atom_coord[
-            datum.atom_mask
-        ] - datum.atom_coord[datum.atom_mask].mean(axis=0)
+        idxs = np.where(datum.atom_mask)
+        datum.atom_coord[idxs] = datum.atom_coord[idxs] - datum.atom_coord[idxs].mean(
+            axis=0
+        )
         return datum
+
 
 class CastToBFloat(MoleculeTransform):
     def transform(self, datum):
@@ -78,6 +82,7 @@ class CastToBFloat(MoleculeTransform):
                 obj = obj.astype(jnp.bfloat16)
             new_datum_[attr] = obj
         return MoleculeDatum(**new_datum_)
+
 
 # class ListBonds(MoleculeTransform):
 #     def __init__(self, buffer_size):

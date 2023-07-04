@@ -1,13 +1,13 @@
 from moleculib import MoleculeDataset
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.express as px
 path = "/mas/projects/molecularmachines/db/PDB"
 # MoleculeDataset.build(save_path=path, max_workers=30)
 # 
-
+ 
 ds = MoleculeDataset(path)  
-a = ds.metadata.atom_count.hist(bins=1022)
-count, division = np.histogram(ds.metadata.atom_count, bins=1023)
+fig= px.histogram(ds.metadata.atom_count)
+fig.show()
 print("Unique res: ", ds.metadata.res_name.nunique())
 print("Unique res id: ", ds.metadata.res_id.nunique())
 
@@ -22,3 +22,6 @@ print(ds.metadata[fil2])
 
 fil2 = ds.metadata.idcode == "1M69"
 print(ds.metadata[fil2])
+
+fil3 = ds.metadata.atom_count == 4
+print(ds.metadata[fil3].res_name.unique())
