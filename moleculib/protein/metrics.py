@@ -56,52 +56,46 @@ class CountClashes(ProteinMetric):
         num_clashes = (is_clash * cross_mask).sum((-1, -2))
         avg_num_clashes = num_clashes / (cross_mask.sum((-1, -2)) + 1e-6)
 
-        # if self.smooth:
-        #     clashes = e3nn.soft_envelope(
-        #         distance_maps,
-        #         x_max=cross_radii,
-        #         arg_multiplicator=10.0,
-        #         value_at_origin=1.0,
-        #     )
-
         return dict(
             num_clashes=num_clashes,
             avg_num_clashes=avg_num_clashes,
         )
 
 
-# class BondDeviation(ProteinMetric):
-#     def __call__(self, datum: ProteinDatum):
-#         coords = rearrange(coords, "r a c -> (r a) c")
-#         i, j = rearrange(coords[indices], "... b c -> b ... c")
-#         norms = safe_norm((i - j))
-#         return norms
-#         indices, mask = ground[f"{self.key}_list"], ground[f"{self.key}_mask"]
-
-#         target = jax.vmap(self.measure)(ground_coords, indices)
-#         prediction = jax.vmap(self.measure)(coords, indices)
-
-#         difference = target - prediction
-#         if self.key == "dihedrals":
-#             alternative = (2 * jnp.pi - target) - prediction
-#             difference = jnp.where(
-#                 jnp.abs(difference) < jnp.abs(alternative), difference, alternative
-#             )
-
-#         sqr_error = jnp.square(difference)
-#         sqr_error = sqr_error * mask.astype(sqr_error.dtype)
-#         mse = sqr_error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
-#         mse = mse.mean()
-
-#         return model_output, mse, {f"{self.key}_loss": mse}
+class StandardBondDeviation(ProteinMetric):
+    def __call__(self, datum: ProteinDatum):
+        coords = rearrange(datum.atom_coord, "r a c -> (r a) c")
+        i, j = rearrange(coords[datum.bonds_list], "... b c -> b ... c")
+        norms = safe_norm((i - j)) * datum.bonds_mask
+        error = jnp.square(norms - datum.bond_lens_list) * datum.bonds_mask
+        error = error.sum((-1, -2)) / (datum.bonds_mask.sum((-1, -2)) + 1e-6)
+        return dict(
+            bond_deviation=error,
+        )
 
 
 if __name__ == "__main__":
     from moleculib.metrics import MetricsPipe
-    from moleculib.protein.transform import DescribeChemistry
+    from moleculib.protein.transform import ProteinCrop, DescribeChemistry
+    from moleculib.protein.dataset import MonomerDataset
 
-    metrics_pipe = MetricsPipe([CountClashes()])
-    datum = ProteinDatum.fetch_pdb_id("4AKE")
-    datum = DescribeChemistry().transform(datum)
+    data_path = "/mas/projects/molecularmachines/db/PDB"
+    min_seq_len = 16
+    max_seq_len = sequence_length = 512
+    dataset = MonomerDataset(
+        base_path=data_path,
+        attrs="all",
+        max_resolution=1.7,
+        min_sequence_length=min_seq_len,
+        max_sequence_length=max_seq_len,
+        frac=1.0,
+        transform=[
+            ProteinCrop(crop_size=sequence_length),
+            DescribeChemistry(),
+        ],
+    )
+
+    datum = dataset[0]
+    metrics_pipe = MetricsPipe([StandardBondDeviation(), CountClashes()])
 
     print(metrics_pipe(datum))
