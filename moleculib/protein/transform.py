@@ -5,6 +5,7 @@ from .alphabet import (
     all_atoms_radii,
     backbone_atoms,
     bonds_arr,
+    bond_lens_arr,
     bonds_mask,
     angles_arr,
     angles_mask,
@@ -99,6 +100,8 @@ class ListBonds(ProteinTransform):
         )
 
         bonds_per_residue = bonds_arr[datum.residue_token]
+        bond_lens_per_residue = bond_lens_arr[datum.residue_token]
+
         bond_list = (bonds_per_residue + count).astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
@@ -110,12 +113,19 @@ class ListBonds(ProteinTransform):
         cs = num_atoms * np.arange(0, len(datum.atom_coord) - 1) + c_page
 
         peptide_bonds = np.stack((ns, cs)).T
+        # NOTE(Allan): need a better interface for specifying peptide bonds
+        peptide_lens = np.array([1.35] * len(peptide_bonds)).astype(np.float64)
+
         peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
 
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
+        peptide_lens = np.pad(peptide_lens, ((0, 1)), constant_values=0)
         peptide_mask = np.pad(peptide_mask, ((0, 1)), constant_values=False)
 
         bond_list = np.concatenate((bond_list, peptide_bonds[:, None, :]), axis=1)
+        bond_len_list = np.concatenate(
+            (bond_lens_per_residue, peptide_lens[:, None]), axis=1
+        )
         bond_mask = np.concatenate((bond_mask, peptide_mask[:, None]), axis=1)
 
         left, right = rearrange(bond_list, "s b i -> i (s b)")
@@ -124,6 +134,7 @@ class ListBonds(ProteinTransform):
             atom_mask[left] & atom_mask[right], "(s b) -> s b", b=bond_list.shape[1]
         )
 
+        datum.bond_lens_list = bond_len_list
         datum.bonds_list = bond_list
         datum.bonds_mask = bond_mask
 
