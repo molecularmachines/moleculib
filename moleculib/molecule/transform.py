@@ -56,10 +56,10 @@ class MoleculePad(MoleculeTransform):
             else:
                 new_datum_[attr] = obj
 
-        pad_mask = pad_array(np.ones_like(datum.atom_token), self.pad_size)
-        if self.random_position:
-            pad_mask = np.roll(pad_mask, shift, axis=0)
-        new_datum_["pad_mask"] = pad_mask
+        # pad_mask = pad_array(np.ones_like(datum.atom_token), self.pad_size)
+        # if self.random_position:
+        #     pad_mask = np.roll(pad_mask, shift, axis=0)
+        # new_datum_["pad_mask"] = pad_mask
 
         new_datum = MoleculeDatum(**new_datum_)
         return new_datum
