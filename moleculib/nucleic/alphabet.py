@@ -12,22 +12,25 @@ MAX_RES_ATOMS = 14
 
 #ensure order and keep track of what atoms are present or missing
 base_atoms_per_nuc = OrderedDict(
-        A=["N1","C2","N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"],
-        U=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"], 
-        RT=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M but had: T=['N1', 'C2', 'O2', 'N3', 'C4', 'O4', 'C5', 'C7', 'C6']
-        G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], 
-        C=["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], 
+        A=["N1","C2","N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"], # GREEN
+        U=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"], #RED
+        RT=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M  'C5' instead
+        G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], #light pink (has N9, O6)
+        C=["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], # pink (has o2)
         I = [], #from gpt: I=["N1", "C2", "N3", "C4", "C5", "C6"]
-        DA = ["N1A","C2A", "N3A", "C4A", "C5A", "N6A", "C6A", "N7A","C8A","N9A"],
-        DC =["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"],
-        DG =["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"],
+        #NOTE: in the file where I took the atoms, DA's atoms are N1A, C2A, etc.
+        #but from working with the data I saw that they're regular without 'A'
+        DA = ["N1","C2", "N3", "C4", "C5", "N6", "C6", "N7","C8","N9"],#olive GREEN
+        DC =["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], #tourcize
+        DG =["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], #light blue-violet
         DI =[],
-        DT = ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"],
+        #NOTE: actually didn't see C5M in the data itself but leave it in case it will come up
+        DT = ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #purple
         DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
 )
 
-backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #add "" for carbons and Oxygens as in the file
-backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"]  #_RNA
+backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #NOTE: add "" for carbons and Oxygens as in the file
+backbone_atoms_RNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"]  
 
 ### TODO: Should it be the same as below (from alphabet protein)?
 # backbone_chemistry = dict(
@@ -44,9 +47,11 @@ atoms_per_nuc["UNK"] = [] # backbone_atoms
 ##TODO check the DUPLICATES situation
 #for every nuc we add the base and backbone atoms
 for nuc, base_atoms in base_atoms_per_nuc.items():
-    atoms_per_nuc[nuc] = base_atoms + backbone_atoms
-MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])
-print(MAX_DNA_ATOMS)
+    if nuc in ['A', 'U', 'RT', 'G', 'C', 'I']: #RNA
+        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_RNA
+    else:
+        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_DNA
+MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])###==24
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
 all_atoms = special_tokens + all_atoms
@@ -64,7 +69,6 @@ all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 all_nucs = list(base_atoms_per_nuc.keys())
 all_nucs = special_tokens + all_nucs
 all_nucs_tokens = np.arange(len(all_nucs))
-# breakpoint()
 all_nucs_atom_mask = np.array(
     [
         ([1] * len(atoms) + [0] * (MAX_DNA_ATOMS - len(atoms)))
@@ -102,3 +106,4 @@ atom_to_nucs_index, atom_to_nucs_mask = zip(
 )
 atom_to_nucs_index = np.array(atom_to_nucs_index)
 atom_to_nucs_mask = np.array(atom_to_nucs_mask)
+

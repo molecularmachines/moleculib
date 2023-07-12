@@ -19,16 +19,13 @@ import biotite.structure.io.mmtf as mmtf
 from alphabet import (
     all_atoms,
     all_nucs,
-    # backbone_atoms,
+    backbone_atoms_DNA,
+    backbone_atoms_RNA,
     atom_index,
     atom_to_nucs_index,
     get_nucleotide_index,
     MAX_DNA_ATOMS
 )
-
-#NOTE: fix it to come from alphabet
-#NOTE: extra ' for carbons in sugar backbone
-backbone_atoms = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"] 
 
 from utils import  pdb_to_atom_array
 
@@ -75,9 +72,10 @@ class NucleicDatum:
         attrs=["coord", "token"],
     ):
         residue_count = get_residue_count(atom_array)
-
         extraction = dict()
         mask = np.zeros((residue_count, MAX_DNA_ATOMS)).astype(bool)
+        #creates array of zeroes in the desired shape to 
+        #fill with tokens and coords
         for attr in attrs:
             attr_shape = getattr(atom_array, attr).shape
             if len(attr_shape) == 1:
@@ -86,28 +84,63 @@ class NucleicDatum:
                 attr_reshape = np.zeros((residue_count, MAX_DNA_ATOMS, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
+        #NOTE: explored the different chains specifically for 5F9R complex:
+        #the following 3 funcs are for this exploration: 
+        def get_repetition_lengths(lst):
+            lengths = []
+            count = 1
+            for i in range(1, len(lst)):
+                if lst[i] == lst[i-1]:
+                    count += 1
+                else:
+                    lengths.append(count)
+                    count = 1
+            lengths.append(count)
+            return lengths
+
+        def check_strictly_increasing(lst):
+            for i in range(1, len(lst)):
+                if lst[i] < lst[i-1]:
+                    return False
+            return True
         
+        def check_res(lst):
+            res =set()
+            for i in lst:
+                if i not in res:
+                    res.add(i)
+            return res
+        
+        #NOTE: explored the different chains specifically for 5F9R complex:
+        # chainA = atom_array[:2462]
+        # chainC = atom_array[2462:2462+601]
+        # chainD = atom_array[2462+601:]
+        
+        # print(check_strictly_increasing(atom_array.res_id[2462+601:]))
+        # repetition_lengths = get_repetition_lengths(atom_array.chain_id) #[2462, 601, 396]
+        # print(repetition_lengths)
+        # print(len(atom_array.res_name))
+
         def _atom_slice(atom_name, atom_array, atom_token):
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
-            
-            
-            if atom_name not in backbone_atoms:
+
+            if atom_name not in backbone_atoms_RNA:
                 atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_indices[atom_token][res_tokens]
-            # if atom_name == "C8":
-            #     breakpoint()    
+
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
         for atom_name in atom_alphabet:
+
             atom_token = atom_alphabet.index(atom_name)
-            _atom_slice(atom_name, atom_array, atom_token)
+            _atom_slice(atom_name, atom_array, atom_token) ####NOTE
         
         return extraction, mask
 
@@ -130,12 +163,7 @@ class NucleicDatum:
     @classmethod
     def from_filepath(cls, filepath):
         atom_array =  pdb_to_atom_array(filepath) #filters pdb to only nucleotides
-        header = parse_pdb_header(filepath)
-        #from Ido's code: (not sure necassary)
-        # idcode = os.path.basename(filepath)
-        # idcode = os.path.splitext(idcode)[0]
-        # header['idcode'] = idcode
-        
+        header = parse_pdb_header(filepath)    
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
@@ -180,6 +208,10 @@ class NucleicDatum:
         residue_token = np.array(
             list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
         )
+        rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
+        dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+        dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+        rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
         residue_mask = np.ones_like(residue_token).astype(bool)
 
         atom_array.add_annotation("residue_token", int)
@@ -284,15 +316,21 @@ def _scatter_coord(name, coord, color='black', visible=True):
     return fig
 
 if __name__ == '__main__':
-    dna_datum = NucleicDatum.fetch_pdb_id('5F9R')
+    dna_datum = NucleicDatum.fetch_pdb_id('5F9R')    
+
+    ##DNADATUM: str,
+        # resolution: float,
+        # sequence: NucleotideSequence,
+        # nuc_token: np.ndarray, #tokenize nucs (0 to ~14 or so, ie options of nucs)
+        # nuc_index: np.ndarray, #index each nuc from 0 to len of nucleotides in the datum
+        # nuc_mask: np.ndarray, #
+        # chain_token: np.ndarray, #gives each chain a different token 0-number of chains in datum
+        # atom_token: np.ndarray, #shape of (len nucs, max_DNA)
+        # atom_coord: np.ndarray, #shape of (len nucs, max_DNA, 3)
+        # atom_mask
+##PLOTTING:
     coords = dna_datum.atom_coord
-    
-    # fig = _scatter_coord('59fr', coords, color='black', visible=True)
     import plotly.graph_objects as go
-    # breakpoint()
-    # nuc_index: np.ndarray,
-        # nuc_mask: np.ndarray,
-        # chain_token
     atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(-1) #all_atoms[dna_datum.atom_token]
     print(dna_datum.nuc_token.shape)
     x, y, z = coords.reshape(-1, 3).T
@@ -314,12 +352,7 @@ if __name__ == '__main__':
         13: 'rgb(196, 156, 148)',  # light brown
     }
     colors = [color_mapping[token] for token in dna_datum.nuc_token for _ in range(24)]
-
-    
-    print(len(dna_datum))
-    print(dna_datum.nuc_token)
     fig = go.Figure(data=[go.Scatter3d(mode='markers',
-    # name=name + " bonds",
             x=x,
             y=y,
             z=z,
@@ -342,27 +375,47 @@ if __name__ == '__main__':
         title='3D Scatter Plot of Atom Coordinates'
     )
     
+    ####TO PLOT:
+    # fig.show()
 
-# ...
-# # in your plotly:
-#         go.Scatter3d(
-#             name=name + " bonds",
-#             x=x,
-#             y=y,
-#             z=z,
-#             hovertemplate="<b>%{text}</b><extra></extra>",
-#             text=atom_names,
-#             marker=dict(size=3),
-#             color = datum.residue_token
-#             line=dict(
-#                 color=color,
-#                 width=3,
-#             ),
-#         ),
-    fig.show()
-    # 
+    def get_repetition_lengths(lst):
+        lengths = []
+        count = 1
+        for i in range(1, len(lst)):
+            if lst[i] == lst[i-1]:
+                count += 1
+            else:
+                lengths.append(count)
+                count = 1
+        lengths.append(count)
+        return lengths
+
+    rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
+    dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+    dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+    rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
     
+    num_chains = dna_datum.chain_token[-1]
+    chains_len = get_repetition_lengths(dna_datum.chain_token)
+    follow=[]
+    for nuci in dna_datum.nuc_token:
+        if nuci in rna_res_tokens:
+            follow.append('R')
+        elif nuci in dna_res_tokens:
+            follow.append('D')
+        else:
+            follow.append('confused')
+    print(dna_datum.nuc_token[140])
+    #number of RNA chains, 
+    # for chain in range(num_chains+1):
+    #     chain_len = chains_len[chain]
+        
+    #number of DNA chains, (check for chain and RNA/DNA),
+
+    # how long the chain is
+    #total number of nucleotides, 
     
+    breakpoint()
     
 
 
