@@ -136,15 +136,19 @@ class PDBDataset(Dataset):
     @staticmethod
     def _extract_statistics(datum):
         """
-        Gets the following statistics for the 
-        df row for each datum:
-            idcode#
-            num_res#
-            num_rna_chains #
-            num_dna_chains #
-             
-            standard#
-            resolution#
+    Extracts statistics for a given datum.
+    This function is called by `_maybe_fetch_and_extract` to retrieve the following for the datum:
+        - idcode#
+        - num_res#
+        - num_rna_chains#
+        - num_dna_chains#
+        - standard#
+        - resolution#
+    Parameters:
+        datum: NucleicDatum inst
+    Returns:
+        df: A df containing the extracted statistics for the datum.
+
         """
         is_standard = not (datum.nuc_token == UNK_TOKEN).all()
         metrics = dict(
@@ -183,3 +187,74 @@ class PDBDataset(Dataset):
             else:
                 raise Exception("The datum nuc token didn't fit RNA or DNA tokens")
         return Series(metrics).to_frame().T
+
+    @staticmethod
+    def _maybe_fetch_and_extract(pdb_id, save_path):
+        """
+        This function is called by the `build` function to check if the datum for the given PDB ID can be fetched. 
+        If it can be fetched, the function retrieves the datum and extracts its statistics.
+
+        Parameters:
+            pdb_id (str): The PDB ID of the datum to fetch and extract.
+            save_path (str): The path to save the fetched datum.
+
+        Returns:
+            tuple or None: A tuple containing the instance of the fetched datum and its extracted statistics 
+                if the fetch is successful, otherwise None and error usually.
+        """
+        try:
+            datum = NucleicDatum.fetch_pdb_id(pdb_id, save_path=save_path)
+        except KeyboardInterrupt:
+            exit()
+        except (ValueError, IndexError) as error:
+            print(traceback.format_exc())
+            print(error)
+            return None
+        except biotite.database.RequestError as request_error:
+            print(request_error)
+            return None
+        if len(datum.sequence) == 0:
+            return None
+        return (datum, PDBDataset._extract_statistics(datum))
+
+
+    @classmethod
+    def build(
+        cls,
+        pdb_ids: List[str] = None,
+        save: bool = True,
+        save_path: str = None,
+        max_workers: int = 1,
+        **kwargs,
+    ):
+        """
+        Builds dataset from scratch given specified pdb_ids, prepares
+        data and metadata for later use.
+        """
+        print(f"Extracting {len(pdb_ids)} PDB IDs with {max_workers} workers...")
+        if pdb_ids is None:
+            root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+            pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
+        if save_path is None:
+            save_path = mkdtemp()
+
+        series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
+        metadata = DataFrame(series)
+
+        extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
+        if max_workers > 1:
+            extraction = process_map(
+                extractor, pdb_ids, max_workers=max_workers, chunksize=50
+            )
+        else:
+            extraction = list(map(extractor, pdb_ids))
+
+        extraction = filter(lambda x: x, extraction)
+        data, metadata_ = list(map(list, zip(*extraction)))
+        metadata = pd.concat((metadata, *metadata_), axis=0)
+
+        if save:
+            with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
+                pickle.dump(metadata, file)
+
+        return cls(base_path=save_path, metadata=metadata, **kwargs)
