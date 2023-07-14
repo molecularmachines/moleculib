@@ -1,6 +1,8 @@
+import biotite
 from .datum import ProteinDatum
 from .alphabet import (
     all_atoms,
+    all_residues,
     all_atoms_elements,
     all_atoms_radii,
     backbone_atoms,
@@ -361,3 +363,31 @@ class CastToBFloat(ProteinTransform):
                 obj = obj.astype(jnp.bfloat16)
             new_datum_[attr] = obj
         return ProteinDatum(**new_datum_)
+
+
+SSE_TOKENS = ["", "c", "a", "b"]
+
+
+class AnnotateSecondaryStructure(ProteinTransform):
+    def transform(self, datum: ProteinDatum):
+        coords = datum.atom_coord[..., 1, :]
+        array = biotite.structure.array(
+            [biotite.structure.Atom(coord, chain_id="A") for coord in coords]
+        )
+        array.set_annotation("atom_name", ["CA" for _ in datum.residue_token])
+        array.set_annotation(
+            "res_name", [all_residues[token] for token in datum.residue_token]
+        )
+        array.set_annotation("res_id", np.arange(0, len(coords)))
+        annotations = biotite.structure.annotate_sse(array, chain_id="A")
+        annotations = [SSE_TOKENS.index(token) for token in annotations]
+
+        present, count = np.unique(annotations, return_counts=True)
+        tokenized_count = np.zeros(4, dtype=np.int32)
+        for idx, char in enumerate(present):
+            tokenized_count[SSE_TOKENS.index(char)] = count[idx]
+
+        datum.sse_token = np.array(annotations, dtype=np.int32)
+        datum.sse_count = tokenized_count
+
+        return datum

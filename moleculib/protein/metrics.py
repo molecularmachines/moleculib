@@ -3,6 +3,7 @@ import numpy as np
 
 from moleculib.protein.datum import ProteinDatum
 import jax.numpy as jnp
+from typing import List
 
 
 def safe_norm(vector: jnp.ndarray, axis: int = -1) -> jnp.ndarray:
@@ -60,6 +61,46 @@ class CountClashes(ProteinMetric):
             num_clashes=num_clashes,
             avg_num_clashes=avg_num_clashes,
         )
+
+
+def norm(vector: np.ndarray) -> np.ndarray:
+    norms_sqr = np.sum(vector**2, axis=-1)
+    norms = norms_sqr**0.5
+    return norms
+
+
+def normalize(vector: np.ndarray) -> np.ndarray:
+    return vector / norm(vector)[..., None]
+
+
+def measure_bonds(coord, idx):
+    v, u = idx.T
+    bonds_len = np.sqrt(np.square(coord[v] - coord[u]).sum(-1))
+    return bonds_len
+
+
+def measure_angles(coords, idx):
+    i, j, k = rearrange(idx, "... a -> a ...")
+    v1, v2 = coords[i] - coords[j], coords[k] - coords[j]
+    v1, v2 = normalize(v1), normalize(v2)
+    x, y = norm(v1 + v2), norm(v1 - v2)
+    return 2 * np.arctan2(y, x)
+
+
+def measure_dihedrals(coords, indices):
+    p, q, v, u = rearrange(indices, "... b -> b ...")
+    v1 = normalize(coords[q] - coords[p])
+    v2 = normalize(coords[v] - coords[q])
+    v3 = normalize(coords[u] - coords[v])
+
+    n1 = np.cross(v1, v2)
+    n2 = np.cross(v2, v3)
+
+    x = (n1 * n2).sum(-1)
+    y = (np.cross(n1, v2) * n2).sum(-1)
+
+    x = np.where(x == 0.0, 1e-6, x)
+    return np.arctan2(y, x) + np.pi
 
 
 class StandardBondDeviation(ProteinMetric):
