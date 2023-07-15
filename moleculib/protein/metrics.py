@@ -131,8 +131,8 @@ class ChemicalDeviationMetric(ProteinMetric):
         standard_values = STANDARD_CHEMICAL_MEASURES[self.key][0][res_token]
 
         mask = getattr(datum, f"{self.key}_mask").astype(np.float32)
-        standard_vars = STANDARD_CHEMICAL_MEASURES[self.key][1][res_token]
         if self.var_clip > 0.0:
+            standard_vars = STANDARD_CHEMICAL_MEASURES[self.key][1][res_token]
             mask = mask * (standard_vars < self.var_clip).astype(np.float32)
 
         values = self.measure(coords, idx)
@@ -158,7 +158,7 @@ class StandardAngleDeviation(ChemicalDeviationMetric):
 
 
 class StandardDihedralDeviation(ChemicalDeviationMetric):
-    def __init__(self, var_clip=0.01):
+    def __init__(self, var_clip=0.1):
         super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip)
 
 
