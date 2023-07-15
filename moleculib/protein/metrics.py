@@ -54,7 +54,7 @@ class CountClashes(ProteinMetric):
         cross_radii = jnp.where(cross_radii == 0.0, 1.0, cross_radii)
 
         is_clash = distance_maps < cross_radii * self.radius_multiplier
-        num_clashes = (is_clash * cross_mask).sum((-1, -2))
+        num_clashes = (is_clash * cross_mask).sum((-1, -2)) / 2
         avg_num_clashes = num_clashes / (cross_mask.sum((-1, -2)) + 1e-6)
 
         return dict(
@@ -89,54 +89,97 @@ def measure_angles(coords, idx):
 
 def measure_dihedrals(coords, indices):
     p, q, v, u = rearrange(indices, "... b -> b ...")
-    v1 = normalize(coords[q] - coords[p])
-    v2 = normalize(coords[v] - coords[q])
-    v3 = normalize(coords[u] - coords[v])
+    u1, u2, u3, u4 = coords[p], coords[q], coords[v], coords[u]
 
-    n1 = np.cross(v1, v2)
-    n2 = np.cross(v2, v3)
+    a1 = u2 - u1
+    a2 = u3 - u2
+    a3 = u4 - u3
 
-    x = (n1 * n2).sum(-1)
-    y = (np.cross(n1, v2) * n2).sum(-1)
+    v1 = np.cross(a1, a2)
+    v1 = normalize(v1)
+    v2 = np.cross(a2, a3)
+    v2 = normalize(v2)
 
-    x = np.where(x == 0.0, 1e-6, x)
-    return np.arctan2(y, x) + np.pi
+    porm = np.sign((v1 * a3).sum(-1))
+    rad = np.arccos((v1 * v2).sum(-1) / ((v1**2).sum(-1) * (v2**2).sum(-1)) ** 0.5)
+    rad = np.array(jnp.where(porm == 0, rad * porm, rad))
+
+    mask = (
+        (u1.sum(-1) != 0.0)
+        & (u2.sum(-1) != 0.0)
+        & (u3.sum(-1) != 0.0)
+        & (u4.sum(-1) != 0.0)
+    )
+
+    return rad * mask
 
 
-class StandardBondDeviation(ProteinMetric):
+from measures import STANDARD_CHEMICAL_MEASURES
+
+
+class ChemicalDeviationMetric(ProteinMetric):
+    def __init__(self, key, measure, var_clip=0.0):
+        self.key = key
+        self.measure = measure
+        self.var_clip = var_clip
+
     def __call__(self, datum: ProteinDatum):
         coords = rearrange(datum.atom_coord, "r a c -> (r a) c")
-        i, j = rearrange(coords[datum.bonds_list], "... b c -> b ... c")
-        norms = safe_norm((i - j)) * datum.bonds_mask
-        error = jnp.square(norms - datum.bond_lens_list) * datum.bonds_mask
-        error = error.sum((-1, -2)) / (datum.bonds_mask.sum((-1, -2)) + 1e-6)
-        return dict(
-            bond_deviation=error,
-        )
+        idx = rearrange(getattr(datum, f"{self.key}_list"), "r a c -> (r a) c")
+
+        res_token = datum.residue_token.astype(np.int32)
+        standard_values = STANDARD_CHEMICAL_MEASURES[self.key][0][res_token]
+
+        mask = getattr(datum, f"{self.key}_mask").astype(np.float32)
+        standard_vars = STANDARD_CHEMICAL_MEASURES[self.key][1][res_token]
+        if self.var_clip > 0.0:
+            mask = mask * (standard_vars < self.var_clip).astype(np.float32)
+
+        values = self.measure(coords, idx)
+        mask[np.isnan(mask)] = 0
+        values[np.isnan(values)] = 0.0
+        values = rearrange(values, "(r a) -> r a", r=datum.residue_token.shape[0])
+
+        error = np.square(values - standard_values) * mask
+        error = error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
+        out = dict()
+        out[f"{self.key}_deviation"] = error
+        return out
+
+
+class StandardBondDeviation(ChemicalDeviationMetric):
+    def __init__(self):
+        super().__init__("bonds", measure_bonds)
+
+
+class StandardAngleDeviation(ChemicalDeviationMetric):
+    def __init__(self):
+        super().__init__("angles", measure_angles)
+
+
+class StandardDihedralDeviation(ChemicalDeviationMetric):
+    def __init__(self, var_clip=0.01):
+        super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip)
 
 
 if __name__ == "__main__":
-    from moleculib.metrics import MetricsPipe
-    from moleculib.protein.transform import ProteinCrop, DescribeChemistry
-    from moleculib.protein.dataset import MonomerDataset
-
-    data_path = "/mas/projects/molecularmachines/db/PDB"
-    min_seq_len = 16
-    max_seq_len = sequence_length = 512
-    dataset = MonomerDataset(
-        base_path=data_path,
-        attrs="all",
-        max_resolution=1.7,
-        min_sequence_length=min_seq_len,
-        max_sequence_length=max_seq_len,
-        frac=1.0,
-        transform=[
-            ProteinCrop(crop_size=sequence_length),
-            DescribeChemistry(),
-        ],
+    from moleculib.protein.transform import (
+        DescribeChemistry,
+        AnnotateSecondaryStructure,
     )
+    from moleculib.metrics import MetricsPipe
 
-    datum = dataset[0]
-    metrics_pipe = MetricsPipe([StandardBondDeviation(), CountClashes()])
+    datum = ProteinDatum.fetch_pdb_id("1l2y")
+    transforms = [DescribeChemistry(), AnnotateSecondaryStructure()]
+    for transform in transforms:
+        datum = transform.transform(datum)
+    metrics_pipe = MetricsPipe(
+        [
+            StandardBondDeviation(),
+            StandardAngleDeviation(),
+            StandardDihedralDeviation(),
+            CountClashes(),
+        ]
+    )
 
     print(metrics_pipe(datum))
