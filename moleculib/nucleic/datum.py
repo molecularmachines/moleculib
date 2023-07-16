@@ -191,7 +191,7 @@ class NucleicDatum:
         ]
 
         sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
-
+        breakpoint()
         # index residues globally
         atom_array.add_annotation("seq_uid", int)
         atom_array.seq_uid = spread_residue_wise(
@@ -208,10 +208,7 @@ class NucleicDatum:
         residue_token = np.array(
             list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
         )
-        rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
-        dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
-        dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
-        rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
+        
         residue_mask = np.ones_like(residue_token).astype(bool)
 
         atom_array.add_annotation("residue_token", int)
@@ -315,9 +312,14 @@ def _scatter_coord(name, coord, color='black', visible=True):
     
     return fig
 
-if __name__ == '__main__':
-    dna_datum = NucleicDatum.fetch_pdb_id('5F9R')    
+rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
+dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
 
+if __name__ == '__main__':
+    dna_datum = NucleicDatum.fetch_pdb_id('2QK9')#('5F9R')    
+    breakpoint()
     ##DNADATUM: str,
         # resolution: float,
         # sequence: NucleotideSequence,
@@ -406,6 +408,7 @@ if __name__ == '__main__':
         else:
             follow.append('confused')
     print(dna_datum.nuc_token[140])
+    print(len(dna_datum))
     #number of RNA chains, 
     # for chain in range(num_chains+1):
     #     chain_len = chains_len[chain]

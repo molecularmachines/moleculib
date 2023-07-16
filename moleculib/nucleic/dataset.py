@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from typing import List, Union
 
+import random
 import biotite
 import numpy as np
 import pandas as pd
@@ -13,13 +14,13 @@ from pandas import DataFrame, Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
-from .alphabet import UNK_TOKEN
-from .datum import NucleicDatum, dna_res_tokens, rna_res_tokens
-from .utils import pids_file_to_list
+from alphabet import UNK_TOKEN
+from datum import NucleicDatum, dna_res_tokens, rna_res_tokens
+from utils import pids_file_to_list
 from tqdm import tqdm
 
 #NOTE: TBD:
-# MAX_COMPLEX_SIZE = 32
+MAX_COMPLEX_SIZE = 32
 PDB_HEADER_FIELDS = [
     ("idcode", str),
     ("num_res", int),
@@ -31,7 +32,7 @@ PDB_HEADER_FIELDS = [
 CHAIN_COUNTER_FIELDS = [(f"num_res_{idx}", int) for idx in range(MAX_COMPLEX_SIZE)]
 PDB_METADATA_FIELDS = PDB_HEADER_FIELDS + CHAIN_COUNTER_FIELDS
 
-SAMPLE_PDBS = ["1C5E", "1C9O", "1CKU", "1CSE", "7ZKR", "7ZYS", "8AJQ", "8AQL", "8DCH"]
+SAMPLE_PDBS = ["5F9R", "2QK9", "8G8E", "8G8G", "8GME", "8H1T", "8H7A", "8HKC", "8HML"]
 
 
 
@@ -54,7 +55,7 @@ class PDBDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        transform: ProteinTransform = None,
+        transform: None, #ProteinTransform = None,
         attrs: Union[List[str], str] = "all",
         metadata: pd.DataFrame = None,
         max_resolution: float = None,
@@ -136,24 +137,25 @@ class PDBDataset(Dataset):
     @staticmethod
     def _extract_statistics(datum):
         """
-    Extracts statistics for a given datum.
-    This function is called by `_maybe_fetch_and_extract` to retrieve the following for the datum:
-        - idcode#
-        - num_res#
-        - num_rna_chains#
-        - num_dna_chains#
-        - standard#
-        - resolution#
-    Parameters:
-        datum: NucleicDatum inst
-    Returns:
-        df: A df containing the extracted statistics for the datum.
-
+        Extracts statistics for a given datum.
+        This function is called by `_maybe_fetch_and_extract` to retrieve the following for the datum:
+            - idcode#
+            - num_res#
+            - num_rna_chains#
+            - num_dna_chains#
+            - standard#
+            - resolution#
+        Parameters:
+            datum: NucleicDatum inst
+        Returns:
+            df: A df containing the extracted statistics for the datum.
         """
         is_standard = not (datum.nuc_token == UNK_TOKEN).all()
         metrics = dict(
             idcode=datum.idcode,
             standard=is_standard,
+            num_rna_chains=0,
+            num_dna_chains=0,
             resolution=datum.resolution,
             num_res=len(datum.sequence),
         )
@@ -164,8 +166,8 @@ class PDBDataset(Dataset):
                     return False
             return True
 
-        num_rna_chains=0
-        num_dna_chains=0
+        # num_rna_chains=0
+        # num_dna_chains=0
 
         for chain in range(np.max(datum.chain_token) + 1):
             #getting chain length for each chain
@@ -181,9 +183,9 @@ class PDBDataset(Dataset):
             random_index = random.choice(chain_indices)
             random_nuc_token = datum.nuc_token[random_index]
             if random_nuc_token in rna_res_tokens:
-                num_rna_chains+=1
+                metrics['num_rna_chains']+=1
             elif random_nuc_token in dna_res_tokens:
-                num_dna_chains+=1
+                metrics['num_dna_chains']+=1
             else:
                 raise Exception("The datum nuc token didn't fit RNA or DNA tokens")
         return Series(metrics).to_frame().T
@@ -240,7 +242,7 @@ class PDBDataset(Dataset):
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
-
+        
         extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
         if max_workers > 1:
             extraction = process_map(
@@ -250,6 +252,7 @@ class PDBDataset(Dataset):
             extraction = list(map(extractor, pdb_ids))
 
         extraction = filter(lambda x: x, extraction)
+        
         data, metadata_ = list(map(list, zip(*extraction)))
         metadata = pd.concat((metadata, *metadata_), axis=0)
 
@@ -257,4 +260,9 @@ class PDBDataset(Dataset):
             with open(str(Path(save_path) / "metadata.pyd"), "wb") as file:
                 pickle.dump(metadata, file)
 
-        return cls(base_path=save_path, metadata=metadata, **kwargs)
+        return cls(base_path=save_path, metadata=metadata,transform=None, **kwargs)
+
+if __name__ == '__main__':
+    d = PDBDataset.build(SAMPLE_PDBS) 
+    print(d.metadata)  
+    breakpoint()
