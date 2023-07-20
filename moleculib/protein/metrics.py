@@ -1,6 +1,8 @@
 from einops import rearrange
 import numpy as np
 
+from .measures import STANDARD_CHEMICAL_MEASURES
+
 from moleculib.protein.datum import ProteinDatum
 import jax.numpy as jnp
 from typing import List
@@ -64,7 +66,7 @@ class CountClashes(ProteinMetric):
 
 
 def norm(vector: np.ndarray) -> np.ndarray:
-    norms_sqr = np.sum(vector**2, axis=-1)
+    norms_sqr = jnp.sum(vector**2, axis=-1)
     norms = norms_sqr**0.5
     return norms
 
@@ -75,7 +77,7 @@ def normalize(vector: np.ndarray) -> np.ndarray:
 
 def measure_bonds(coord, idx):
     v, u = idx.T
-    bonds_len = np.sqrt(np.square(coord[v] - coord[u]).sum(-1))
+    bonds_len = jnp.sqrt(jnp.square(coord[v] - coord[u]).sum(-1))
     return bonds_len
 
 
@@ -84,7 +86,7 @@ def measure_angles(coords, idx):
     v1, v2 = coords[i] - coords[j], coords[k] - coords[j]
     v1, v2 = normalize(v1), normalize(v2)
     x, y = norm(v1 + v2), norm(v1 - v2)
-    return 2 * np.arctan2(y, x)
+    return 2 * jnp.arctan2(y, x)
 
 
 def measure_dihedrals(coords, indices):
@@ -95,14 +97,14 @@ def measure_dihedrals(coords, indices):
     a2 = u3 - u2
     a3 = u4 - u3
 
-    v1 = np.cross(a1, a2)
+    v1 = jnp.cross(a1, a2)
     v1 = normalize(v1)
-    v2 = np.cross(a2, a3)
+    v2 = jnp.cross(a2, a3)
     v2 = normalize(v2)
 
-    porm = np.sign((v1 * a3).sum(-1))
-    rad = np.arccos((v1 * v2).sum(-1) / ((v1**2).sum(-1) * (v2**2).sum(-1)) ** 0.5)
-    rad = np.array(jnp.where(porm == 0, rad * porm, rad))
+    porm = jnp.sign((v1 * a3).sum(-1))
+    rad = jnp.arccos((v1 * v2).sum(-1) / ((v1**2).sum(-1) * (v2**2).sum(-1)) ** 0.5)
+    rad = jnp.where(porm == 0, rad * porm, rad)
 
     mask = (
         (u1.sum(-1) != 0.0)
@@ -112,9 +114,6 @@ def measure_dihedrals(coords, indices):
     )
 
     return rad * mask
-
-
-from measures import STANDARD_CHEMICAL_MEASURES
 
 
 class ChemicalDeviationMetric(ProteinMetric):
@@ -127,23 +126,28 @@ class ChemicalDeviationMetric(ProteinMetric):
         coords = rearrange(datum.atom_coord, "r a c -> (r a) c")
         idx = rearrange(getattr(datum, f"{self.key}_list"), "r a c -> (r a) c")
 
-        res_token = datum.residue_token.astype(np.int32)
-        standard_values = STANDARD_CHEMICAL_MEASURES[self.key][0][res_token]
+        res_token = datum.residue_token.astype(jnp.int32)
+        standard_values = jnp.array(STANDARD_CHEMICAL_MEASURES[self.key][0])[res_token]
 
-        mask = getattr(datum, f"{self.key}_mask").astype(np.float32)
+        mask = getattr(datum, f"{self.key}_mask").astype(jnp.float32)
         if self.var_clip > 0.0:
-            standard_vars = STANDARD_CHEMICAL_MEASURES[self.key][1][res_token]
-            mask = mask * (standard_vars < self.var_clip).astype(np.float32)
+            standard_vars = jnp.array(STANDARD_CHEMICAL_MEASURES[self.key][1])[
+                res_token
+            ]
+            mask = mask * (standard_vars < self.var_clip).astype(jnp.float32)
 
         values = self.measure(coords, idx)
-        mask[np.isnan(mask)] = 0
-        values[np.isnan(values)] = 0.0
+
+        mask = jnp.where(jnp.isnan(mask), 0.0, mask)
+        values = jnp.where(jnp.isnan(values), 0.0, values)
+
         values = rearrange(values, "(r a) -> r a", r=datum.residue_token.shape[0])
 
-        error = np.square(values - standard_values) * mask
+        error = jnp.square(values - standard_values) * mask
         error = error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
         out = dict()
         out[f"{self.key}_deviation"] = error
+
         return out
 
 
