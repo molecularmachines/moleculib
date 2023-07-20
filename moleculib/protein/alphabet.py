@@ -72,21 +72,14 @@ sidechain_atoms_per_residue = OrderedDict(
 
 sidechain_chemistry_per_residue = OrderedDict(
     ALA=dict(
-        bonds=[["N", "CA"], ["CA", "C"], ["C", "O"], ["CA", "CB"]],
+        bonds=[["CA", "CB"]],
         flippable=[],
-        angles=[
-            ["N", "CA", "CB"],
-            ["C", "CA", "CB"],
-        ],
-        dihedrals=[
-            ["O", "C", "CA", "CB"],
-        ],
+        angles=[["N", "CA", "CB"], ["C", "CA", "CB"]],
+        dihedrals=[["O", "C", "CA", "CB"]],
+        bond_lens=[1.52],
     ),
     ARG=dict(
         bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
             ["CA", "CB"],
             ["CB", "CG"],
             ["CG", "CD"],
@@ -117,17 +110,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CD", "NE", "CZ", "NH1"],
             ["CD", "NE", "CZ", "NH2"],
         ],
+        bond_lens=[1.53, 1.52, 1.52, 1.46, 1.33, 1.33, 1.33],
     ),
     ASN=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "OD1"],
-            ["CG", "ND2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "ND2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -144,17 +130,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.51, 1.23, 1.33],
     ),
     ASP=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "OD1"],
-            ["CG", "OD2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "OD1"], ["CG", "OD2"]],
         flippable=[["OD1", "OD2"]],
         angles=[
             ["N", "CA", "CB"],
@@ -171,32 +150,21 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.52, 1.25, 1.25],
     ),
     CYS=dict(
-        bonds=[["N", "CA"], ["CA", "C"], ["C", "O"], ["CA", "CB"], ["CB", "SG"]],
+        bonds=[["CA", "CB"], ["CB", "SG"]],
         flippable=[],
-        angles=[
-            ["N", "CA", "CB"],
-            ["CA", "CB", "SG"],
-            ["C", "CA", "CB"],
-        ],
+        angles=[["N", "CA", "CB"], ["CA", "CB", "SG"], ["C", "CA", "CB"]],
         dihedrals=[
             ["N", "CA", "CB", "SG"],
             ["C", "CA", "CB", "SG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.81],
     ),
     GLN=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "CD"],
-            ["CD", "OE1"],
-            ["CD", "NE2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "NE2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -215,18 +183,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CB", "CG", "CD", "OE1"],
             ["CB", "CG", "CD", "NE2"],
         ],
+        bond_lens=[1.53, 1.52, 1.52, 1.23, 1.33],
     ),
     GLU=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "CD"],
-            ["CD", "OE1"],
-            ["CD", "OE2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "OE1"], ["CD", "OE2"]],
         flippable=[["OE1", "OE2"]],
         angles=[
             ["N", "CA", "CB"],
@@ -245,18 +205,17 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CB", "CG", "CD", "OE1"],
             ["CB", "CG", "CD", "OE2"],
         ],
+        bond_lens=[1.53, 1.52, 1.52, 1.25, 1.25],
     ),
     GLY=dict(
-        bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
+        bonds=[],
         flippable=[],
         angles=[],
         dihedrals=[],
+        bond_lens=[],
     ),
     HIS=dict(
         bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
             ["CA", "CB"],
             ["CB", "CG"],
             ["CG", "ND1"],
@@ -283,17 +242,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CG", "ND1", "CE1", "NE2"],
             ["ND1", "CE1", "NE2", "CD2"],
         ],
+        bond_lens=[1.53, 1.49, 1.38, 1.32, 1.32, 1.37],
     ),
     ILE=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG1"],
-            ["CG1", "CD1"],
-            ["CB", "CG2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG1"], ["CG1", "CD1"], ["CB", "CG2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -312,17 +264,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["O", "C", "CA", "CB"],
             ["CD1", "CG1", "CB", "CG2"],
         ],
+        bond_lens=[1.54, 1.53, 1.52, 1.53],
     ),
     LEU=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "CD1"],
-            ["CG", "CD2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD1"], ["CG", "CD2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -339,18 +284,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.53, 1.52, 1.52],
     ),
     LYS=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "CD"],
-            ["CD", "CE"],
-            ["CE", "NZ"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"], ["CD", "CE"], ["CE", "NZ"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -368,17 +305,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CB", "CG", "CD", "CE"],
             ["CG", "CD", "CE", "NZ"],
         ],
+        bond_lens=[1.53, 1.52, 1.52, 1.52, 1.49],
     ),
     MET=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "SD"],
-            ["SD", "CE"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "SD"], ["SD", "CE"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -394,12 +324,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["O", "C", "CA", "CB"],
             ["CB", "CG", "SD", "CE"],
         ],
+        bond_lens=[1.53, 1.52, 1.80, 1.79],
     ),
     PHE=dict(
         bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
             ["CA", "CB"],
             ["CB", "CG"],
             ["CG", "CD1"],
@@ -438,16 +366,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CE1", "CD1", "CG", "CD2"],
             ["CE1", "CZ", "CE2", "CD2"],
         ],
+        bond_lens=[1.53, 1.50, 1.39, 1.39, 1.38, 1.38, 1.39, 1.39],
     ),
     PRO=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG"],
-            ["CG", "CD"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG"], ["CG", "CD"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -461,30 +383,21 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.49, 1.51],
     ),
     SER=dict(
-        bonds=[["N", "CA"], ["CA", "C"], ["C", "O"], ["CA", "CB"], ["CB", "OG"]],
+        bonds=[["CA", "CB"], ["CB", "OG"]],
         flippable=[],
-        angles=[
-            ["N", "CA", "CB"],
-            ["CA", "CB", "OG"],
-            ["C", "CA", "CB"],
-        ],
+        angles=[["N", "CA", "CB"], ["CA", "CB", "OG"], ["C", "CA", "CB"]],
         dihedrals=[
             ["N", "CA", "CB", "OG"],
             ["C", "CA", "CB", "OG"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.53, 1.42],
     ),
     THR=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "OG1"],
-            ["CB", "CG2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "OG1"], ["CB", "CG2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -500,12 +413,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG2"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.54, 1.43, 1.52],
     ),
     TRP=dict(
         bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
             ["CA", "CB"],
             ["CB", "CG"],
             ["CG", "CD1"],
@@ -567,12 +478,23 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CH2", "CZ2", "CE2", "CD2"],
             ["CH2", "CZ3", "CE3", "CD2"],
         ],
+        bond_lens=[
+            1.53,
+            1.50,
+            1.37,
+            1.37,
+            1.37,
+            1.40,
+            1.37,
+            1.40,
+            1.39,
+            1.40,
+            1.41,
+            1.43,
+        ],
     ),
     TYR=dict(
         bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
             ["CA", "CB"],
             ["CB", "CG"],
             ["CG", "CD1"],
@@ -616,16 +538,10 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["CE1", "CZ", "CE2", "CD2"],
             ["OH", "CZ", "CE2", "CD2"],
         ],
+        bond_lens=[1.53, 1.51, 1.39, 1.39, 1.38, 1.38, 1.38, 1.39, 1.39],
     ),
     VAL=dict(
-        bonds=[
-            ["N", "CA"],
-            ["CA", "C"],
-            ["C", "O"],
-            ["CA", "CB"],
-            ["CB", "CG1"],
-            ["CB", "CG2"],
-        ],
+        bonds=[["CA", "CB"], ["CB", "CG1"], ["CB", "CG2"]],
         flippable=[],
         angles=[
             ["N", "CA", "CB"],
@@ -641,6 +557,7 @@ sidechain_chemistry_per_residue = OrderedDict(
             ["C", "CA", "CB", "CG2"],
             ["O", "C", "CA", "CB"],
         ],
+        bond_lens=[1.54, 1.53, 1.52],
     ),
 )
 
@@ -651,6 +568,7 @@ backbone_chemistry = dict(
     angles=[["CA", "C", "O"], ["N", "CA", "C"]],
     dihedrals=[["N", "CA", "C", "O"]],
     flippable=[],
+    bond_lens=[1.46, 1.52, 1.23],
 )
 special_tokens = ["PAD", "UNK"]
 
@@ -659,7 +577,6 @@ atoms_per_residue["PAD"] = []
 atoms_per_residue["UNK"] = backbone_atoms
 for res, sidechain_atoms in sidechain_atoms_per_residue.items():
     atoms_per_residue[res] = backbone_atoms + sidechain_atoms
-
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_residue.values()), [])))
 all_atoms = special_tokens + all_atoms
@@ -683,7 +600,12 @@ all_residues_atom_mask = np.array(
         for (_, atoms) in atoms_per_residue.items()
     ]
 ).astype(np.bool_)
-
+all_residues_atom_tokens = np.array(
+    [
+        ([all_atoms.index(atom) for atom in atoms] + [0] * (14 - len(atoms)))
+        for (_, atoms) in atoms_per_residue.items()
+    ]
+)
 
 # and base vocabularies for chemistry
 def geometry_to_per_residue_indexing_array(property="bonds"):
@@ -725,6 +647,17 @@ def geometry_to_per_residue_indexing_array(property="bonds"):
 
 
 bonds_arr, bonds_mask = geometry_to_per_residue_indexing_array("bonds")
+
+bond_lens_arr = [[] for _ in special_tokens]
+bond_lens_arr += [
+    backbone_chemistry["bond_lens"] + sidechain_chemistry["bond_lens"]
+    for sidechain_chemistry in sidechain_chemistry_per_residue.values()
+]
+max_arr_size = max([len(v) for v in bond_lens_arr])
+bond_lens_arr = np.array(
+    [np.pad(arr, (0, max_arr_size - len(arr)), "constant") for arr in bond_lens_arr]
+)
+
 angles_arr, angles_mask = geometry_to_per_residue_indexing_array("angles")
 dihedrals_arr, dihedrals_mask = geometry_to_per_residue_indexing_array("dihedrals")
 flippable_arr, flippable_mask = geometry_to_per_residue_indexing_array("flippable")
@@ -762,3 +695,8 @@ atom_to_residues_index, atom_to_residues_mask = zip(
 )
 atom_to_residues_index = np.array(atom_to_residues_index)
 atom_to_residues_mask = np.array(atom_to_residues_mask)
+
+
+if __name__ == "__main__":
+    breakpoint()
+    print("success")

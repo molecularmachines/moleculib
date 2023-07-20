@@ -24,6 +24,8 @@ from .alphabet import (
     get_residue_index,
 )
 
+from einops import rearrange, repeat
+
 
 class ProteinDatum:
     """
@@ -197,7 +199,7 @@ class ProteinDatum:
         # with the correct ordering
         # [N * 14, ...] -> [N, 14, ...]
         atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
-            atom_array, ["coord", "token"]
+            atom_array, attrs=["coord", "token"]
         )
         atom_extract = dict(
             map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
@@ -232,6 +234,27 @@ class ProteinDatum:
             atom_mask=atom_mask,
         )
 
+    def _apply_chemistry(self, key, f):
+        all_atoms = rearrange(self.atom_coord, "r a c -> (r a) c")
+        all_idx = rearrange(getattr(self, f"{key}_list"), "r o i -> (r o) i")
+        mask = getattr(self, f"{key}_mask")
+
+        measures = f(all_atoms, all_idx)
+        measures = rearrange(measures, "(r o) -> r o", r=len(self.residue_token))
+
+        output = dict()
+        output[key] = measures * mask
+        return measures
+
+    def apply_bonds(self, f):
+        return self._apply_chemistry(key="bonds", f=f)
+
+    def apply_angles(self, f):
+        return self._apply_chemistry(key="angles", f=f)
+
+    def apply_dihedrals(self, f):
+        return self._apply_chemistry(key="dihedrals", f=f)
+
     def to_dict(self, attrs=None):
         if attrs is None:
             attrs = vars(self).keys()
@@ -247,3 +270,40 @@ class ProteinDatum:
                 obj = np.array(obj)
             dict_[attr] = obj
         return dict_
+
+    def to_pdb_str(self):
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
+        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        assert len(self.residue_token.shape) == 1
+
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
+        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+
+        lines = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_residues[int(res_token)]
+            x, y, z = coord
+            line = list(" " * 80)
+            line[0:6] = "ATOM".ljust(6)
+            line[6:11] = str(idx + 1).ljust(5)
+            line[12:16] = name.ljust(4)
+            line[17:20] = res_name.ljust(3)
+            line[22:26] = str(res_index + 1).ljust(4)
+            line[30:38] = f"{x:.3f}".rjust(8)
+            line[38:46] = f"{y:.3f}".rjust(8)
+            line[46:54] = f"{z:.3f}".rjust(8)
+            line[76:78] = name[0].rjust(2)
+            lines.append("".join(line))
+        lines = "\n".join(lines)
+        return lines

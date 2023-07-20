@@ -1,10 +1,13 @@
+import biotite
 from .datum import ProteinDatum
 from .alphabet import (
     all_atoms,
+    all_residues,
     all_atoms_elements,
     all_atoms_radii,
     backbone_atoms,
     bonds_arr,
+    bond_lens_arr,
     bonds_mask,
     angles_arr,
     angles_mask,
@@ -99,6 +102,7 @@ class ListBonds(ProteinTransform):
         )
 
         bonds_per_residue = bonds_arr[datum.residue_token]
+
         bond_list = (bonds_per_residue + count).astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
@@ -110,6 +114,8 @@ class ListBonds(ProteinTransform):
         cs = num_atoms * np.arange(0, len(datum.atom_coord) - 1) + c_page
 
         peptide_bonds = np.stack((ns, cs)).T
+        # NOTE(Allan): need a better interface for specifying peptide bonds
+
         peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
 
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
@@ -350,3 +356,31 @@ class CastToBFloat(ProteinTransform):
                 obj = obj.astype(jnp.bfloat16)
             new_datum_[attr] = obj
         return ProteinDatum(**new_datum_)
+
+
+SSE_TOKENS = ["", "c", "a", "b"]
+
+
+class AnnotateSecondaryStructure(ProteinTransform):
+    def transform(self, datum: ProteinDatum):
+        coords = datum.atom_coord[..., 1, :]
+        array = biotite.structure.array(
+            [biotite.structure.Atom(coord, chain_id="A") for coord in coords]
+        )
+        array.set_annotation("atom_name", ["CA" for _ in datum.residue_token])
+        array.set_annotation(
+            "res_name", [all_residues[token] for token in datum.residue_token]
+        )
+        array.set_annotation("res_id", np.arange(0, len(coords)))
+        annotations = biotite.structure.annotate_sse(array, chain_id="A")
+
+        present, count = np.unique(annotations, return_counts=True)
+        tokenized_count = np.zeros(4, dtype=np.int32)
+        for idx, char in enumerate(present):
+            tokenized_count[SSE_TOKENS.index(char)] = count[idx]
+
+        annotations = [SSE_TOKENS.index(token) for token in annotations]
+        datum.sse_token = np.array(annotations, dtype=np.int32)
+        datum.sse_count = tokenized_count
+
+        return datum
