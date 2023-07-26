@@ -5,6 +5,7 @@ from functools import partial
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import List, Union
+import requests
 
 import random
 import biotite
@@ -166,8 +167,7 @@ class PDBDataset(Dataset):
                     return False
             return True
 
-        # num_rna_chains=0
-        # num_dna_chains=0
+
 
         for chain in range(np.max(datum.chain_token) + 1):
             #getting chain length for each chain
@@ -186,8 +186,9 @@ class PDBDataset(Dataset):
                 metrics['num_rna_chains']+=1
             elif random_nuc_token in dna_res_tokens:
                 metrics['num_dna_chains']+=1
-            else:
-                raise Exception("The datum nuc token didn't fit RNA or DNA tokens")
+            # else:
+            #     print(random_nuc_token)
+            #     raise Exception("The datum nuc token didn't fit RNA or DNA tokens")
         return Series(metrics).to_frame().T
 
     @staticmethod
@@ -226,7 +227,7 @@ class PDBDataset(Dataset):
         pdb_ids: List[str] = None,
         save: bool = True,
         save_path: str = None,
-        max_workers: int = 1,
+        max_workers: int = 20,
         **kwargs,
     ):
         """
@@ -262,7 +263,33 @@ class PDBDataset(Dataset):
 
         return cls(base_path=save_path, metadata=metadata,transform=None, **kwargs)
 
-if __name__ == '__main__':
-    d = PDBDataset.build(SAMPLE_PDBS) 
-    print(d.metadata)  
+def get_pdb_ids():
+    url = 'https://data.rcsb.org/rest/v1/core/entry/'
+    params = {
+        'entity_poly.rcsb_entity_polymer_type': 'DNA',  # Filter by DNA molecules
+        'rcsb_entry_info.resolution_combined.operator': '<',  # Filter by experimental method (X-ray)
+        'limit': 100,  # Adjust this value to fetch more or fewer entries per request
+    }
+
+
+    response = requests.get(url, params=params)
+    data = response.json()
     breakpoint()
+    pdb_ids = [entry['rcsb_id'] for entry in data['result_set']]
+    return pdb_ids
+
+if __name__ == '__main__':
+    print("hey")
+    with open('/u/danaru/moleculib/moleculib/data/pids_all.txt', 'r') as file:
+        data = file.read()
+        pdbs = data.split(',')
+    
+    
+    dataset = PDBDataset.build(pdbs)
+    breakpoint()
+    # # Call the function to get a list of PDB IDs
+    # all_pdb_ids = get_pdb_ids()
+    # print(all_pdb_ids)
+
+    # print(d.metadata)  
+    # breakpoint()

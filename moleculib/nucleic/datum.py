@@ -191,7 +191,7 @@ class NucleicDatum:
         ]
 
         sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
-        breakpoint()
+        # breakpoint()
         # index residues globally
         atom_array.add_annotation("seq_uid", int)
         atom_array.seq_uid = spread_residue_wise(
@@ -319,7 +319,7 @@ rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('2QK9')#('5F9R')    
-    breakpoint()
+    # breakpoint()
     ##DNADATUM: str,
         # resolution: float,
         # sequence: NucleotideSequence,
@@ -418,7 +418,7 @@ if __name__ == '__main__':
     # how long the chain is
     #total number of nucleotides, 
     
-    breakpoint()
+    # breakpoint()
     
 
 
