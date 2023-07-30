@@ -33,9 +33,8 @@ class MoleculeTransform:
 
 
 class MoleculePad(MoleculeTransform):
-    def __init__(self, pad_size: int, random_position: bool = False):
+    def __init__(self, pad_size: int):
         self.pad_size = pad_size
-        self.random_position = random_position
 
     def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
         mol_size = datum.atom_token.shape[0]
@@ -43,23 +42,13 @@ class MoleculePad(MoleculeTransform):
             datum.pad_mask = np.ones_like(datum.atom_token)
             return datum
 
-        size_diff = self.pad_size - mol_size
-        shift = np.random.randint(0, size_diff)
-
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
             if type(obj) == np.ndarray:
-                obj = pad_array(obj, self.pad_size)
-                if self.random_position:
-                    obj = np.roll(obj, shift, axis=0)
+                obj = pad_array(obj, self.pad_size, attr=="bonds")
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
-
-        # pad_mask = pad_array(np.ones_like(datum.atom_token), self.pad_size)
-        # if self.random_position:
-        #     pad_mask = np.roll(pad_mask, shift, axis=0)
-        # new_datum_["pad_mask"] = pad_mask
 
         new_datum = MoleculeDatum(**new_datum_)
         return new_datum

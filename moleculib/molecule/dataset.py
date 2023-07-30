@@ -36,7 +36,7 @@ class MoleculeDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        transform: MoleculeTransform = None,
+        transform: List[MoleculeTransform] = None,
         attrs: Union[List[str], str] = "all",
         metadata: pd.DataFrame = None,
         max_resolution: float = None,
@@ -124,6 +124,7 @@ class MoleculeDataset(Dataset):
                 res_id=datum.res_id[mask][0],
                 res_name=datum.res_name[mask][0],
                 atom_count=len(datum.atom_token[mask]),
+                bond_count=datum.bonds[mask].get_bond_count(),
                 molecule_idx=i,
             )
             for i, mask in enumerate(datum.atom_mask)

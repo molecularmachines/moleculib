@@ -24,6 +24,7 @@ class MoleculeDatum:
         atom_name: np.ndarray,
         b_factor: np.ndarray,
         atom_mask: np.ndarray,
+        bonds: np.ndarray,
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -35,6 +36,7 @@ class MoleculeDatum:
         self.atom_name = atom_name
         self.b_factor = b_factor
         self.atom_mask = atom_mask
+        self.bonds = bonds
 
     def __len__(self):
         return len(self.sequence)
@@ -52,6 +54,7 @@ class MoleculeDatum:
             atom_name=np.array([]),
             b_factor=np.array([]),
             atom_mask=np.array([]),
+            bonds=np.array([]),
         )
 
     @classmethod
@@ -82,12 +85,15 @@ class MoleculeDatum:
         # for attr in atom_attrs:
         #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
 
+        atom_array.element[
+            atom_array.element == "D"
+        ] = "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
 
-        atom_array.element[atom_array.element == "D"] = "H" # set deuterium to hydrogen (use mass_number to differentiate later)
-        
         try:
             orig_indexes = (
-                elements.reset_index().set_index("symbol").loc[atom_array.element, "index"]
+                elements.reset_index()
+                .set_index("symbol")
+                .loc[atom_array.element, "index"]
             )
         except KeyError as e:
             print(atom_array)
@@ -96,7 +102,7 @@ class MoleculeDatum:
         atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
 
         atom_mask = get_molecule_masks(atom_array)
-        
+
         # filter out molecules with 1 atom (which are not really molecules nor ions)
         atom_mask = atom_mask[np.sum(atom_mask, axis=1) > 1]
 
@@ -112,6 +118,9 @@ class MoleculeDatum:
                 atom_name=atom_array.atom_name[atom_mask[molecule_idx]],
                 b_factor=atom_array.b_factor[atom_mask[molecule_idx]],
                 atom_mask=np.full(np.sum(atom_mask[molecule_idx]), 1),
+                bonds=atom_array.bonds[
+                    atom_mask[molecule_idx]
+                ].bond_type_matrix(),  # BondType
             )
         return cls(
             idcode=header["idcode"],
@@ -124,4 +133,5 @@ class MoleculeDatum:
             atom_name=atom_array.atom_name,
             b_factor=atom_array.b_factor,
             atom_mask=atom_mask,
+            bonds=atom_array.bonds,
         )

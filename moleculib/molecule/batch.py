@@ -93,19 +93,17 @@ class MoleculePadBatch(MoleculeCollator):
         data_type = type(proxy)
         unique_type = reduce(lambda res, obj: type(obj) is data_type, data_list, True)
         assert unique_type, "all data must have same type"
-        max_size = max([len(datum.atom_token) for datum in data_list])
 
-        def _maybe_pad_and_stack(obj_list):
+        def _maybe_stack(obj_list):
             obj = obj_list[0]
             if type(obj) != np.ndarray:
                 return obj_list
-            new_list = map(partial(pad_array, total_size=max_size), obj_list)
-            return np.stack(list(new_list), axis=0)
+            return np.stack(list(obj_list), axis=0)
 
         keys = vars(proxy).keys()
         value_lists = [vars(datum).values() for datum in data_list]
         value_lists = zip(*value_lists)
-        values = list(map(_maybe_pad_and_stack, value_lists))
+        values = list(map(_maybe_stack, value_lists))
         batch_attr = dict(zip(keys, values))
 
         return cls(**batch_attr)
