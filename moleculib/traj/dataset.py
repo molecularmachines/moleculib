@@ -190,7 +190,6 @@ class TrajNextStepDataset(Dataset):
     """
     Traj Next Step Dataset returns a tuple of (ProteinDatum at time step t,ProteinDatum at time step t+delta_t).
     frame start and end will determine the timesteps used for training.
-    example - call with TrajNextStepDataset(pdb_id="6FKA",traj_id="15310_trj_732_mmtf",traj_type="GPCR",frame_start=1,frame_end=100,frames_dir="/mas/projects/molecularmachines/db/GPCRmd_mmtfs/")
 
     Arguments:
     ----------
@@ -243,9 +242,10 @@ class TrajNextStepDataset(Dataset):
         datum_next = ProteinDatum.from_filepath(self.traj_files[idx+1])
 
         data = [datum_current, datum_next]
+        
+        #Leaving this in - in case we want to apply any transformations to the datum later.
         if self.transform is not None:
             for transformation in self.transform:
                 data = map(transformation.transform, data)
 
-        data = list(data)
         return data
