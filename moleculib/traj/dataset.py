@@ -185,3 +185,66 @@ class AdKEqDataset(Dataset):
         data[1].atom_velocity = data[1].atom_coord - data[0].atom_coord
 
         return data[1:]
+
+class TrajNextStepDataset(Dataset):
+    """
+    Traj Next Step Dataset returns a tuple of (ProteinDatum at time step t,ProteinDatum at time step t+delta_t).
+    frame start and end will determine the timesteps used for training.
+
+    Arguments:
+    ----------
+    pdb_id : str
+        pdb id for the md traj
+    traj_id : str
+        subset select the trajectory
+    traj_type : str
+        select between "GPCR" or "MODEL"
+    frame_start: int
+        start frame
+    frame_end: int
+        end frame
+        
+    """
+
+    def __init__(
+        self,
+        pdb_id:str,
+        traj_type:str,
+        frame_start: int,
+        frame_end: int,
+        frames_dir:str,
+        traj_id:str=None,
+        transform:list=None,
+    ):
+        super().__init__()
+        self.pdb_id = pdb_id
+        self.traj_type = traj_type
+        self.frame_start = frame_start
+        self.frame_end = frame_end
+        self.frames_dir = frames_dir
+        self.traj_id = traj_id
+        self.transform = transform
+        
+        if self.traj_type == "GPCR":
+            assert self.traj_id != None
+            self.pdbs_dir =pdb_id+"/"+self.traj_id 
+        elif self.traj_type == "MODEL":
+            self.pdbs_dir =pdb_id
+            
+        fulltraj_dir = os.path.join(self.frames_dir,self.pdbs_dir)
+        self.traj_files = [os.path.join(fulltraj_dir,fname) for fname in os.listdir(fulltraj_dir)[self.frame_start:self.frame_end]]
+
+    def __len__(self):
+        return len(self.traj_files)-1
+
+    def __getitem__(self, idx):
+        datum_current = ProteinDatum.from_filepath(self.traj_files[idx])
+        datum_next = ProteinDatum.from_filepath(self.traj_files[idx+1])
+
+        data = [datum_current, datum_next]
+        if self.transform is not None:
+            for transformation in self.transform:
+                data = map(transformation.transform, data)
+
+        data = list(data)
+        return data
