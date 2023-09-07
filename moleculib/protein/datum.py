@@ -124,7 +124,7 @@ class ProteinDatum:
         # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
         header = dict(
-            idcode=mmtf_file["structureId"],
+            idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
             resolution=None
             if ("resolution" not in mmtf_file)
             else mmtf_file["resolution"],
