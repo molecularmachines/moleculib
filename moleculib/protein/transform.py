@@ -384,3 +384,22 @@ class AnnotateSecondaryStructure(ProteinTransform):
         datum.sse_count = tokenized_count
 
         return datum
+
+
+class MaskResidues(ProteinTransform):
+    def __init__(self, mask_ratio: float = 0.15):
+        self.mask_ratio = mask_ratio
+
+    def transform(self, datum: ProteinDatum):
+        residue_token_masked = datum.residue_token.copy()
+        mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
+
+        residue_token_masked[mask] = all_residues.index("MASK")
+        datum.residue_token_masked = residue_token_masked
+
+        atom_coord_masked = datum.atom_coord.copy()
+        atom_coord_masked[mask] = 0.0
+        datum.atom_coord_masked = atom_coord_masked
+
+        datum.mask_mask = mask
+        return datum
