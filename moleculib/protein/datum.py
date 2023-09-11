@@ -299,7 +299,8 @@ class ProteinDatum:
             line[6:11] = str(idx + 1).ljust(5)
             line[12:16] = name.ljust(4)
             line[17:20] = res_name.ljust(3)
-            line[22:26] = str(res_index + 1).ljust(4)
+            line[21:22] = "A"
+            line[23:27] = str(res_index + 1).ljust(4)
             line[30:38] = f"{x:.3f}".rjust(8)
             line[38:46] = f"{y:.3f}".rjust(8)
             line[46:54] = f"{z:.3f}".rjust(8)
