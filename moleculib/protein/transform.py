@@ -57,6 +57,34 @@ class ProteinCrop(ProteinTransform):
         new_datum = ProteinDatum(**new_datum_)
         return new_datum
 
+class ProteinRescale(ProteinTransform):
+    def __init__(self, factor):
+        self.factor = factor
+
+    def transform(self, datum):
+        coord = datum.atom_coord
+        mask = datum.atom_mask
+        all_coords = rearrange(coord, 'r a c -> (r a) c')
+        all_masks = rearrange(mask, 'r a -> (r a)')
+
+        center = (all_coords * all_masks[..., None]).sum(0) / all_masks[..., None].sum(axis=0)
+        datum.atom_coord = coord - center[..., None, :] * mask[..., None]
+
+        datum.atom_coord = datum.atom_coord / self.factor
+        return datum 
+
+
+class BackboneOnly(ProteinTransform):
+    def __init__(self, filter: bool = True):
+        self.filter = filter
+
+    def transform(self, datum):
+        if self.filter:
+            datum.atom_coord[..., 4:, :] = 0.0
+            datum.atom_mask[..., 4:] = False
+            datum.residue_token[datum.residue_token > 2] = 10 # GLY
+        return datum 
+
 
 class ProteinPad(ProteinTransform):
     def __init__(self, pad_size: int, random_position: bool = False):
