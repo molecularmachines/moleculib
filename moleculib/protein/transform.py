@@ -415,13 +415,13 @@ class AnnotateSecondaryStructure(ProteinTransform):
 
 
 class MaskResidues(ProteinTransform):
-    def __init__(self, mask_ratio: float = 0.15):
+    def __init__(self, mask_ratio: float = 0.0):
         self.mask_ratio = mask_ratio
 
-    def transform(self, datum: ProteinDatum):
+    def transform(self, datum: ProteinDatum, mask=None):
         residue_token_masked = datum.residue_token.copy()
-        mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
-
+        mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio if mask is None else mask
+        mask = mask & datum.residue_mask
         residue_token_masked[mask] = all_residues.index("MASK")
         datum.residue_token_masked = residue_token_masked
 
