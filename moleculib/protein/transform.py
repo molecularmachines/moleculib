@@ -57,6 +57,7 @@ class ProteinCrop(ProteinTransform):
         new_datum = ProteinDatum(**new_datum_)
         return new_datum
 
+
 class ProteinRescale(ProteinTransform):
     def __init__(self, factor):
         self.factor = factor
@@ -64,14 +65,16 @@ class ProteinRescale(ProteinTransform):
     def transform(self, datum):
         coord = datum.atom_coord
         mask = datum.atom_mask
-        all_coords = rearrange(coord, 'r a c -> (r a) c')
-        all_masks = rearrange(mask, 'r a -> (r a)')
+        all_coords = rearrange(coord, "r a c -> (r a) c")
+        all_masks = rearrange(mask, "r a -> (r a)")
 
-        center = (all_coords * all_masks[..., None]).sum(0) / all_masks[..., None].sum(axis=0)
+        center = (all_coords * all_masks[..., None]).sum(0) / all_masks[..., None].sum(
+            axis=0
+        )
         datum.atom_coord = coord - center[..., None, :] * mask[..., None]
 
         datum.atom_coord = datum.atom_coord / self.factor
-        return datum 
+        return datum
 
 
 class BackboneOnly(ProteinTransform):
@@ -82,8 +85,8 @@ class BackboneOnly(ProteinTransform):
         if self.filter:
             datum.atom_coord[..., 4:, :] = 0.0
             datum.atom_mask[..., 4:] = False
-            datum.residue_token[datum.residue_token > 2] = 10 # GLY
-        return datum 
+            datum.residue_token[datum.residue_token > 2] = 10  # GLY
+        return datum
 
 
 class ProteinPad(ProteinTransform):
@@ -419,15 +422,15 @@ class MaskResidues(ProteinTransform):
         self.mask_ratio = mask_ratio
 
     def transform(self, datum: ProteinDatum, mask=None):
-        residue_token_masked = datum.residue_token.copy()
-        mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio if mask is None else mask
-        mask = mask & datum.residue_mask
-        residue_token_masked[mask] = all_residues.index("MASK")
-        datum.residue_token_masked = residue_token_masked
-
-        atom_coord_masked = datum.atom_coord.copy()
-        atom_coord_masked[mask] = 0.0
-        datum.atom_coord_masked = atom_coord_masked
-
+        mask = (
+            np.random.rand(len(datum.residue_token)) < self.mask_ratio
+            if mask is None
+            else mask
+        )
+        mask = mask * datum.residue_mask
+        datum.residue_token_masked = np.where(
+            mask, all_residues.index("MASK"), datum.residue_token
+        )
+        datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
         datum.mask_mask = mask
         return datum
