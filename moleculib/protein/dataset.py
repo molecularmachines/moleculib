@@ -123,10 +123,12 @@ class PDBDataset(Dataset):
         while True:
             header = self.metadata.iloc[idx]
             pdb_id = header["idcode"]
-            if pdb_id.lower() in self.filter_ids:
-                idx = np.random.randint(0, len(self.metadata))
-            else:
-                break
+            if self.filter_ids is not None:
+                if pdb_id.lower() in self.filter_ids:
+                    idx = np.random.randint(0, len(self.metadata))
+                    continue
+            break
+
         filepath = os.path.join(self.base_path, f"{pdb_id}.mmtf")
         molecules = ProteinDatum.from_filepath(filepath)
         return self.parse(header, molecules)
