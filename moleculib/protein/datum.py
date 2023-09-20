@@ -119,10 +119,15 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath):
+    def from_filepath(cls, filepath,chain_id=None):
         mmtf_file = mmtf.MMTFFile.read(filepath)
         # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
+        
+        #filter for a specific chain
+        if chain_id is not None:
+            atom_array = atom_array[(atom_array.chain_id == chain_id)]
+            
         header = dict(
             idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
             resolution=None
@@ -135,9 +140,13 @@ class ProteinDatum:
 
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path)
-        return cls.from_filepath(filepath)
-
+        if len(id)==4:
+            filepath = rcsb.fetch(id, "mmtf", save_path)
+            return cls.from_filepath(filepath)
+        elif len(id)==5:
+            filepath = rcsb.fetch(id[:4], "mmtf", save_path)
+            return cls.from_filepath(filepath,chain_id = id[4])
+            
     @classmethod
     def from_atom_array(
         cls,
