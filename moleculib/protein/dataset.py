@@ -60,6 +60,7 @@ class PDBDataset(Dataset):
         frac: float = 1.0,
         preload: bool = False,
         preload_num_workers: int = 10,
+        filter_ids=None,
     ):
         super().__init__()
         self.base_path = Path(base_path)
@@ -107,6 +108,10 @@ class PDBDataset(Dataset):
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
+        self.filter_ids = (
+            [i.lower() for i in filter_ids] if filter_ids is not None else None
+        )
+
     def _is_in_filter(self, sample):
         return int(sample["id"]) in self.shard_indices
 
@@ -114,8 +119,15 @@ class PDBDataset(Dataset):
         return len(self.metadata)
 
     def load_index(self, idx):
-        header = self.metadata.iloc[idx]
-        pdb_id = header["idcode"]
+        while True:
+            header = self.metadata.iloc[idx]
+            pdb_id = header["idcode"]
+            if self.filter_ids is not None:
+                if pdb_id.lower() in self.filter_ids:
+                    idx = np.random.randint(0, len(self.metadata))
+                    continue
+            break
+
         filepath = os.path.join(self.base_path, f"{pdb_id}.mmtf")
         molecules = ProteinDatum.from_filepath(filepath)
         return self.parse(header, molecules)
