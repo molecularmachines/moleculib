@@ -193,7 +193,7 @@ class PDBDataset(Dataset):
             extraction = list(map(extractor, pdb_ids))
 
         extraction = filter(lambda x: x, extraction)
-        data, metadata_ = list(map(list, zip(*extraction)))
+        _, metadata_ = list(map(list, zip(*extraction)))
         metadata = pd.concat((metadata, *metadata_), axis=0)
 
         if save:
@@ -224,6 +224,10 @@ class MonomerDataset(PDBDataset):
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
                 metadata = pickle.load(file)
         metadata = metadata.reset_index()
+
+        # NOTE(Allan): small hack to make sure 
+        # we follow trainer.py convention
+        self.splits = {'train': self}
 
         # flatten metadata with regards to num_res
         filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)]
@@ -260,5 +264,35 @@ class MonomerDataset(PDBDataset):
             return obj[slice_min:slice_max]
 
         values = list(map(_cut_chain, values))
-
         return ProteinDatum(*values)
+
+
+from functools import reduce
+import os
+import pickle
+from typing import Callable, List
+
+from tqdm.contrib.concurrent import process_map
+
+
+def _transform(x, transform: List[Callable]):
+    return reduce(lambda x, t: t.transform(x), transform, x)
+
+class Fold3DDataset:
+
+    def __init__(self, base_path, transform: List[Callable]):
+        with open(os.path.join(base_path, 'fold3d.pyd'), 'rb') as fin:
+            print('Loading data...')
+            self.splits = pickle.load(fin)
+        self.transform = transform 
+        for split, data in list(self.splits.items()):
+            print(f'Processing {split}...')
+            self.splits[split] = process_map(
+                partial(_transform, transform=transform), 
+                data, 
+                max_workers=8, 
+                chunksize=30
+            ) 
+            
+    def __getitem__(self, split):
+        return (split, self.splits[split])
