@@ -9,6 +9,7 @@ from biotite.structure import (
     get_residues,
     spread_chain_wise,
     spread_residue_wise,
+    chain_iter,
 )
 
 from biotite.structure import filter_amino_acids
@@ -121,7 +122,6 @@ class ProteinDatum:
     @classmethod
     def from_filepath(cls, filepath,chain_id=None):
         mmtf_file = mmtf.MMTFFile.read(filepath)
-        # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
         
         #filter for a specific chain
@@ -136,6 +136,9 @@ class ProteinDatum:
         )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
+        if chain_id is not None:
+            atom_arrays = chain_iter(atom_array)
+            atom_array = list(atom_arrays)[chain_id]
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
