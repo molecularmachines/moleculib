@@ -44,14 +44,15 @@ def measure_rmsd(x_: ProteinDatum, y_: ProteinDatum, mode="all_atom", align=Fals
     x = x_.atom_coord.copy()
     y = y_.atom_coord.copy()
     if mode == "CA":
-        x = x[:, 1:2, :]
-        y = y[:, 1:2, :]
         mask = mask[:, 1:2]
+        x = x[:, 1:2, :] * mask[...,None]
+        y = y[:, 1:2, :] * mask[...,None]
         if align:
-            x -= x.sum(0) / x_.residue_mask.sum()
-            y -= y.sum(0) / y_.residue_mask.sum()
+            x -= x.sum(0)[None] / mask.sum()
+            y -= y.sum(0)[None] / mask.sum()
+            print(x)
             R = rigid_Kabsch_3D(
-                np.squeeze(x * mask[..., None]), np.squeeze(y * mask[..., None])
+                np.squeeze(x), np.squeeze(y)
             )
             x = (R @ np.squeeze(x).T).T[:, None, :]
 
@@ -62,6 +63,11 @@ def measure_rmsd(x_: ProteinDatum, y_: ProteinDatum, mode="all_atom", align=Fals
 
     return rmsd
 
+def superimpose_rmsd(x_: ProteinDatum, y_: ProteinDatum, mode="all_atom", align=False):
+    #Generate Atom Arrays
+    
+
+    return rmsd
 
 def rigid_Kabsch_3D(Q, P):
     # Q (num points x 3) is the one to be rotated to match P (num points x 3)

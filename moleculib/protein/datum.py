@@ -285,20 +285,19 @@ class ProteinDatum:
         return dict_
     
     def save_pdb_file(self,filepath,seqlen):
-        atom_mask = self.atom_mask.astype(np.bool_)
+        atom_mask = self.atom_mask.astype(np.bool_) 
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
-        all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
-        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
         prot=[]
-        for i in range(seqlen*4):         
+        for i in range(all_atom_coords.shape[0]): 
             prot.append(struc.Atom(
-                all_atom_coords[i], chain_id="A", res_id=i+1, 
-                res_name="GLY", atom_name=all_atoms[all_atom_tokens[i]]))
-        
+                all_atom_coords[i], chain_id="A", res_id=int(i/4)+1,
+                res_name="GLY", atom_name=all_atoms[int(all_atom_tokens[i])]))
         prot_array = struc.array(prot)
         strucio.save_structure(filepath, prot_array)
         return True
+    
+    
     
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
