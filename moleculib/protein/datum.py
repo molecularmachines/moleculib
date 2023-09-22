@@ -26,7 +26,9 @@ from .alphabet import (
 )
 
 from einops import rearrange, repeat
-
+import biotite.structure as struc
+import biotite.structure.io as strucio
+import numpy as np
 
 class ProteinDatum:
     """
@@ -122,6 +124,7 @@ class ProteinDatum:
     @classmethod
     def from_filepath(cls, filepath,chain_id=None):
         mmtf_file = mmtf.MMTFFile.read(filepath)
+        # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
         
         #filter for a specific chain
@@ -136,17 +139,15 @@ class ProteinDatum:
         )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
-        if chain_id is not None:
-            atom_arrays = chain_iter(atom_array)
-            atom_array = list(atom_arrays)[chain_id]
         return cls.from_atom_array(atom_array, header=header)
-
+    
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
         if len(id)==4:
             filepath = rcsb.fetch(id, "mmtf", save_path)
             return cls.from_filepath(filepath)
         elif len(id)==5:
+            print(id[4])
             filepath = rcsb.fetch(id[:4], "mmtf", save_path)
             return cls.from_filepath(filepath,chain_id = id[4])
             
@@ -282,12 +283,29 @@ class ProteinDatum:
                 obj = np.array(obj)
             dict_[attr] = obj
         return dict_
-
+    
+    def save_pdb_file(self,filepath,seqlen):
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
+        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+        prot=[]
+        for i in range(seqlen*4):         
+            prot.append(struc.Atom(
+                all_atom_coords[i], chain_id="A", res_id=i+1, 
+                res_name="GLY", atom_name=all_atoms[all_atom_tokens[i]]))
+        
+        prot_array = struc.array(prot)
+        strucio.save_structure(filepath, prot_array)
+        return True
+    
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
         # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.residue_token.shape) == 1
-
+        sequence_size = len(self.sequence)
+        print(sequence_size,"sequence size")
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
