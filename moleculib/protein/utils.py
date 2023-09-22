@@ -42,14 +42,14 @@ def pad_array(array, total_size):
 def measure_rmsd(x_: ProteinDatum, y_: ProteinDatum, mode="all_atom", align=False):
     mask = x_.atom_mask * y_.atom_mask
     x = x_.atom_coord.copy()
-    x -= x.sum(0) / x_.residue_mask.sum()
     y = y_.atom_coord.copy()
-    y -= y.sum(0) / y_.residue_mask.sum()
     if mode == "CA":
         x = x[:, 1:2, :]
         y = y[:, 1:2, :]
         mask = mask[:, 1:2]
         if align:
+            x -= x.sum(0) / x_.residue_mask.sum()
+            y -= y.sum(0) / y_.residue_mask.sum()
             R = rigid_Kabsch_3D(
                 np.squeeze(x * mask[..., None]), np.squeeze(y * mask[..., None])
             )
