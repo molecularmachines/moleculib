@@ -28,7 +28,11 @@ from .alphabet import (
 from einops import rearrange, repeat
 import biotite.structure as struc
 import biotite.structure.io as strucio
+import biotite.structure as struc
+from biotite.structure.compare import rmsd
+from biotite.structure.io.pdb import PDBFile
 import numpy as np
+
 
 class ProteinDatum:
     """
@@ -37,18 +41,18 @@ class ProteinDatum:
     """
 
     def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        **kwargs,
+            self,
+            idcode: str,
+            resolution: float,
+            sequence: ProteinSequence,
+            residue_token: np.ndarray,
+            residue_index: np.ndarray,
+            residue_mask: np.ndarray,
+            chain_token: np.ndarray,
+            atom_token: np.ndarray,
+            atom_coord: np.ndarray,
+            atom_mask: np.ndarray,
+            **kwargs,
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -65,11 +69,11 @@ class ProteinDatum:
 
     @classmethod
     def _extract_reshaped_atom_attr(
-        cls,
-        atom_array,
-        atom_alphabet=all_atoms,
-        atom_to_indices=atom_to_residues_index,
-        attrs=["coord", "token"],
+            cls,
+            atom_array,
+            atom_alphabet=all_atoms,
+            atom_to_indices=atom_to_residues_index,
+            attrs=["coord", "token"],
     ):
         residue_count = get_residue_count(atom_array)
 
@@ -122,15 +126,15 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath,chain_id=None):
+    def from_filepath(cls, filepath, chain_id=None):
         mmtf_file = mmtf.MMTFFile.read(filepath)
         # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
-        
-        #filter for a specific chain
+
+        # filter for a specific chain
         if chain_id is not None:
             atom_array = atom_array[(atom_array.chain_id == chain_id)]
-            
+
         header = dict(
             idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
             resolution=None
@@ -140,22 +144,22 @@ class ProteinDatum:
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
         return cls.from_atom_array(atom_array, header=header)
-    
+
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None):
-        if len(id)==4:
+        if len(id) == 4:
             filepath = rcsb.fetch(id, "mmtf", save_path)
             return cls.from_filepath(filepath)
-        elif len(id)==5:
+        elif len(id) == 5:
             print(id[4])
             filepath = rcsb.fetch(id[:4], "mmtf", save_path)
-            return cls.from_filepath(filepath,chain_id = id[4])
-            
+            return cls.from_filepath(filepath, chain_id=id[4])
+
     @classmethod
     def from_atom_array(
-        cls,
-        atom_array,
-        header,
+            cls,
+            atom_array,
+            header,
     ):
         """
         Reshapes atom array to residue-indexed representation to
@@ -283,28 +287,39 @@ class ProteinDatum:
                 obj = np.array(obj)
             dict_[attr] = obj
         return dict_
-    
-    def save_pdb_file(self,filepath,seqlen):
-        atom_mask = self.atom_mask.astype(np.bool_) 
+
+    def save_pdb_file(self, filepath, seqlen):
+        atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
-        prot=[]
-        for i in range(all_atom_coords.shape[0]): 
+        prot = []
+        for i in range(all_atom_coords.shape[0]):
             prot.append(struc.Atom(
-                all_atom_coords[i], chain_id="A", res_id=int(i/4)+1,
+                all_atom_coords[i], chain_id="A", res_id=int(i / 4) + 1,
                 res_name="GLY", atom_name=all_atoms[int(all_atom_tokens[i])]))
         prot_array = struc.array(prot)
         strucio.save_structure(filepath, prot_array)
         return True
-    
-    
-    
+
+    def get_biotite_rmsd(reference_filepath, pdb_filepath, seq_cutoff=None):
+        prot1 = PDBFile.read(reference_filepath).get_structure()
+        prot2 = PDBFile.read(pdb_filepath).get_structure()
+        if seq_cutoff:
+            prot_array = prot2.get_array(0)[:seq_cutoff]
+        else:
+            prot_array = prot2.get_array(0)
+
+        prot_superimposed, transformation = struc.superimpose(
+            prot_array, prot1
+        )
+        return rmsd(prot_array, prot_superimposed)[0]
+
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
         # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.residue_token.shape) == 1
         sequence_size = len(self.sequence)
-        print(sequence_size,"sequence size")
+        print(sequence_size, "sequence size")
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
@@ -313,12 +328,12 @@ class ProteinDatum:
 
         lines = []
         for idx, (coord, token, res_token, res_index) in enumerate(
-            zip(
-                all_atom_coords,
-                all_atom_tokens,
-                all_atom_res_tokens,
-                all_atom_res_indices,
-            )
+                zip(
+                    all_atom_coords,
+                    all_atom_tokens,
+                    all_atom_res_tokens,
+                    all_atom_res_indices,
+                )
         ):
             name = all_atoms[int(token)]
             res_name = all_residues[int(res_token)]
