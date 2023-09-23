@@ -308,3 +308,24 @@ class Fold3DDataset:
             
     def __getitem__(self, split):
         return (split, self.splits[split])
+
+
+class ECDataset:
+
+    def __init__(self, base_path, transform: List[Callable]):
+        #this really doesnt need to be it's own class could be combined with fold above but for now it works
+        with open(os.path.join(base_path, 'enzymeclassifier.pyd'), 'rb') as fin:
+            print('Loading data...')
+            self.splits = pickle.load(fin)
+        self.transform = transform
+        for split, data in list(self.splits.items()):
+            print(f'Processing {split}...')
+            self.splits[split] = process_map(
+                partial(_transform, transform=transform),
+                data,
+                max_workers=8,
+                chunksize=30
+            )
+
+    def __getitem__(self, split):
+        return (split, self.splits[split])
