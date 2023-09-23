@@ -78,14 +78,17 @@ class ProteinRescale(ProteinTransform):
 
 
 class BackboneOnly(ProteinTransform):
-    def __init__(self, filter: bool = True):
+    def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
-
+        self.keep_seq = keep_seq
     def transform(self, datum):
         if self.filter:
             datum.atom_coord[..., 4:, :] = 0.0
             datum.atom_mask[..., 4:] = False
+            datum.residue_token_keep = datum.residue_token
             datum.residue_token[datum.residue_token > 2] = 10  # GLY
+            if not self.keep_seq:
+                datum.residue_token_keep[datum.residue_token_keep > 2] = 10  # GLY
         return datum
 
 
@@ -418,19 +421,41 @@ class AnnotateSecondaryStructure(ProteinTransform):
 
 
 class MaskResidues(ProteinTransform):
-    def __init__(self, mask_ratio: float = 0.0):
+    def __init__(self, mask_ratio: float = 0.0, contiguous: float = 0.0):
         self.mask_ratio = mask_ratio
-
+        self.contiguous = contiguous
+        
     def transform(self, datum: ProteinDatum, mask=None):
-        mask = (
-            np.random.rand(len(datum.residue_token)) < self.mask_ratio
-            if mask is None
-            else mask
-        )
+        if mask is not None:
+            pass
+        elif self.contiguous > 0.0:
+            num_units = int(np.round(np.random.exponential(self.contiguous)))
+            frac = np.round(len(datum.residue_token)*self.mask_ratio)
+            if num_units >= frac:
+                mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio   
+            else:
+                if num_units > 1:
+                    sizes = np.sort(np.random.choice(np.arange(1,frac), size=num_units-1, replace=False))
+                    sizes = np.concatenate((np.array([0]), sizes, np.array([frac])))
+                    sizes = np.diff(sizes)
+                else:
+                    sizes = np.array([frac])
+                pos = np.sort(np.random.choice(np.arange(len(datum.residue_token)), size=num_units, replace=False))
+                mask = np.zeros(len(datum.residue_token), dtype=np.bool_)
+                for p, s in zip(pos, sizes):
+                    mask[int(p):min(int(p+s),len(datum.residue_token))] = True
+        else:
+            mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
+
         mask = mask * datum.residue_mask
-        datum.residue_token_masked = np.where(
-            mask, all_residues.index("MASK"), datum.residue_token
-        )
+        try:
+            datum.residue_token_masked = np.where(
+                mask, all_residues.index("MASK"), datum.residue_token_keep
+            )
+        except AttributeError:
+            datum.residue_token_masked = np.where(
+                mask, all_residues.index("MASK"), datum.residue_token
+            )
         datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
         datum.mask_mask = mask
         return datum
