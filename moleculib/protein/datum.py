@@ -138,7 +138,8 @@ class ProteinDatum:
     @classmethod
     def fetch_pdb_id(cls, idx, save_path=None):
         """
-        chain name directly to the fetch_pdb_id to load only chain pdb of interest
+        chain name directly to the fetch_pdb_id to load 
+        only chain pdb of interest
         """
         if len(idx) == 4:
             filepath = rcsb.fetch(idx, "mmtf", save_path)
@@ -280,9 +281,10 @@ class ProteinDatum:
             dict_[attr] = obj
         return dict_
 
-    def save_pdb_file(self, filepath):
+    def save_datum_to_file(self, filepath):
         """
-        This function will save the datum to a pdb or mmtf file, just pass the right extension to the filepath
+        This function will save the datum to a pdb or mmtf file, 
+        just pass the right extension to the filepath
         """
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
