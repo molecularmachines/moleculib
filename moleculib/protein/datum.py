@@ -131,8 +131,7 @@ class ProteinDatum:
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
         if chain_id is not None:
-            atom_arrays = chain_iter(atom_array)
-            atom_array = list(atom_arrays)[chain_id]
+            atom_array = atom_array[(atom_array.chain_id == chain_id)]
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
@@ -289,6 +288,7 @@ class ProteinDatum:
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
+        print(all_atom_coords.shape,"all atom coords")
         prot = []
         for i in range(all_atom_coords.shape[0]):
             prot.append(struc.Atom(
