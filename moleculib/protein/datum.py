@@ -1,3 +1,6 @@
+import biotite.structure as struc
+import biotite.structure.io as strucio
+import biotite.structure.io.mmtf as mmtf
 import numpy as np
 from biotite.database import rcsb
 from biotite.sequence import ProteinSequence
@@ -11,10 +14,8 @@ from biotite.structure import (
     spread_residue_wise,
     chain_iter,
 )
-
 from biotite.structure import filter_amino_acids
-
-import biotite.structure.io.mmtf as mmtf
+from einops import rearrange, repeat
 
 from .alphabet import (
     all_atoms,
@@ -25,8 +26,6 @@ from .alphabet import (
     get_residue_index,
 )
 
-from einops import rearrange, repeat
-
 
 class ProteinDatum:
     """
@@ -35,18 +34,18 @@ class ProteinDatum:
     """
 
     def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        **kwargs,
+            self,
+            idcode: str,
+            resolution: float,
+            sequence: ProteinSequence,
+            residue_token: np.ndarray,
+            residue_index: np.ndarray,
+            residue_mask: np.ndarray,
+            chain_token: np.ndarray,
+            atom_token: np.ndarray,
+            atom_coord: np.ndarray,
+            atom_mask: np.ndarray,
+            **kwargs,
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -63,11 +62,11 @@ class ProteinDatum:
 
     @classmethod
     def _extract_reshaped_atom_attr(
-        cls,
-        atom_array,
-        atom_alphabet=all_atoms,
-        atom_to_indices=atom_to_residues_index,
-        attrs=["coord", "token"],
+            cls,
+            atom_array,
+            atom_alphabet=all_atoms,
+            atom_to_indices=atom_to_residues_index,
+            attrs=["coord", "token"],
     ):
         residue_count = get_residue_count(atom_array)
 
@@ -137,15 +136,22 @@ class ProteinDatum:
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path)
-        return cls.from_filepath(filepath)
+    def fetch_pdb_id(cls, idx, save_path=None):
+        """
+        chain name directly to the fetch_pdb_id to load only chain pdb of interest
+        """
+        if len(idx) == 4:
+            filepath = rcsb.fetch(idx, "mmtf", save_path)
+            return cls.from_filepath(filepath)
+        elif len(idx) == 5:
+            filepath = rcsb.fetch(idx[:4], "mmtf", save_path)
+            return cls.from_filepath(filepath, chain_id=idx[4])
 
     @classmethod
     def from_atom_array(
-        cls,
-        atom_array,
-        header,
+            cls,
+            atom_array,
+            header,
     ):
         """
         Reshapes atom array to residue-indexed representation to
@@ -274,6 +280,22 @@ class ProteinDatum:
             dict_[attr] = obj
         return dict_
 
+    def save_pdb_file(self, filepath):
+        """
+        This function will save the datum to a pdb or mmtf file, just pass the right extension to the filepath
+        """
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        prot = []
+        for i in range(all_atom_coords.shape[0]):
+            prot.append(struc.Atom(
+                all_atom_coords[i], chain_id="A", res_id=int(i / 4) + 1,
+                res_name="GLY", atom_name=all_atoms[int(all_atom_tokens[i])]))
+        prot_array = struc.array(prot)
+        strucio.save_structure(filepath, prot_array)
+        return True
+
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
         # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
@@ -287,12 +309,12 @@ class ProteinDatum:
 
         lines = []
         for idx, (coord, token, res_token, res_index) in enumerate(
-            zip(
-                all_atom_coords,
-                all_atom_tokens,
-                all_atom_res_tokens,
-                all_atom_res_indices,
-            )
+                zip(
+                    all_atom_coords,
+                    all_atom_tokens,
+                    all_atom_res_tokens,
+                    all_atom_res_indices,
+                )
         ):
             name = all_atoms[int(token)]
             res_name = all_residues[int(res_token)]

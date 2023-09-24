@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
 
-from biotite.structure import filter_amino_acids
-from biotite.structure.io.pdb import PDBFile
-from .datum import ProteinDatum
+import biotite.structure as struc
 import numpy as np
-from einops import rearrange
+from biotite.structure import filter_amino_acids
+from biotite.structure.compare import rmsd
+from biotite.structure.io.pdb import PDBFile
+
+from .datum import ProteinDatum
 
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
@@ -85,3 +87,21 @@ def rigid_Kabsch_3D(Q, P):
             U.T,
         )
     return R
+
+
+def get_biotite_rmsd(reference_filepath, pdb_filepath, seq_cutoff=None):
+    """
+    compares the rmsd between two pdb files. 
+    seq cutoff is for when you have pdbs of different lengths
+    """
+    prot1 = PDBFile.read(reference_filepath).get_structure()
+    prot2 = PDBFile.read(pdb_filepath).get_structure()
+    if seq_cutoff:
+        prot_array = prot2.get_array(0)[:seq_cutoff]
+    else:
+        prot_array = prot2.get_array(0)
+
+    prot_superimposed, transformation = struc.superimpose(
+        prot_array, prot1
+    )
+    return rmsd(prot_array, prot_superimposed)[0]
