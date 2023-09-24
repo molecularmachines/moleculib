@@ -151,7 +151,6 @@ class ProteinDatum:
             filepath = rcsb.fetch(id, "mmtf", save_path)
             return cls.from_filepath(filepath)
         elif len(id) == 5:
-            print(id[4])
             filepath = rcsb.fetch(id[:4], "mmtf", save_path)
             return cls.from_filepath(filepath, chain_id=id[4])
 
