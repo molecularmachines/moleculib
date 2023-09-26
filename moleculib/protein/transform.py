@@ -78,7 +78,7 @@ class ProteinRescale(ProteinTransform):
 
 
 class BackboneOnly(ProteinTransform):
-    def __init__(self, filter: bool = True):
+    def __init__(self, filter: bool = True, keep_seq=False):
         self.filter = filter
 
     def transform(self, datum):
@@ -105,7 +105,7 @@ class ProteinPad(ProteinTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray:
+            if type(obj) == np.ndarray and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size)
                 if self.random_position:
                     obj = np.roll(obj, shift, axis=0)
