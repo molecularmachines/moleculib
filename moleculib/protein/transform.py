@@ -85,10 +85,8 @@ class BackboneOnly(ProteinTransform):
         if self.filter:
             datum.atom_coord[..., 4:, :] = 0.0
             datum.atom_mask[..., 4:] = False
-            datum.residue_token_keep = datum.residue_token
-            datum.residue_token[datum.residue_token > 2] = 10  # GLY
             if not self.keep_seq:
-                datum.residue_token_keep[datum.residue_token_keep > 2] = 10  # GLY
+                datum.residue_token[datum.residue_token > 2] = 10  # GLY
         return datum
 
 
@@ -448,14 +446,9 @@ class MaskResidues(ProteinTransform):
             mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
 
         mask = mask * datum.residue_mask
-        try:
-            datum.residue_token_masked = np.where(
-                mask, all_residues.index("MASK"), datum.residue_token_keep
-            )
-        except AttributeError:
-            datum.residue_token_masked = np.where(
-                mask, all_residues.index("MASK"), datum.residue_token
-            )
+        datum.residue_token_masked = np.where(
+            mask, all_residues.index("MASK"), datum.residue_token
+        )
         datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
         datum.mask_mask = mask
         return datum

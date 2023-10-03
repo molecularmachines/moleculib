@@ -294,7 +294,7 @@ def _transform(x, transform: List[Callable]):
 class Fold3DDataset:
 
     def __init__(self, base_path, transform: List[Callable]):
-        with open(os.path.join(base_path, 'fold3d.pyd'), 'rb') as fin:
+        with open(os.path.join(base_path, 'fold.pyd'), 'rb') as fin:
             print('Loading data...')
             self.splits = pickle.load(fin)
         self.transform = transform 
