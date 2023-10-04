@@ -297,7 +297,7 @@ class PreProcessedDataset:
             for split, data in list(self.splits.items()):
                 print(f'Shuffling {split}...')
                 self.splits[split] = np.random.permutation(data)
-
+                
         self.transform = transform 
         if self.transform is not None:
             for split, data in list(self.splits.items()):

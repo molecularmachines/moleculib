@@ -39,26 +39,39 @@ def pad_array(array, total_size):
     return np.concatenate((array, pad), axis=0)
 
 
-def measure_rmsd(x_: ProteinDatum, y_: ProteinDatum, mode="all_atom", align=False):
-    mask = x_.atom_mask * y_.atom_mask
-    x = x_.atom_coord.copy()
-    x -= x.sum(0) / x_.residue_mask.sum()
-    y = y_.atom_coord.copy()
-    y -= y.sum(0) / y_.residue_mask.sum()
-    if mode == "CA":
-        x = x[:, 1:2, :]
-        y = y[:, 1:2, :]
+def measure_rmsd(x: ProteinDatum, y: ProteinDatum, mode="all_atom"):
+    mask = x.atom_mask * y.atom_mask
+    x = x.atom_coord.copy()
+    y = y.atom_coord.copy()
+    if mode == "all_atom":
+        x -= ((x * mask[..., None]).sum((0, 1)) / mask.sum())[None, None, :]
+        x = x * mask[..., None]
+        y -= ((y * mask[..., None]).sum((0, 1)) / mask.sum())[None, None, :]
+        y = y * mask[..., None]
+        x = rearrange(x, "r a c -> (r a) c")
+        y = rearrange(y, "r a c -> (r a) c")
+        R = rigid_Kabsch_3D(x, y)
+        x = (R @ x.T).T
+        dists = np.square(x - y).sum(-1)
+        dists = (dists).sum() / (mask.sum((-1, -2)) + 1e-6)
+        rmsd = np.sqrt(dists + 1e-6)
+        rmsd = rmsd * (mask.sum((-1, -2)) > 0).astype(rmsd.dtype)
+    elif mode == "CA":
         mask = mask[:, 1:2]
-        if align:
-            R = rigid_Kabsch_3D(
-                np.squeeze(x * mask[..., None]), np.squeeze(y * mask[..., None])
-            )
-            x = (R @ np.squeeze(x).T).T[:, None, :]
-
-    dists = np.square(x - y).sum(-1)
-    dists = (dists * mask).sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
-    rmsd = np.sqrt(dists + 1e-6)
-    rmsd = rmsd * (mask.sum((-1, -2)) > 0).astype(rmsd.dtype)
+        x = x[:, 1:2, :]
+        x -= (x * mask[..., None]).sum(0) / mask.sum()
+        x = x * mask[..., None]
+        y = y[:, 1:2, :]
+        y -= (y * mask[..., None]).sum(0) / mask.sum()
+        y = y * mask[..., None]
+        R = rigid_Kabsch_3D(np.squeeze(x), np.squeeze(y))
+        x = (R @ np.squeeze(x).T).T[:, None, :]
+        dists = np.square(x - y).sum(-1)
+        dists = (dists * mask).sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
+        rmsd = np.sqrt(dists + 1e-6)
+        rmsd = rmsd * (mask.sum((-1, -2)) > 0).astype(rmsd.dtype)
+    else:
+        raise ValueError(f"Unknown mode {mode}")
 
     return rmsd
 
