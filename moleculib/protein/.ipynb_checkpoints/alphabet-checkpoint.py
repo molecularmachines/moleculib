@@ -570,12 +570,11 @@ backbone_chemistry = dict(
     flippable=[],
     bond_lens=[1.46, 1.52, 1.23],
 )
-special_tokens = ["PAD", "MASK", "UNK"]
+special_tokens = ["PAD", "UNK"]
 
 atoms_per_residue = OrderedDict()
 atoms_per_residue["PAD"] = []
 atoms_per_residue["UNK"] = backbone_atoms
-atoms_per_residue["MASK"] = []
 for res, sidechain_atoms in sidechain_atoms_per_residue.items():
     atoms_per_residue[res] = backbone_atoms + sidechain_atoms
 

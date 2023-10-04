@@ -9,6 +9,7 @@ from biotite.structure import (
     get_residues,
     spread_chain_wise,
     spread_residue_wise,
+    chain_iter,
 )
 
 from biotite.structure import filter_amino_acids
@@ -24,10 +25,12 @@ from .alphabet import (
     get_residue_index,
 )
 
+from einops import rearrange, repeat
+
 
 class ProteinDatum:
     """
-    Incorporates protein sequence data to MolecularDatum
+    Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
 
@@ -59,11 +62,13 @@ class ProteinDatum:
             setattr(self, key, value)
 
     @classmethod
-    def _extract_reshaped_atom_attr(cls, atom_array, attrs):
-        """
-        Given the alphabet, it will extract all atoms of a residue in the alphabets order
-        if there’s more atoms than the largest alphabet size, it will pad
-        """
+    def _extract_reshaped_atom_attr(
+        cls,
+        atom_array,
+        atom_alphabet=all_atoms,
+        atom_to_indices=atom_to_residues_index,
+        attrs=["coord", "token"],
+    ):
         residue_count = get_residue_count(atom_array)
 
         extraction = dict()
@@ -84,14 +89,14 @@ class ProteinDatum:
                 atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
-            atom_indices = atom_to_residues_index[atom_token][res_tokens]
+            atom_indices = atom_to_indices[atom_token][res_tokens]
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
             mask[seq_id, atom_indices] = True
 
-        for atom_name in all_atoms:
-            atom_token = all_atoms.index(atom_name)
+        for atom_name in atom_alphabet:
+            atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
 
         return extraction, mask
@@ -115,18 +120,20 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath):
+    def from_filepath(cls, filepath, chain_id=None):
         mmtf_file = mmtf.MMTFFile.read(filepath)
-        # Note(Allan): come back here, remove model=1 and set dynamically
         atom_array = mmtf.get_structure(mmtf_file, model=1)
         header = dict(
-            idcode=mmtf_file["structureId"],
+            idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
             resolution=None
             if ("resolution" not in mmtf_file)
             else mmtf_file["resolution"],
         )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
+        if chain_id is not None:
+            atom_arrays = chain_iter(atom_array)
+            atom_array = list(atom_arrays)[chain_id]
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
@@ -139,8 +146,12 @@ class ProteinDatum:
         cls,
         atom_array,
         header,
-        query_atoms=all_atoms,
     ):
+        """
+        Reshapes atom array to residue-indexed representation to
+        build a protein datum.
+        """
+
         if atom_array.array_length() == 0:
             return cls.empty_protein()
 
@@ -150,16 +161,19 @@ class ProteinDatum:
         ]
         sequence = ProteinSequence(list(res_names))
 
+        # index residues globally
         atom_array.add_annotation("seq_uid", int)
         atom_array.seq_uid = spread_residue_wise(
             atom_array, np.arange(0, get_residue_count(atom_array))
         )
 
+        # tokenize atoms
         atom_array.add_annotation("token", int)
         atom_array.token = np.array(
             list(map(lambda atom: atom_index(atom), atom_array.atom_name))
         )
 
+        # tokenize residues
         residue_token = np.array(
             list(map(lambda res: get_residue_index(res), atom_array.res_name))
         )
@@ -171,6 +185,8 @@ class ProteinDatum:
             atom_array, np.arange(0, get_chain_count(atom_array))
         )
 
+        # count number of residues per chain
+        # and index residues per chain using cumulative sum
         atom_array.add_annotation("res_uid", int)
 
         def _count_residues_per_chain(chain_atom_array, axis=0):
@@ -182,10 +198,18 @@ class ProteinDatum:
         chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1]))
         atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
 
+        # reshape atom attributes to residue-based representation
+        # with the correct ordering
+        # [N * 14, ...] -> [N, 14, ...]
         atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
-            atom_array, ["coord", "token"]
+            atom_array, attrs=["coord", "token"]
+        )
+        atom_extract = dict(
+            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
         )
 
+        # pool residue attributes and create residue features
+        # [N * 14, ...] -> [N, ...]
         def _pool_residue_token(atom_residue_tokens, axis=0):
             representative = atom_residue_tokens[0]
             return representative
@@ -195,14 +219,11 @@ class ProteinDatum:
 
         residue_token = _reshape_residue_attr(residue_token)
         residue_index = np.arange(0, residue_token.shape[0])
+
         residue_mask = _reshape_residue_attr(residue_mask)
-        chain_token = _reshape_residue_attr(chain_token)
-
-        atom_extract = dict(
-            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
-        )
-
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
+
+        chain_token = _reshape_residue_attr(chain_token)
 
         return cls(
             idcode=header["idcode"],
@@ -215,3 +236,78 @@ class ProteinDatum:
             **atom_extract,
             atom_mask=atom_mask,
         )
+
+    def _apply_chemistry(self, key, f):
+        all_atoms = rearrange(self.atom_coord, "r a c -> (r a) c")
+        all_idx = rearrange(getattr(self, f"{key}_list"), "r o i -> (r o) i")
+        mask = getattr(self, f"{key}_mask")
+
+        measures = f(all_atoms, all_idx)
+        measures = rearrange(measures, "(r o) -> r o", r=len(self.residue_token))
+
+        output = dict()
+        output[key] = measures * mask
+        return measures
+
+    def apply_bonds(self, f):
+        return self._apply_chemistry(key="bonds", f=f)
+
+    def apply_angles(self, f):
+        return self._apply_chemistry(key="angles", f=f)
+
+    def apply_dihedrals(self, f):
+        return self._apply_chemistry(key="dihedrals", f=f)
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_
+
+    def to_pdb_str(self):
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
+        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        assert len(self.residue_token.shape) == 1
+
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
+        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+
+        lines = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_residues[int(res_token)]
+            x, y, z = coord
+            line = list(" " * 80)
+            line[0:6] = "ATOM".ljust(6)
+            line[6:11] = str(idx + 1).ljust(5)
+            line[12:16] = name.ljust(4)
+            line[17:20] = res_name.ljust(3)
+            line[21:22] = "A"
+            line[23:27] = str(res_index + 1).ljust(4)
+            line[30:38] = f"{x:.3f}".rjust(8)
+            line[38:46] = f"{y:.3f}".rjust(8)
+            line[46:54] = f"{z:.3f}".rjust(8)
+            line[76:78] = name[0].rjust(2)
+            lines.append("".join(line))
+        lines = "\n".join(lines)
+        return lines

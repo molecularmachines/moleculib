@@ -60,6 +60,7 @@ class PDBDataset(Dataset):
         frac: float = 1.0,
         preload: bool = False,
         preload_num_workers: int = 10,
+        filter_ids=None,
     ):
         super().__init__()
         self.base_path = Path(base_path)
@@ -107,6 +108,10 @@ class PDBDataset(Dataset):
                     raise AttributeError(f"attribute {attr} is invalid")
             self.attrs = attrs
 
+        self.filter_ids = (
+            [i.lower() for i in filter_ids] if filter_ids is not None else None
+        )
+
     def _is_in_filter(self, sample):
         return int(sample["id"]) in self.shard_indices
 
@@ -114,8 +119,15 @@ class PDBDataset(Dataset):
         return len(self.metadata)
 
     def load_index(self, idx):
-        header = self.metadata.iloc[idx]
-        pdb_id = header["idcode"]
+        while True:
+            header = self.metadata.iloc[idx]
+            pdb_id = header["idcode"]
+            if self.filter_ids is not None:
+                if pdb_id.lower() in self.filter_ids:
+                    idx = np.random.randint(0, len(self.metadata))
+                    continue
+            break
+
         filepath = os.path.join(self.base_path, f"{pdb_id}.mmtf")
         molecules = ProteinDatum.from_filepath(filepath)
         return self.parse(header, molecules)
@@ -193,7 +205,7 @@ class PDBDataset(Dataset):
             extraction = list(map(extractor, pdb_ids))
 
         extraction = filter(lambda x: x, extraction)
-        data, metadata_ = list(map(list, zip(*extraction)))
+        _, metadata_ = list(map(list, zip(*extraction)))
         metadata = pd.concat((metadata, *metadata_), axis=0)
 
         if save:
@@ -224,6 +236,10 @@ class MonomerDataset(PDBDataset):
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
                 metadata = pickle.load(file)
         metadata = metadata.reset_index()
+
+        # NOTE(Allan): small hack to make sure 
+        # we follow trainer.py convention
+        self.splits = {'train': self}
 
         # flatten metadata with regards to num_res
         filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)]
@@ -260,5 +276,92 @@ class MonomerDataset(PDBDataset):
             return obj[slice_min:slice_max]
 
         values = list(map(_cut_chain, values))
-
         return ProteinDatum(*values)
+
+
+from functools import reduce
+import os
+import pickle
+from typing import Callable, List
+
+from tqdm.contrib.concurrent import process_map
+
+
+
+class PreProcessedDataset:
+
+    def __init__(self, splits, transform: List[Callable] = None, shuffle=True):
+        self.splits = splits
+
+        if shuffle:
+            for split, data in list(self.splits.items()):
+                print(f'Shuffling {split}...')
+                self.splits[split] = np.random.permutation(data)
+                
+        self.transform = transform 
+        if self.transform is not None:
+            for split, data in list(self.splits.items()):
+                self.splits[split] = [ reduce(lambda x, t: t.transform(x), self.transform, datum) for datum in tqdm(data) ]
+
+
+    def __getitem__(self, split):
+        return (split, self.splits[split])
+
+
+class FoldDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'fold.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class EnzymeCommissionDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        path = os.path.join(base_path, 'ec.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class GeneOntologyDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, level='mf', shuffle=True):
+        path = os.path.join(base_path, f'go_{level}.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class FuncDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        path = os.path.join(base_path, 'func.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+
+class ScaffoldsDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0):
+        with open(os.path.join(base_path, 'scaffolds.pyd'), 'rb') as fin:
+            print('Loading data...')
+            dataset = pickle.load(fin)
+        if val_split > 0.0: 
+            print(f'Splitting data into train/val with val_split={val_split}')
+            dataset = np.random.permutation(dataset)
+            num_val = int(len(dataset) * val_split)
+            splits = dict(train=dataset[:-num_val], val=dataset[-num_val:])
+        else:
+            splits = dict(train=dataset)
+        super().__init__(splits, transform, shuffle)
+
+
