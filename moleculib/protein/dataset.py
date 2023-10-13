@@ -85,7 +85,8 @@ class PDBDataset(Dataset):
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
-
+        print(f"Loaded metadata with {len(self.metadata)} samples")
+        
         # specific protein attributes
         protein_attrs = [
             "idcode",
@@ -285,7 +286,6 @@ import pickle
 from typing import Callable, List
 
 from tqdm.contrib.concurrent import process_map
-
 
 
 class PreProcessedDataset:

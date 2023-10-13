@@ -78,7 +78,6 @@ class ProteinRescale(ProteinTransform):
 
 
 class BackboneOnly(ProteinTransform):
-
     def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
         self.keep_seq = keep_seq
