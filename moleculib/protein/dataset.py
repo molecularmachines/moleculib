@@ -288,24 +288,80 @@ from typing import Callable, List
 from tqdm.contrib.concurrent import process_map
 
 
-def _transform(x, transform: List[Callable]):
-    return reduce(lambda x, t: t.transform(x), transform, x)
+class PreProcessedDataset:
 
-class Fold3DDataset:
+    def __init__(self, splits, transform: List[Callable] = None, shuffle=True):
+        self.splits = splits
 
-    def __init__(self, base_path, transform: List[Callable]):
-        with open(os.path.join(base_path, 'fold.pyd'), 'rb') as fin:
-            print('Loading data...')
-            self.splits = pickle.load(fin)
+        if shuffle:
+            for split, data in list(self.splits.items()):
+                print(f'Shuffling {split}...')
+                self.splits[split] = np.random.permutation(data)
+                
         self.transform = transform 
-        for split, data in list(self.splits.items()):
-            print(f'Processing {split}...')
-            self.splits[split] = process_map(
-                partial(_transform, transform=transform), 
-                data, 
-                max_workers=8, 
-                chunksize=30
-            ) 
-            
+        if self.transform is not None:
+            for split, data in list(self.splits.items()):
+                self.splits[split] = [ reduce(lambda x, t: t.transform(x), self.transform, datum) for datum in tqdm(data) ]
+
+
     def __getitem__(self, split):
         return (split, self.splits[split])
+
+
+class FoldDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'fold.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class EnzymeCommissionDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        path = os.path.join(base_path, 'ec.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class GeneOntologyDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, level='mf', shuffle=True):
+        path = os.path.join(base_path, f'go_{level}.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+class FuncDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        path = os.path.join(base_path, 'func.pyd')
+        with open(path, 'rb') as fin:
+            print(f'Loading data from {path}')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle)
+
+
+
+class ScaffoldsDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0):
+        with open(os.path.join(base_path, 'scaffolds.pyd'), 'rb') as fin:
+            print('Loading data...')
+            dataset = pickle.load(fin)
+        if val_split > 0.0: 
+            print(f'Splitting data into train/val with val_split={val_split}')
+            dataset = np.random.permutation(dataset)
+            num_val = int(len(dataset) * val_split)
+            splits = dict(train=dataset[:-num_val], val=dataset[-num_val:])
+        else:
+            splits = dict(train=dataset)
+        super().__init__(splits, transform, shuffle)
+
+

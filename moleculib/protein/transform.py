@@ -81,6 +81,7 @@ class BackboneOnly(ProteinTransform):
     def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
         self.keep_seq = keep_seq
+        
     def transform(self, datum):
         if self.filter:
             datum.atom_coord[..., 4:, :] = 0.0
@@ -106,7 +107,7 @@ class ProteinPad(ProteinTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray:
+            if type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size)
                 if self.random_position:
                     obj = np.roll(obj, shift, axis=0)
