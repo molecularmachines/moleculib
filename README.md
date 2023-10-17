@@ -1,4 +1,4 @@
-# `moleculib` – Molecular Data Pipelining Tools
+# 🧬 `moleculib` – Molecular Data Pipelining Tools
 
 ![krystian-plich-VepCnmobN44-unsplash](https://github.com/molecularmachines/moleculib/assets/11742939/bf445bc9-46ae-4dab-aea8-7ef6dfdc1124)
 
