@@ -15,6 +15,7 @@ from biotite.structure import (
 from biotite.structure import filter_amino_acids
 
 import biotite.structure.io.mmtf as mmtf
+import biotite.structure.io.pdb as pdb
 
 from .alphabet import (
     all_atoms,
@@ -121,14 +122,22 @@ class ProteinDatum:
 
     @classmethod
     def from_filepath(cls, filepath, chain_id=None):
-        mmtf_file = mmtf.MMTFFile.read(filepath)
-        atom_array = mmtf.get_structure(mmtf_file, model=1)
-        header = dict(
-            idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
-            resolution=None
-            if ("resolution" not in mmtf_file)
-            else mmtf_file["resolution"],
-        )
+        if filepath.endswith(".pdb"):
+            pdb_file = pdb.PDBFile.read(filepath)
+            atom_array = pdb.get_structure(pdb_file, model=1)
+            header = dict(
+                idcode='allancomebackhere',
+                resolution=None,
+            )
+        elif filepath.endswith(".mmtf"): 
+            mmtf_file = mmtf.MMTFFile.read(filepath)
+            atom_array = mmtf.get_structure(mmtf_file, model=1)
+            header = dict(
+                idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
+                resolution=None
+                if ("resolution" not in mmtf_file)
+                else mmtf_file["resolution"],
+            )
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
         if chain_id is not None:

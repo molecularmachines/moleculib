@@ -1,3 +1,5 @@
+import math
+
 import biotite
 from .datum import ProteinDatum
 from .alphabet import (
@@ -444,7 +446,10 @@ class MaskResidues(ProteinTransform):
                 for p, s in zip(pos, sizes):
                     mask[int(p):min(int(p+s),len(datum.residue_token))] = True
         else:
-            mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
+            num_mask = math.ceil(self.mask_ratio * datum.residue_token.shape[0])
+            mask = np.zeros_like(datum.residue_token, dtype=np.bool_)
+            choice = np.random.choice(len(datum.residue_token), num_mask, replace=False)
+            mask[choice] = True
 
         mask = mask * datum.residue_mask
         datum.residue_token_masked = np.where(
