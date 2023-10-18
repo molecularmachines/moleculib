@@ -78,7 +78,7 @@ class SeqDatum:
         :param filepath:
         :return:
         """
-     
+         
         residues = [
             ("UNK" if (ProteinSequence.convert_letter_1to3(name) not in all_residues) else ProteinSequence.convert_letter_1to3(name)) for name in list(sequence)
         ]
@@ -86,7 +86,7 @@ class SeqDatum:
         residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
 
         return cls(
-            idcode="",
+            idcode=idcode,
             sequence=sequence,
             sequence_token=residue_tokens
         )
