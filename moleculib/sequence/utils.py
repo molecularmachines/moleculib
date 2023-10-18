@@ -14,10 +14,31 @@ from Bio.SeqUtils import seq1
 import ankh
 import esm
 from transformers import T5Tokenizer, T5EncoderModel
+from typing import List, Tuple
+from biotite.sequence.io import fasta
 
 alphabet = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
                          'Y', "X"]
 
+def load_fasta_file(input: str) -> List[Tuple[str]]:
+    # read input fasta file
+    fasta_file = fasta.FastaFile.read(input)
+    fasta_sequences = fasta.get_sequences(fasta_file)
+    sequences = list(fasta_sequences.values())
+    sequences = [str(s) for s in sequences]
+    names = list(fasta_sequences.keys())
+    all_sequences = {}
+    for k,v in zip(names,sequences):
+        all_sequences[k]=v
+    return all_sequences
+
+def save_fasta_file(sequences, names, save_path):
+    step_fasta_file = fasta.FastaFile()
+    for j, res_name in enumerate(names):
+        step_fasta_file[res_name] = sequences[j]
+    step_fasta_file.write(save_path)
+    return save_path
+    
 def one_hot_encode_seq(protein_seq, max_length=14):
 
     char_to_int = dict((c, i) for i, c in enumerate(alphabet))
