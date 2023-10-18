@@ -1,0 +1,106 @@
+#biotite dependencies
+import biotite.structure.io.pdbx as pdbx
+import biotite.database.rcsb as rcsb
+import biotite.database.uniprot as uniprot
+from biotite.structure import get_residues
+from biotite.sequence import ProteinSequence
+import biotite.sequence.io.fasta as fasta
+import numpy as np
+from collections import OrderedDict
+import biotite.database.entrez as entrez
+
+from urllib.parse import urlparse, parse_qs, urlencode
+import requests
+from requests.adapters import HTTPAdapter, Retry
+
+API_URL = "https://rest.uniprot.org"
+allowed_aa= ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
+
+
+class SeqDatum:
+    """
+    Incorporates protein data to MolecularDatum
+    and reshapes atom arrays to residue-based representation
+    """
+
+    def __init__(
+        self,
+        idcode: str='default',
+        sequences: list[ProteinSequence]=[],
+        **kwargs,
+    ):
+        self.idcode = idcode
+        self.sequences =sequences
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __len__(self):
+        return len(self.sequence)
+    
+    @classmethod
+    def empty_seqrecord(cls):
+        return cls(
+            idcode="",
+            sequences=ProteinSequence("")
+        )
+    
+    @classmethod
+    def from_filepath(cls,filepath):
+        fasta_file = fasta.FastaFile.read(filepath)
+        sequences = [ProteinSequence(s) for s in fasta_file.values()]
+        return cls(
+            idcode="",
+            sequences=sequences
+        )
+    
+    @classmethod
+    def from_pdb_id(cls, pdb_id,chain_id=None):
+        pdbx_file = pdbx.PDBxFile.read(rcsb.fetch(pdb_id, "mmcif"))
+        structure = pdbx.get_structure(pdbx_file,model=1)
+        
+        chain_structures = {}
+        chain_sequence = {}
+        for chain_id in list(set(structure.get_annotation('chain_id'))):
+            chain_structure = structure[(structure.chain_id == chain_id)]
+            _, res_names = get_residues(chain_structure)
+            res_names = [name for name in res_names if name in allowed_aa]
+            sequence = ProteinSequence(list(res_names))
+            chain_sequence[chain_id]=sequence
+            chain_structures[chain_id]=chain_structure
+            
+        if chain_id is not None:
+            selected_sequences = [chain_sequence[chain_id]]
+            chain_ids = [chain_id]
+            selected_structures = [chain_structures[chain_id]]
+        else:
+            selected_sequences = [chain_sequence[cid] for cid in chain_sequence.keys()]
+            chain_ids = [cid for cid in chain_sequence.keys()]
+            selected_structures = [chain_structures[cid] for cid in chain_sequence.keys()]
+            
+        return cls(
+            idcode=pdb_id,
+            sequences=selected_sequences,
+            structures=selected_structures,
+            chain_ids = chain_ids
+        )
+
+    @classmethod
+    def from_uniprot_id(cls, uniprotid,save_path=None):
+        def map_uniprot_id(to_db, search_id):
+            request = requests.post(
+                f"{API_URL}/idmapping/run",
+                data={"from": "UniProtKB_AC-ID", "to": to_db, "ids": search_id},
+            )
+            return request.json()["jobId"]
+    
+        filepath = uniprot.fetch(uniprotid, "fasta")
+        fasta_file = fasta.FastaFile.read(filepath)
+        sequences = [ProteinSequence(s) for s in fasta_file.values()]
+        chain_ids = ["chain_{}".format(i) for i in range(0,len(sequences))]
+        query = uniprot.SimpleQuery("accession",uniprotid)
+        return cls(
+            idcode=uniprotid,
+            sequences=sequences,
+            structure=None,
+            chain_ids = chain_ids
+        )
