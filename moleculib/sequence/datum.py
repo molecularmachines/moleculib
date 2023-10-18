@@ -13,6 +13,8 @@ from urllib.parse import urlparse, parse_qs, urlencode
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
+from moleculib.protein.alphabet import all_residues,get_residue_index
+
 API_URL = "https://rest.uniprot.org"
 allowed_aa= ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
 
@@ -25,12 +27,14 @@ class SeqDatum:
 
     def __init__(
         self,
-        idcode: str='default',
-        sequences: list[ProteinSequence]=[],
+        idcode: str,
+        sequence: ProteinSequence,
+        sequence_token:np.ndarray,
         **kwargs,
     ):
         self.idcode = idcode
-        self.sequences =sequences
+        self.sequence =sequence
+        self.sequence_token = sequence_token
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -41,23 +45,56 @@ class SeqDatum:
     def empty_seqrecord(cls):
         return cls(
             idcode="",
-            sequences=ProteinSequence("")
+            sequence=ProteinSequence(""),
+            sequence_token = None
         )
     
     @classmethod
     def from_filepath(cls,filepath):
+        """
+        Fasta file would only have sequence entry
+        :param filepath:
+        :return:
+        """
         fasta_file = fasta.FastaFile.read(filepath)
-        sequences = [ProteinSequence(s) for s in fasta_file.values()]
+        sequence = [ProteinSequence(s) for s in fasta_file.values()][0]
+        
+        residues = [
+            ("UNK" if (ProteinSequence.convert_letter_1to3(name) not in all_residues) else ProteinSequence.convert_letter_1to3(name)) for name in list(selected_sequence)
+        ]
+        
+        residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
+
         return cls(
             idcode="",
-            sequences=sequences
+            sequence=sequence,
+            sequence_token=residue_tokens
+        )
+    
+    @classmethod
+    def from_sequence(cls,idcode,sequence):
+        """
+        Fasta file would only have sequence entry
+        :param filepath:
+        :return:
+        """
+     
+        residues = [
+            ("UNK" if (ProteinSequence.convert_letter_1to3(name) not in all_residues) else ProteinSequence.convert_letter_1to3(name)) for name in list(sequence)
+        ]
+        
+        residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
+
+        return cls(
+            idcode="",
+            sequence=sequence,
+            sequence_token=residue_tokens
         )
     
     @classmethod
     def from_pdb_id(cls, pdb_id,chain_id=None):
         pdbx_file = pdbx.PDBxFile.read(rcsb.fetch(pdb_id, "mmcif"))
         structure = pdbx.get_structure(pdbx_file,model=1)
-        
         chain_structures = {}
         chain_sequence = {}
         for chain_id in list(set(structure.get_annotation('chain_id'))):
@@ -67,21 +104,22 @@ class SeqDatum:
             sequence = ProteinSequence(list(res_names))
             chain_sequence[chain_id]=sequence
             chain_structures[chain_id]=chain_structure
-            
-        if chain_id is not None:
-            selected_sequences = [chain_sequence[chain_id]]
-            chain_ids = [chain_id]
-            selected_structures = [chain_structures[chain_id]]
-        else:
-            selected_sequences = [chain_sequence[cid] for cid in chain_sequence.keys()]
-            chain_ids = [cid for cid in chain_sequence.keys()]
-            selected_structures = [chain_structures[cid] for cid in chain_sequence.keys()]
-            
+        selected_sequence = chain_sequence[chain_id]
+        chain_id = chain_id
+        selected_structure = chain_structures[chain_id]
+        
+        residues = [
+            ("UNK" if (ProteinSequence.convert_letter_1to3(name) not in all_residues) else ProteinSequence.convert_letter_1to3(name)) for name in list(selected_sequence)
+        ]
+        
+        residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
+
         return cls(
             idcode=pdb_id,
-            sequences=selected_sequences,
-            structures=selected_structures,
-            chain_ids = chain_ids
+            sequence=selected_sequence,
+            sequence_token=residue_tokens,
+            structure=selected_structure,
+            chain_id = chain_id
         )
 
     @classmethod
@@ -95,12 +133,22 @@ class SeqDatum:
     
         filepath = uniprot.fetch(uniprotid, "fasta")
         fasta_file = fasta.FastaFile.read(filepath)
-        sequences = [ProteinSequence(s) for s in fasta_file.values()]
-        chain_ids = ["chain_{}".format(i) for i in range(0,len(sequences))]
+
+        #take only the first one
+        sequence = [ProteinSequence(s) for s in fasta_file.values()][0]
+        chain_id = ["chain_{}".format(i) for i in range(0,len(sequences))][0]
         query = uniprot.SimpleQuery("accession",uniprotid)
+
+       
+        residues = [
+            ("UNK" if (ProteinSequence.convert_letter_1to3(name) not in all_residues) else ProteinSequence.convert_letter_1to3(name)) for name in list(sequence)
+        ]
+        residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
+        
         return cls(
             idcode=uniprotid,
-            sequences=sequences,
+            sequences=sequence,
+            sequence_token=residue_tokens,
             structure=None,
-            chain_ids = chain_ids
+            chain_ids = chain_id
         )
