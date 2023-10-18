@@ -4,7 +4,10 @@ from biotite.structure import get_molecule_masks
 from biotite.database import rcsb
 from .utils import pdb_to_atom_array
 from .alphabet import elements
+
 import biotite.structure.io.mmtf as mmtf
+import biotite.structure.io.mol as mol
+from biotite.structure import Atom, array 
 
 
 class MoleculeDatum:
@@ -59,14 +62,26 @@ class MoleculeDatum:
 
     @classmethod
     def from_filepath(cls, filepath, molecule_idx=None):
-        mmtf_file = mmtf.MMTFFile.read(filepath)
-        atom_array = pdb_to_atom_array(mmtf_file)
-        header = dict(
-            idcode=mmtf_file["structureId"],
-            resolution=None
-            if ("resolution" not in mmtf_file)
-            else mmtf_file["resolution"],
-        )
+        if filepath.endswith(".mmtf"):
+            mmtf_file = mmtf.MMTFFile.read(filepath)
+            atom_array = pdb_to_atom_array(mmtf_file)
+            header = dict(
+                idcode=mmtf_file["structureId"],
+                resolution=None
+                if ("resolution" not in mmtf_file)
+                else mmtf_file["resolution"],
+            )
+        elif filepath.endswith('.sdf'):
+            mol_file = mol.MOLFile.read(filepath)
+            atom_array = mol_file.get_structure()
+            header = dict(
+                idcode='allancomebackhere',
+                resolution=None
+            )
+        else:
+            raise NotImplementedError(
+                f"File type {filepath.split('.')[-1]} is not supported"
+            )
         return cls.from_atom_array(atom_array, header=header, molecule_idx=molecule_idx)
 
     @classmethod
@@ -105,6 +120,7 @@ class MoleculeDatum:
 
         # filter out molecules with 1 atom (which are not really molecules nor ions)
         atom_mask = atom_mask[np.sum(atom_mask, axis=1) > 1]
+        bonds = atom_array.bonds._bonds
 
         if molecule_idx is not None:
             return cls(
@@ -131,7 +147,31 @@ class MoleculeDatum:
             atom_token=atom_token,
             atom_coord=atom_array.coord,
             atom_name=atom_array.atom_name,
-            b_factor=atom_array.b_factor,
+            b_factor=atom_array.b_factor if hasattr(atom_array, "b_factor") else None,
             atom_mask=atom_mask,
-            bonds=atom_array.bonds,
+            bonds=bonds,
         )
+
+    def to_atom_array(self):
+        tokens = self.atom_token[self.atom_mask[0]]
+        atoms = []
+        for (coord, (_, el)) in zip(
+            self.atom_coord, 
+            elements.iloc[tokens].iterrows()
+        ): 
+            atom = Atom(
+                coord, 
+                chain_id='A',
+                element=el.symbol, 
+                hetero=False, 
+                atom_name=el.symbol
+            )
+            atoms.append(atom)
+        arr = array(atoms)
+        arr.bonds = self.bonds
+        return arr
+
+    def to_sdf_str(self):
+        file = mol.MOLFile()
+        file.set_structure(self.to_atom_array())
+        return str(file)

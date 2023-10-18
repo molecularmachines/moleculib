@@ -32,6 +32,31 @@ class MoleculeTransform:
         raise NotImplementedError("method transform must be implemented")
 
 
+class MoleculeCrop(MoleculeTransform):
+    def __init__(self, crop_size: int):
+        self.crop_size = crop_size
+
+    def transform(self, datum: MoleculeDatum, cut = None) -> MoleculeDatum:
+        seq_len = len(datum.atom_token)
+        if seq_len <= self.crop_size:
+            return datum
+        if cut is None:
+            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
+
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:
+                new_datum_[attr] = obj[cut : cut + self.crop_size]
+            else:
+                new_datum_[attr] = obj
+
+        new_datum = MoleculeDatum(**new_datum_)
+        return new_datum
+
+
+
+
+
 class MoleculePad(MoleculeTransform):
     def __init__(self, pad_size: int):
         self.pad_size = pad_size
