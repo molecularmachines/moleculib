@@ -36,6 +36,7 @@ class ElutedLigandDataset(Dataset):
         self.base_path = Path(base_path)
         self.transform = transform
         self.data_frame = pd.read_csv(base_path)
+        self.data_frame = self.data_frame.sample(frac=1).reset_index(drop=True)
         self.splits = dict(train=self)
         
     def __len__(self):
