@@ -29,12 +29,12 @@ class SeqDatum:
         self,
         idcode: str,
         sequence: ProteinSequence,
-        sequence_token:np.ndarray,
+        residue_token:np.ndarray,
         **kwargs,
     ):
         self.idcode = idcode
         self.sequence =sequence
-        self.sequence_token = sequence_token
+        self.residue_token = residue_token
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -46,7 +46,7 @@ class SeqDatum:
         return cls(
             idcode="",
             sequence=ProteinSequence(""),
-            sequence_token = None
+            residue_token = None
         )
     
     @classmethod
@@ -68,7 +68,7 @@ class SeqDatum:
         return cls(
             idcode="",
             sequence=sequence,
-            sequence_token=residue_tokens
+            residue_token=residue_tokens
         )
     
     @classmethod
@@ -88,7 +88,8 @@ class SeqDatum:
         return cls(
             idcode=idcode,
             sequence=sequence,
-            sequence_token=residue_tokens
+            sequence_mask=np.ones_like(residue_tokens).astype(np.bool_),
+            residue_token=residue_tokens
         )
     
     @classmethod
@@ -117,7 +118,7 @@ class SeqDatum:
         return cls(
             idcode=pdb_id,
             sequence=selected_sequence,
-            sequence_token=residue_tokens,
+            residue_token=residue_tokens,
             structure=selected_structure,
             chain_id = chain_id
         )
@@ -148,7 +149,7 @@ class SeqDatum:
         return cls(
             idcode=uniprotid,
             sequences=sequence,
-            sequence_token=residue_tokens,
+            residue_token=residue_tokens,
             structure=None,
             chain_ids = chain_id
         )

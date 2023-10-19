@@ -43,6 +43,7 @@ class ProteinCrop(ProteinTransform):
         self.crop_size = crop_size
 
     def transform(self, datum, cut=None):
+        datum_type = type(datum) 
         seq_len = datum.residue_token.shape[0]
         if seq_len <= self.crop_size:
             return datum
@@ -56,7 +57,44 @@ class ProteinCrop(ProteinTransform):
             else:
                 new_datum_[attr] = obj
 
-        new_datum = ProteinDatum(**new_datum_)
+        new_datum = datum_type(**new_datum_)
+        return new_datum
+
+
+class ProteinPad(ProteinTransform):
+    def __init__(self, pad_size: int, random_position: bool = False):
+        self.pad_size = pad_size
+        self.random_position = random_position
+
+    def transform(self, datum: ProteinDatum) -> ProteinDatum:
+        datum_type = type(datum) 
+
+        seq_len = datum.residue_token.shape[0]
+        if seq_len >= self.pad_size:
+            datum.pad_mask = np.ones_like(datum.residue_token)
+            return datum
+
+        size_diff = self.pad_size - seq_len
+        shift = np.random.randint(0, size_diff)
+
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
+                obj = pad_array(obj, self.pad_size)
+                if self.random_position:
+                    obj = np.roll(obj, shift, axis=0)
+                    if attr in ["bonds_list", "angles_list", "dihedrals_list"]:
+                        obj += shift * 14
+                new_datum_[attr] = obj
+            else:
+                new_datum_[attr] = obj
+
+        pad_mask = pad_array(np.ones_like(datum.residue_token), self.pad_size)
+        if self.random_position:
+            pad_mask = np.roll(pad_mask, shift, axis=0)
+        new_datum_["pad_mask"] = pad_mask
+
+        new_datum = datum_type(**new_datum_)
         return new_datum
 
 
@@ -92,40 +130,6 @@ class BackboneOnly(ProteinTransform):
                 datum.residue_token[datum.residue_token > 2] = 10  # GLY
         return datum
 
-
-class ProteinPad(ProteinTransform):
-    def __init__(self, pad_size: int, random_position: bool = False):
-        self.pad_size = pad_size
-        self.random_position = random_position
-
-    def transform(self, datum: ProteinDatum) -> ProteinDatum:
-        seq_len = datum.residue_token.shape[0]
-        if seq_len >= self.pad_size:
-            datum.pad_mask = np.ones_like(datum.residue_token)
-            return datum
-
-        size_diff = self.pad_size - seq_len
-        shift = np.random.randint(0, size_diff)
-
-        new_datum_ = dict()
-        for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
-                obj = pad_array(obj, self.pad_size)
-                if self.random_position:
-                    obj = np.roll(obj, shift, axis=0)
-                    if attr in ["bonds_list", "angles_list", "dihedrals_list"]:
-                        obj += shift * 14
-                new_datum_[attr] = obj
-            else:
-                new_datum_[attr] = obj
-
-        pad_mask = pad_array(np.ones_like(datum.residue_token), self.pad_size)
-        if self.random_position:
-            pad_mask = np.roll(pad_mask, shift, axis=0)
-        new_datum_["pad_mask"] = pad_mask
-
-        new_datum = ProteinDatum(**new_datum_)
-        return new_datum
 
 
 class ListBonds(ProteinTransform):
