@@ -41,16 +41,12 @@ def pids_file_to_list(pids_path):
     return pids_str.rstrip().split(",")
 
 
-def pad_array(array, total_size, bonds=False):
+def pad_array(array, total_size, value=0):
     shape = array.shape[1:]
     size = array.shape[0]
     diff = total_size - size
     assert diff >= 0
     if diff == 0:
         return array
-    if bonds:
-        # pad with -1 to match biotite BondType
-        return np.pad(array, (0, diff), constant_values=-1)
-
-    pad = np.zeros((diff, *shape), dtype=array.dtype)
+    pad = np.full((diff, *shape), value, dtype=array.dtype)
     return np.concatenate((array, pad), axis=0)

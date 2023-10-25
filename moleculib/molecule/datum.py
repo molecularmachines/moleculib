@@ -8,6 +8,7 @@ from .alphabet import elements
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
 from biotite.structure import Atom, array 
+from biotite.structure import BondList
 
 
 class MoleculeDatum:
@@ -116,10 +117,7 @@ class MoleculeDatum:
             raise e
         atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
 
-        atom_mask = get_molecule_masks(atom_array)
-
-        # filter out molecules with 1 atom (which are not really molecules nor ions)
-        atom_mask = atom_mask[np.sum(atom_mask, axis=1) > 1]
+        atom_mask = get_molecule_masks(atom_array)[0]
         bonds = atom_array.bonds._bonds
 
         if molecule_idx is not None:
@@ -153,12 +151,11 @@ class MoleculeDatum:
         )
 
     def to_atom_array(self):
-        tokens = self.atom_token[self.atom_mask[0]]
+        tokens = self.atom_token[self.atom_mask]
+        coords = self.atom_coord[self.atom_mask]
         atoms = []
-        for (coord, (_, el)) in zip(
-            self.atom_coord, 
-            elements.iloc[tokens].iterrows()
-        ): 
+        for (coord, token) in zip(coords, tokens):
+            el = elements.iloc[token]
             atom = Atom(
                 coord, 
                 chain_id='A',
@@ -168,7 +165,10 @@ class MoleculeDatum:
             )
             atoms.append(atom)
         arr = array(atoms)
-        arr.bonds = self.bonds
+        bonds = BondList(len(atoms))
+        if self.bonds is not None:
+            bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
+        arr.bonds = bonds
         return arr
 
     def to_sdf_str(self):

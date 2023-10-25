@@ -45,16 +45,18 @@ class MoleculeCrop(MoleculeTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:
+            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len and attr != 'bonds':
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
             else:
                 new_datum_[attr] = obj
 
+        bonds = new_datum_['bonds']
+        bonds_mask = (bonds[:, 0] <= cut + self.crop_size - 1) & (bonds[:, 1] <= cut + self.crop_size - 1)
+        bonds_mask &= (bonds[:, 0] >= cut) & (bonds[:, 1] >= cut)
+        new_datum_['bonds'] = bonds[bonds_mask] - cut
+    
         new_datum = MoleculeDatum(**new_datum_)
         return new_datum
-
-
-
 
 
 class MoleculePad(MoleculeTransform):
@@ -64,13 +66,15 @@ class MoleculePad(MoleculeTransform):
     def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
         mol_size = datum.atom_token.shape[0]
         if mol_size >= self.pad_size:
-            datum.pad_mask = np.ones_like(datum.atom_token)
             return datum
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
             if type(obj) == np.ndarray:
-                obj = pad_array(obj, self.pad_size, attr=="bonds")
+                if attr == 'bonds':
+                    obj = pad_array(obj, self.pad_size * self.pad_size)
+                else:
+                    obj = pad_array(obj, self.pad_size)
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
