@@ -54,3 +54,30 @@ class ElutedLigandDataset(Dataset):
                
         return (peptide,mhc,label)
 
+class GFPFitnessDataset(Dataset):
+    def __init__(
+            self,
+            base_path: str,
+            transform: ProteinTransform = None
+    ):
+        super().__init__()
+        self.base_path = Path(base_path)
+        self.transform = transform
+        self.data_frame = pd.read_csv(base_path)
+        self.data_frame = self.data_frame.sample(frac=1).reset_index(drop=True)
+        self.splits = dict(train=self)
+        
+    def __len__(self):
+        return len(self.data_frame)
+
+    def __getitem__(self, idx):
+        
+        row = self.data_frame.iloc[idx]
+        peptide = SeqDatum.from_sequence("peptide_{}".format(idx),row['sequence'])
+        label = row['target']
+        
+        if self.transform is not None:
+            for transformation in self.transform:
+                peptide = transformation.transform(peptide)
+               
+        return (peptide,label)
