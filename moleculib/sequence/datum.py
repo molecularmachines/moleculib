@@ -48,7 +48,22 @@ class SeqDatum:
             sequence=ProteinSequence(""),
             residue_token = None
         )
+
+    @classmethod
+    def from_tokens(cls, residues):
+        """
+        Fasta file would only have sequence entry
+        :param filepath:
+        :return:
+        """
     
+        return cls(
+            idcode="",
+            sequence="",
+            residue_token=np.array(residues),
+            sequence_mask =np.ones_like(residues).astype(np.bool_)
+        )
+
     @classmethod
     def from_filepath(cls,filepath):
         """
