@@ -52,7 +52,8 @@ class ElutedLigandDataset(Dataset):
             for transformation in self.transform:
                 peptide = transformation.transform(peptide)
                
-        return (peptide,mhc,label)
+        return (peptide,mhc,torch.Tensor([label]).long())
+
 
 class MHCBindingAffinityDataset(Dataset):
     def __init__(

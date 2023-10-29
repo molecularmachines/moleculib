@@ -41,6 +41,13 @@ class SeqDatum:
     def __len__(self):
         return len(self.sequence)
     
+    def onehot_encode_datum(self):
+        residue_tokens = self.residue_token
+        one_hot_tensor = torch.zeros(len(residue_tokens), len(all_residues))
+        for i, token in enumerate(residue_tokens):
+            one_hot_tensor[i, token] = 1
+        return one_hot_tensor
+
     @classmethod
     def empty_seqrecord(cls):
         return cls(
@@ -56,12 +63,21 @@ class SeqDatum:
         :param filepath:
         :return:
         """
-    
+        sequence_list = []
+        sequence_mask = []
+        for name in residues:
+            residue_name=all_residues[name]
+            if residue_name!="PAD":
+                sequence_list.append(ProteinSequence.convert_letter_3to1(residue_name))
+                sequence_mask.append(True)
+            else:
+                sequence_mask.append(False)
+                
         return cls(
             idcode="",
-            sequence="",
+            sequence="".join(sequence_list),
             residue_token=np.array(residues),
-            sequence_mask =np.ones_like(residues).astype(np.bool_)
+            sequence_mask =np.array(sequence_mask)
         )
 
     @classmethod
@@ -79,11 +95,20 @@ class SeqDatum:
         ]
         
         residue_tokens = np.array(list(map(lambda res: get_residue_index(res), residues)))
-
+      
+        sequence_mask = []
+        for name in residue_tokens:
+            residue_name=all_residues[name]
+            if residue_name!="PAD":
+                sequence_mask.append(True)
+            else:
+                sequence_mask.append(False)
+                
         return cls(
             idcode="",
             sequence=sequence,
-            residue_token=residue_tokens
+            residue_token=residue_tokens,
+            sequence_mask=sequence_mask
         )
     
     @classmethod
@@ -137,7 +162,7 @@ class SeqDatum:
             structure=selected_structure,
             chain_id = chain_id
         )
-
+    
     @classmethod
     def from_uniprot_id(cls, uniprotid,save_path=None):
         def map_uniprot_id(to_db, search_id):

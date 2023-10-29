@@ -40,7 +40,6 @@ def save_fasta_file(sequences, names, save_path):
     return save_path
     
 def one_hot_encode_seq(protein_seq, max_length=14):
-
     char_to_int = dict((c, i) for i, c in enumerate(alphabet))
     encoded_protein = np.zeros((max_length, len(alphabet)))
 
@@ -50,14 +49,11 @@ def one_hot_encode_seq(protein_seq, max_length=14):
         letter = [0 for _ in range(len(alphabet))]
         letter[i] = 1
         one_hot_array.append(letter)
-
     pad_length = max_length - len(protein_seq)
-
     pad_hot_array = []
     for i in range(0, pad_length):
         letter = [0 for _ in range(len(alphabet))]
         pad_hot_array.append(letter)
-
     return np.array(one_hot_array + pad_hot_array)
 
 def encode_seq_with_ankh(protein_seq):
