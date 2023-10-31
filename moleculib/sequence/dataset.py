@@ -52,7 +52,7 @@ class ElutedLigandDataset(Dataset):
             for transformation in self.transform:
                 peptide = transformation.transform(peptide)
                
-        return (peptide,mhc,torch.Tensor([label]).long())
+        return (torch.Tensor(peptide.residue_token).long(),torch.Tensor([label]).long())
 
 
 class MHCBindingAffinityDataset(Dataset):
@@ -109,4 +109,4 @@ class GFPFitnessDataset(Dataset):
             for transformation in self.transform:
                 peptide = transformation.transform(peptide)
                
-        return (peptide,label)
+        return (torch.Tensor(peptide.residue_token).long(),torch.Tensor([label]).float())
