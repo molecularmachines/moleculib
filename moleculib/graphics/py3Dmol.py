@@ -3,7 +3,11 @@ from moleculib.molecule.datum import MoleculeDatum
 import py3Dmol
 
 
-def plot_py3dmol_grid(grid, window_size=(250, 250), spin=False):
+def plot_py3dmol_grid(
+        grid, 
+        window_size=(250, 250), 
+        spin=False
+    ):
     v = py3Dmol.view(
         viewergrid=(len(grid), len(grid[0])), 
         linked=True, 
@@ -19,6 +23,5 @@ def plot_py3dmol_grid(grid, window_size=(250, 250), spin=False):
                 v.addModel(datum.to_sdf_str(), 'sdf', viewer=(i, j))
                 v.setStyle({'sphere': {'radius': 0.4, 'color': 'orange'}, 'stick': {'radius': 0.2, 'color': 'orange'} }, viewer=(i, j))
     v.zoomTo()
-    if spin: v.spin()
     v.setBackgroundColor('rgb(0,0,0)', 0)
     return v
