@@ -6,7 +6,8 @@ import py3Dmol
 def plot_py3dmol_grid(
         grid, 
         window_size=(250, 250), 
-        spin=False
+        sphere=False,
+        ribbon=False,
     ):
     v = py3Dmol.view(
         viewergrid=(len(grid), len(grid[0])), 
@@ -18,7 +19,12 @@ def plot_py3dmol_grid(
         for j, datum in enumerate(row):
             if type(datum) == ProteinDatum:
                 v.addModel(datum.to_pdb_str(), 'pdb', viewer=(i, j))
-                v.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.2}}, viewer=(i, j))
+                if sphere:
+                    v.setStyle({'sphere': {'radius': 0.3}}, viewer=(i, j))
+                elif ribbon:
+                    v.setStyle({'cartoon': {'color': 'spectrum', 'ribbon': True, 'thickness': 0.7}}, viewer=(i, j))
+                else:
+                    v.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.2}}, viewer=(i, j))
             elif type(datum) == MoleculeDatum:
                 v.addModel(datum.to_sdf_str(), 'sdf', viewer=(i, j))
                 v.setStyle({'sphere': {'radius': 0.4, 'color': 'orange'}, 'stick': {'radius': 0.2, 'color': 'orange'} }, viewer=(i, j))

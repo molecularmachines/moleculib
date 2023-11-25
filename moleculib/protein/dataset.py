@@ -60,6 +60,7 @@ class PDBDataset(Dataset):
         frac: float = 1.0,
         preload: bool = False,
         preload_num_workers: int = 10,
+        keep_ids: List[str] = None,
         filter_ids=None,
     ):
         super().__init__()
@@ -82,6 +83,9 @@ class PDBDataset(Dataset):
             self.metadata = self.metadata[
                 self.metadata["num_res"] <= max_sequence_length
             ]
+
+        if keep_ids is not None:
+            self.metadata = self.metadata[self.metadata["idcode"].isin(keep_ids)]
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
@@ -158,9 +162,11 @@ class PDBDataset(Dataset):
         return Series(metrics).to_frame().T
 
     @staticmethod
-    def _maybe_fetch_and_extract(pdb_id, save_path):
+    def _maybe_fetch_and_extract(pdb_id, format, save_path):
         try:
-            datum = ProteinDatum.fetch_pdb_id(pdb_id, save_path=save_path)
+            if os.path.exists(os.path.join(save_path, f"{pdb_id}.{format}")):
+                return None
+            datum = ProteinDatum.fetch_pdb_id(pdb_id, save_path=save_path, format=format)
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
@@ -181,30 +187,30 @@ class PDBDataset(Dataset):
         save: bool = True,
         save_path: str = None,
         max_workers: int = 1,
+        format: str = "mmtf",
         **kwargs,
     ):
         """
         Builds dataset from scratch given specified pdb_ids, prepares
         data and metadata for later use.
         """
-        print(f"Extracting {len(pdb_ids)} PDB IDs with {max_workers} workers...")
         if pdb_ids is None:
             root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
         if save_path is None:
             save_path = mkdtemp()
+        print(f"Fetching {len(pdb_ids)} PDB IDs with {max_workers} workers...")
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
 
-        extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path)
+        extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path, format=format)
         if max_workers > 1:
             extraction = process_map(
-                extractor, pdb_ids, max_workers=max_workers, chunksize=50
+                extractor, pdb_ids, max_workers=max_workers
             )
         else:
             extraction = list(map(extractor, pdb_ids))
-
         extraction = filter(lambda x: x, extraction)
         _, metadata_ = list(map(list, zip(*extraction)))
         metadata = pd.concat((metadata, *metadata_), axis=0)
@@ -220,18 +226,10 @@ class MonomerDataset(PDBDataset):
     def __init__(
         self,
         base_path: str,
-        pdb_ids: List[str] = None,
         metadata: pd.DataFrame = None,
+        single_chain: bool = True,
         **kwargs,
     ):
-        if base_path is None:
-            base_path = mkdtemp()
-            if pdb_ids is None:
-                raise ValueError("pdb_ids must be specified if base_path is None")
-            MonomerDataset.build(
-                pdb_ids=pdb_ids, save_path=base_path, save=True, **kwargs
-            )
-
         # read from base path if metadata is not built
         if metadata is None:
             with open(str(Path(base_path) / "metadata.pyd"), "rb") as file:
@@ -255,6 +253,10 @@ class MonomerDataset(PDBDataset):
         metadata = filtered[
             [col for (col, _) in PDB_HEADER_FIELDS] + ["chain_indexes", "source"]
         ]
+        # if single_chain:
+            # breakpoint()
+            # metadata = metadata[::MAX_COMPLEX_SIZE].reset_index()
+
         metadata = metadata[metadata["num_res"] > 0].reset_index()
 
         # initialize PDBDataset
@@ -287,10 +289,19 @@ from typing import Callable, List
 
 from tqdm.contrib.concurrent import process_map
 
+class _TransformWrapper:
+    def __init__(self, ds, transform):
+        self.ds = ds
+        self.transform = transform
+    def __len__(self):
+        return len(self.ds)
+    def __getitem__(self, idx):
+        return reduce(lambda x, t: t.transform(x), self.transform, self.ds[idx])
+
 
 class PreProcessedDataset:
 
-    def __init__(self, splits, transform: List[Callable] = None, shuffle=True):
+    def __init__(self, splits, transform: List[Callable] = None, shuffle=True, pre_transform=False):
         self.splits = splits
 
         if shuffle:
@@ -299,13 +310,54 @@ class PreProcessedDataset:
                 self.splits[split] = np.random.permutation(data)
                 
         self.transform = transform 
-        if self.transform is not None:
+        if pre_transform:
+            if self.transform is None:
+                raise ValueError('Cannot pre-transform without a transform')
             for split, data in list(self.splits.items()):
                 self.splits[split] = [ reduce(lambda x, t: t.transform(x), self.transform, datum) for datum in tqdm(data) ]
+        else:
+            if self.transform is not None:
+                for split, data in list(self.splits.items()):
+                    self.splits[split] = _TransformWrapper(data, self.transform)
 
 
-    def __getitem__(self, split):
-        return (split, self.splits[split])
+class TinyPDBDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'tinypdb.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle, pre_transform=False)
+
+
+class FrameDiffDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'framediff_train_data.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle, pre_transform=False)
+
+class TinyPDBDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'tinypdb.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle, pre_transform=False)
+
+
+class FoldingDiffDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, 'folddiff_train_data.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle, pre_transform=False)
 
 
 class FoldDataset(PreProcessedDataset):

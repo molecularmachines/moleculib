@@ -16,6 +16,7 @@ from biotite.structure import filter_amino_acids
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.pdb as pdb
+import biotite.structure.io.pdbx as pdbx
 
 from .alphabet import (
     all_atoms,
@@ -121,8 +122,8 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath, chain_id=None):
-        if filepath.endswith(".pdb"):
+    def from_filepath(cls, filepath, format=None, chain_id=None):
+        if format == 'pdb' or filepath.endswith(".pdb"):
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=1)
             header = dict(
@@ -138,6 +139,14 @@ class ProteinDatum:
                 if ("resolution" not in mmtf_file)
                 else mmtf_file["resolution"],
             )
+        elif filepath.endswith(".mmcif"):
+            mmcif_file = pdbx.PDBxFile.read(filepath)
+            atom_array = pdbx.get_structure(mmcif_file, model=1)
+            header = dict(
+                idcode=None,
+                resolution=None
+            )
+
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
         if chain_id is not None:
@@ -146,8 +155,8 @@ class ProteinDatum:
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path)
+    def fetch_pdb_id(cls, id, format='mmtf', save_path=None):
+        filepath = rcsb.fetch(id, format, save_path)
         return cls.from_filepath(filepath)
 
     @classmethod

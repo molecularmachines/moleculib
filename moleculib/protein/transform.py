@@ -93,6 +93,44 @@ class BackboneOnly(ProteinTransform):
         return datum
 
 
+class CaOnly(ProteinTransform):
+    def __init__(self, filter: bool = True, keep_seq: bool = False):
+        self.filter = filter
+        self.keep_seq = keep_seq
+        
+    def transform(self, datum):
+        if self.filter:
+            datum.atom_mask[..., 0] = False
+            datum.atom_coord[..., 0, :] = 0.0
+
+            datum.atom_coord[..., 2:, :] = 0.0
+            datum.atom_mask[..., 2:] = False
+
+            if not self.keep_seq:
+                datum.residue_token[datum.residue_token > 2] = 10  # GLY
+
+        return datum
+    
+from einops import repeat
+
+class ToJraph(ProteinTransform):
+    def __init__(self):
+        import jraph
+        self.jraph = jraph
+
+    def transform(self, datum: ProteinDatum):
+        num_nodes = len(datum.residue_token[datum.pad_mask.astype(jnp.bool_)])
+        # node_features = datum.residue_token[datum.pad_mask.astype(jnp.bool_)]
+        node_indices = jnp.arange(len(datum))
+        n_node = jnp.array([num_nodes])
+        node_pos = datum.atom_coord[..., 1, :][datum.pad_mask.astype(jnp.bool_)]
+        senders = repeat(node_indices, "i -> (i j)", j=num_nodes)
+        receivers = repeat(node_indices, "i -> (j i)", j=num_nodes)
+        graph = self.jraph.GraphsTuple(nodes=node_pos, edges=None, senders=senders, receivers=receivers, n_node=n_node, n_edge=jnp.array([num_nodes**2]), globals=None)
+        if num_nodes < 63:
+            graph = self.jraph.pad_with_graphs(graph, n_node=63, n_edge=63**2)
+        return graph
+
 class ProteinPad(ProteinTransform):
     def __init__(self, pad_size: int, random_position: bool = False):
         self.pad_size = pad_size
