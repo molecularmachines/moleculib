@@ -1,5 +1,6 @@
 # biotite dependencies
 import sys
+from subprocess import Popen, PIPE, STDOUT
 
 sys.path.append("/u/manvitha/PyRosetta4.Debug.python310.linux.release-364/")
 from Bio.PDB.DSSP import DSSP
@@ -84,4 +85,16 @@ class PDBStatistics:
             a_key = list(dssp.keys())[z]
             sec_structure += dssp[a_key][2]
         return sec_structure
+
+    def get_term_motifs(self, python_env="ophiuchusenv",
+                        run_path="/mas/projects/molecularmachines/binaries/MASTER/termanal/run.py"):
+        command_to_run = "conda activate {};python {} --p {}".format(python_env, run_path, self.pdb_path)
+        process = Popen(command_to_run, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        process.wait()
+        return process.returncode
+
+
+
+
+
 
