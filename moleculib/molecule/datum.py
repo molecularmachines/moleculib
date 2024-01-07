@@ -1,17 +1,57 @@
 import numpy as np
-from Bio.PDB import parse_pdb_header
-from biotite.structure import get_molecule_masks
-from biotite.database import rcsb
-from .utils import pdb_to_atom_array
-from .alphabet import elements
+from .alphabet import elements, PERIODIC_TABLE
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
-from biotite.structure import Atom, array 
+from biotite.structure import Atom, array
 from biotite.structure import BondList
 
 
 class MoleculeDatum:
+    def __init__(
+        self,
+        idcode: str,
+        atom_token: np.ndarray,
+        atom_coord: np.ndarray,
+        atom_mask: np.ndarray,
+        bonds: np.ndarray,
+        **kwargs,
+    ):
+        self.idcode = idcode
+        self.atom_token = atom_token
+        self.atom_coord = atom_coord
+        self.atom_mask = atom_mask
+        self.bonds = bonds
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def to_atom_array(self):
+        tokens = self.atom_token[self.atom_mask]
+        coords = self.atom_coord[self.atom_mask]
+        atoms = []
+        for coord, token in zip(coords, tokens):
+            el = PERIODIC_TABLE[token - 1]
+            atom = Atom(coord, chain_id="A", element=el, hetero=False, atom_name=el)
+            atoms.append(atom)
+        arr = array(atoms)
+        bonds = BondList(len(atoms))
+        if self.bonds is not None:
+            bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
+        arr.bonds = bonds
+        return arr
+
+    def to_sdf_str(self):
+        file = mol.MOLFile()
+        file.set_structure(self.to_atom_array())
+        return str(file)
+
+
+from biotite.database import rcsb
+from biotite.structure import get_molecule_masks
+from .utils import pdb_to_atom_array
+
+
+class PDBMoleculeDatum(MoleculeDatum):
     """
     Incorporates molecular data to MoleculeDatum
     """
@@ -72,13 +112,10 @@ class MoleculeDatum:
                 if ("resolution" not in mmtf_file)
                 else mmtf_file["resolution"],
             )
-        elif filepath.endswith('.sdf'):
+        elif filepath.endswith(".sdf"):
             mol_file = mol.MOLFile.read(filepath)
             atom_array = mol_file.get_structure()
-            header = dict(
-                idcode='allancomebackhere',
-                resolution=None
-            )
+            header = dict(idcode="allancomebackhere", resolution=None)
         else:
             raise NotImplementedError(
                 f"File type {filepath.split('.')[-1]} is not supported"
@@ -154,14 +191,14 @@ class MoleculeDatum:
         tokens = self.atom_token[self.atom_mask]
         coords = self.atom_coord[self.atom_mask]
         atoms = []
-        for (coord, token) in zip(coords, tokens):
+        for coord, token in zip(coords, tokens):
             el = elements.iloc[token]
             atom = Atom(
-                coord, 
-                chain_id='A',
-                element=el.symbol, 
-                hetero=False, 
-                atom_name=el.symbol
+                coord,
+                chain_id="A",
+                element=el.symbol,
+                hetero=False,
+                atom_name=el.symbol,
             )
             atoms.append(atom)
         arr = array(atoms)

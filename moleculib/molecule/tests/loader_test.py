@@ -27,7 +27,8 @@ def check_dataloader_batch_size(pids, bs):
     )
     for batch_ in iter(dataloader):
         # assert batch_.atom_token.shape[0] == bs
-        print(batch_.to_dict()['bonds'].shape)
-        print(batch_.to_dict()['atom_mask'].sum(-1))
+        print(batch_.to_dict()["bonds"].shape)
+        print(batch_.to_dict()["atom_mask"].sum(-1))
+
 
 test_dataloader()

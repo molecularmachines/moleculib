@@ -5,14 +5,10 @@ from .protein.datum import ProteinDatum
 from .protein.dataset import MonomerDataset, PDBDataset
 from .molecule.batch import MoleculePadBatch
 from .molecule.datum import MoleculeDatum
-from .molecule.dataset import MoleculeDataset
 
 __all__ = [
     "PadBatch",
     "GeometricBatch",
     "ProteinDatum",
     "ProteinDataset",
-    "MoleculePadBatch",
-    "MoleculeDatum",
-    "MoleculeDataset",
 ]
