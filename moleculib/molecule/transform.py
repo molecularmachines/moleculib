@@ -1,4 +1,4 @@
-from .datum import MoleculeDatum
+from .datum import MoleculeDatum, QM9Datum
 import numpy as np
 from .utils import pad_array
 from functools import partial
@@ -71,7 +71,7 @@ class MoleculePad(MoleculeTransform):
                 elif attr in ["adjacency", "laplacian"]:
                     diff = self.pad_size - obj.shape[0]
                     obj = np.pad(obj, ((0, diff), (0, diff)))
-                elif attr == "properties":
+                elif attr in ["properties", "stds"]:
                     pass
                 else:
                     obj = pad_array(obj, self.pad_size)
@@ -101,8 +101,7 @@ class CastToBFloat(MoleculeTransform):
 
 
 class DescribeGraph(MoleculeTransform):
-    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
-        bonds = np.where((datum.bonds[..., -1] == -1)[..., None], 65, datum.bonds)
+    def transform(self, datum: QM9Datum) -> QM9Datum:
         adj = np.zeros((len(datum.atom_coord), len(datum.atom_coord)))
         adj[datum.bonds[:, 0], datum.bonds[:, 1]] = 1
         num_atoms = datum.atom_mask.sum()
@@ -199,17 +198,63 @@ class AtomFeatures(MoleculeTransform):
             "glawe_number",
             "molar_heat_capacity",
         ]
+        self.params = {}
+        for f in self.relevant_features:
+            v = elements[f].dropna().values
+            self.params[f] = (v.min(), v.max(), v.mean(), v.std())
 
-    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
-        tokens = datum.atom_token
-        atom_types = tokens[datum.atom_mask] - 1
-        atom_features = -2 * np.ones(
-            (len(tokens), len(self.relevant_features))
-        )  #TODO: -2 for masks, find better solution
+    def shift(self, x, f):
+        # make x between [-1,1]
+        mn, mx, _, _ = self.params[f]
+        m = (1 - (-1)) / (mx - mn)
+        b = (-1) - m * mn
+        x = m * x + b
+        return np.nan_to_num(x, nan=-2.0)  # TODO: -2 for missing, find better solution
+
+    def transform(self, datum: QM9Datum) -> QM9Datum:
+        atom_types = datum.atom_token[datum.atom_mask] - 1
+        atom_features = -3 * np.ones(
+            (datum.atom_token.shape[0], len(self.relevant_features))
+        )  # TODO: -3 for masks, find better solution
         atoms = elements.iloc[atom_types]
         for i, feature in enumerate(self.relevant_features):
-            atom_features[datum.atom_mask, i] = (
-                atoms[feature].fillna(-1).values
-            )  #TODO: -1 for missing, find better solution
+            atom_features[datum.atom_mask, i] = self.shift(
+                atoms[feature].values, feature
+            )
 
         return datum.__class__(**vars(datum), atom_features=atom_features)
+
+class NormalizeProperties(MoleculeTransform):
+    def __init__(self):
+        self.mins, self.maxs, self.means, self.stds = (
+            np.array([ 0.00000000e+00,  1.29899998e+01, -1.16627998e+01, -4.76199245e+00,
+                    1.88302791e+00,  3.53641014e+01,  4.34048831e-01, -1.69097949e+04,
+                    -1.69095625e+04, -1.69095371e+04, -1.69107148e+04,  6.27799988e+00,
+                    -1.13110725e+02, -1.13889809e+02, -1.14609604e+02, -1.04810410e+02,
+                    0.00000000e+00,  3.37119997e-01,  3.31180006e-01], dtype=np.float32),
+            np.array([ 2.29605007e+01,  1.30860001e+02, -2.76739788e+00,  5.26540327e+00,
+                    1.69282036e+01,  3.28602026e+03,  7.43942928e+00, -1.10148779e+03,
+                    -1.10140979e+03, -1.10138403e+03, -1.10202295e+03,  4.63810005e+01,
+                    -1.30881882e+01, -1.31352901e+01, -1.31866665e+01, -1.25200958e+01,
+                    2.32663781e+05,  1.57709976e+02,  1.57706985e+02], dtype=np.float32),
+            np.array([ 2.6704957e+00,  7.5256264e+01, -6.5378528e+00,  3.1930840e-01,
+                    6.8571572e+00,  1.1888519e+03,  4.0535598e+00, -1.1182805e+04,
+                    -1.1182573e+04, -1.1182548e+04, -1.1183713e+04,  3.1614559e+01,
+                    -7.6084610e+01, -7.6548729e+01, -7.6986252e+01, -7.0808083e+01,
+                    1.0557292e+01,  1.4054270e+00,  1.1276687e+00], dtype=np.float32),
+            np.array([1.50735915e+00, 8.17282867e+00, 5.99983990e-01, 1.27825534e+00,
+                    1.28357017e+00, 2.79095245e+02, 9.03440654e-01, 1.09038257e+03,
+                    1.09037683e+03, 1.09037683e+03, 1.09039624e+03, 4.06875277e+00,
+                    1.03288488e+01, 1.04204378e+01, 1.04946375e+01, 9.50233650e+00,
+                    1.28643958e+03, 1.01723623e+00, 9.62196529e-01], dtype=np.float32)
+        )
+
+    def transform(self, datum: QM9Datum) -> QM9Datum:
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+            if attr == "properties":
+                obj = (obj - self.means) / self.stds
+            if attr == "stds":
+                obj = self.stds
+            new_datum_[attr] = obj
+        return datum.__class__(**new_datum_)

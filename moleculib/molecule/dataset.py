@@ -20,6 +20,7 @@ from .transform import (
     Permuter,
     Centralize,
     AtomFeatures,
+    NormalizeProperties
 )
 from .utils import pids_file_to_list
 from .alphabet import elements
@@ -207,7 +208,7 @@ class QM9Dataset(Dataset):
         molecule_transform: List = [],
         permute=False,
         centralize=True,
-        use_atom_features=False,
+        use_atom_features=True,
     ):
         with open(os.path.join(base_path, "data.pyd"), "rb") as f:
             print("Loading data...")
@@ -217,6 +218,8 @@ class QM9Dataset(Dataset):
         self.permute = Permuter() if permute else None
         self.centralize = Centralize() if centralize else None
         self.atom_features = AtomFeatures()
+        self.normalize_properties = NormalizeProperties()
+        self.use_atom_features = use_atom_features
         self.splits = {"train": self}  # FIXME: patch to kheiron
 
     def __len__(self):
@@ -243,8 +246,10 @@ class QM9Dataset(Dataset):
             atom_mask,
             bonds,
             properties=properties,
+            stds=np.ones_like(properties),
         )
-
+        datum = self.normalize_properties.transform(datum)
+        
         if self.centralize:
             datum = self.centralize.transform(datum)
 

@@ -65,10 +65,10 @@ class QM9Datum(MoleculeDatum):
         atom_mask: np.ndarray,
         bonds: np.ndarray,
         properties: np.ndarray,
+        stds: np.ndarray,
         **kwargs,
     ):
         super().__init__(idcode, atom_token, atom_coord, atom_mask, bonds, **kwargs)
-        self.properties = properties
         """
         Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
         """
@@ -85,14 +85,16 @@ class QM9Datum(MoleculeDatum):
             9: "H Enthalpy at 298.15K, eV",
             10: "G Free energy at 298.15K, eV",
             11: "c_v Heat capacity at 298.15K, cal/(mol K)",
-            12: "U₀_ATOM Atomization energy at 0K, eV",
-            13: "U_ATOM Atomization energy at 298.15K, eV",
-            14: "H_ATOM Atomization enthalpy at 298.15K, eV",
-            15: "G_ATOM Atomization free energy at 298.15K, eV",
-            16: "A Rotational constant, GHz",
-            17: "B Rotational constant, GHz",
-            18: "C Rotational constant, GHz",
+            # 12: "U₀_ATOM Atomization energy at 0K, eV",
+            # 13: "U_ATOM Atomization energy at 298.15K, eV",
+            # 14: "H_ATOM Atomization enthalpy at 298.15K, eV",
+            # 15: "G_ATOM Atomization free energy at 298.15K, eV",
+            # 16: "A Rotational constant, GHz",
+            # 17: "B Rotational constant, GHz",
+            # 18: "C Rotational constant, GHz",
         }
+        self.properties = properties
+        self.stds = stds
 
 
 register_pytree(QM9Datum)
