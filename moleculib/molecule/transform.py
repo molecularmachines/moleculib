@@ -48,7 +48,7 @@ class MoleculeCrop(MoleculeTransform):
         bonds_mask &= (bonds[:, 0] >= cut) & (bonds[:, 1] >= cut)
         new_datum_["bonds"] = bonds[bonds_mask] - cut
 
-        new_datum = MoleculeDatum(**new_datum_)
+        new_datum = datum.__class__(**new_datum_)
         return new_datum
 
 
@@ -58,7 +58,7 @@ class MoleculePad(MoleculeTransform):
 
     def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
         mol_size = datum.atom_token.shape[0]
-        if mol_size >= self.pad_size:
+        if mol_size > self.pad_size:  # TODO: make sure not >=
             return datum
 
         new_datum_ = dict()
@@ -71,13 +71,13 @@ class MoleculePad(MoleculeTransform):
                 elif attr in ["adjacency", "laplacian"]:
                     diff = self.pad_size - obj.shape[0]
                     obj = np.pad(obj, ((0, diff), (0, diff)))
+                elif attr == "properties":
+                    pass
                 else:
                     obj = pad_array(obj, self.pad_size)
-                new_datum_[attr] = obj
-            else:
-                new_datum_[attr] = obj
+            new_datum_[attr] = obj
 
-        new_datum = MoleculeDatum(**new_datum_)
+        new_datum = datum.__class__(**new_datum_)
         return new_datum
 
 
@@ -97,7 +97,7 @@ class CastToBFloat(MoleculeTransform):
             if type(obj) == np.ndarray and (obj.dtype in [np.float32, np.float64]):
                 obj = obj.astype(jnp.bfloat16)
             new_datum_[attr] = obj
-        return MoleculeDatum(**new_datum_)
+        return datum.__class__(**new_datum_)
 
 
 class DescribeGraph(MoleculeTransform):
@@ -108,7 +108,7 @@ class DescribeGraph(MoleculeTransform):
         num_atoms = datum.atom_mask.sum()
         L = laplacian(adj[:num_atoms, :num_atoms], normed=False)
         _, chi = np.linalg.eigh(L)
-        return MoleculeDatum(
+        return datum.__class__(
             **vars(datum),
             adjacency=adj,
             laplacian=chi,
@@ -128,11 +128,11 @@ class Permuter(MoleculeTransform):
         for i in range(datum.bonds.shape[0]):
             for j in range(datum.bonds.shape[1]):
                 permuted_bonds[i, j] = permutation[datum.bonds[i, j]]
-
-        return MoleculeDatum(
-            **vars(datum),
-            atom_token=datum.atom_token[permutation],
-            atom_coord=datum.atom_coord[permutation],
-            atom_mask=datum.atom_mask[permutation],
-            bonds=permutation[datum.bonds],
-        )
+        raise NotImplementedError("bond perm must be corrected")
+        # return datum.__class__(
+        #     **vars(datum),
+        #     atom_token=datum.atom_token[permutation],
+        #     atom_coord=datum.atom_coord[permutation],
+        #     atom_mask=datum.atom_mask[permutation],
+        #     bonds=permutation[datum.bonds],
+        # )

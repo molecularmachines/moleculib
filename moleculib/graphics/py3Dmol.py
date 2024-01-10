@@ -49,7 +49,7 @@ import numpy as np
 
 class PlotPy3DmolSamples:
     def __init__(
-        self, plot_func: Callable, num_samples=7, window_size=(250, 250), pairs=False
+        self, plot_func: Callable, num_samples=None, window_size=(250, 250), pairs=False
     ):
         self.plot_func = plot_func
         self.num_samples = num_samples
@@ -58,8 +58,9 @@ class PlotPy3DmolSamples:
 
     def __call__(self, run, outputs, batch):
         # transform 9 outputs in 3x3 grid:
-        outputs = outputs[: self.num_samples]
-        batch = batch[: self.num_samples]
+        if self.num_samples is not None:
+            outputs = outputs[: self.num_samples]
+            batch = batch[: self.num_samples]
         if self.pairs:
             datums = []
             for output, ground in list(zip(outputs, batch)):

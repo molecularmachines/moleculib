@@ -5,6 +5,7 @@ import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
 from biotite.structure import Atom, array
 from biotite.structure import BondList
+from .utils import register_pytree
 
 
 class MoleculeDatum:
@@ -45,6 +46,50 @@ class MoleculeDatum:
         file.set_structure(self.to_atom_array())
         return str(file)
 
+
+register_pytree(MoleculeDatum)
+
+
+class QM9Datum(MoleculeDatum):
+    def __init__(
+        self,
+        idcode: str,
+        atom_token: np.ndarray,
+        atom_coord: np.ndarray,
+        atom_mask: np.ndarray,
+        bonds: np.ndarray,
+        properties: np.ndarray,
+        **kwargs,
+    ):
+        super().__init__(idcode, atom_token, atom_coord, atom_mask, bonds, **kwargs)
+        self.properties = properties
+        """
+        Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
+        """
+        self.properties_dict = {
+            0: "μ Dipole moment, D",
+            1: "α Isotropic polarizability, a₀³",
+            2: "ε_HOMO Highest occupied molecular orbital energy, eV",
+            3: "ε_LUMO Lowest unoccupied molecular orbital energy, eV",
+            4: "Δε Gap between ε_HOMO and ε_LUMO, eV",
+            5: "⟨R²⟩ Electronic spatial extent, a₀²",
+            6: "ZPVE Zero point vibrational energy, eV",
+            7: "U₀ Internal energy at 0K, eV",
+            8: "U Internal energy at 298.15K, eV",
+            9: "H Enthalpy at 298.15K, eV",
+            10: "G Free energy at 298.15K, eV",
+            11: "c_v Heat capacity at 298.15K, cal/(mol K)",
+            12: "U₀_ATOM Atomization energy at 0K, eV",
+            13: "U_ATOM Atomization energy at 298.15K, eV",
+            14: "H_ATOM Atomization enthalpy at 298.15K, eV",
+            15: "G_ATOM Atomization free energy at 298.15K, eV",
+            16: "A Rotational constant, GHz",
+            17: "B Rotational constant, GHz",
+            18: "C Rotational constant, GHz",
+        }
+
+
+register_pytree(QM9Datum)
 
 from biotite.database import rcsb
 from biotite.structure import get_molecule_masks

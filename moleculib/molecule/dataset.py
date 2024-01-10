@@ -12,17 +12,15 @@ from pandas import Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
-from .datum import MoleculeDatum, PDBMoleculeDatum
+from .datum import MoleculeDatum, PDBMoleculeDatum, QM9Datum
 from .transform import (
     MoleculeTransform,
     MoleculePad,
     DescribeGraph,
     Permuter,
+    Centralize
 )
 from .utils import pids_file_to_list, register_pytree
-
-register_pytree(MoleculeDatum)
-
 
 class PDBMoleculeDataset(Dataset):
     """
@@ -200,14 +198,20 @@ class PDBMoleculeDataset(Dataset):
 
 
 class QM9Dataset(Dataset):
-    def __init__(self, base_path="QM9", molecule_transform: List = [], permute=False):
+    def __init__(
+        self,
+        base_path="QM9",
+        molecule_transform: List = [],
+        permute=False,
+        centralize=True,
+    ):
         with open(os.path.join(base_path, "data.pyd"), "rb") as f:
             print("Loading data...")
             self.data = pickle.load(f)
         self.graph = DescribeGraph()
         self.padding = MoleculePad(29)
         self.permute = Permuter() if permute else None
-        self.centralize = True
+        self.centralize = Centralize() if centralize else None
         self.splits = {"train": self}  # FIXME: patch to kheiron
 
     def __len__(self):
@@ -219,6 +223,7 @@ class QM9Dataset(Dataset):
         atom_coord = datum["pos"]
         atom_token = datum["z"]
         atom_mask = np.ones_like(atom_token, dtype=bool)
+        properties = np.squeeze(datum["y"])
 
         bonds = datum["edge_index"].T
         # allan come back here
@@ -226,15 +231,17 @@ class QM9Dataset(Dataset):
             np.int32
         )
 
-        # atom_coord -= atom_coord.mean(axis=0)
-
-        datum = MoleculeDatum(
+        datum = QM9Datum(
             idcode,
             atom_token,
             atom_coord,
             atom_mask,
             bonds,
+            properties=properties,
         )
+
+        if self.centralize:
+            datum = self.centralize.transform(datum)
 
         if self.permute is not None:
             datum = self.permute(datum)
