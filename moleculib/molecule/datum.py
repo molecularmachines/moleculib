@@ -72,7 +72,7 @@ class QM9Datum(MoleculeDatum):
         """
         Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
         """
-        self.properties_dict = {
+        self.relevant_properties = {
             0: "μ Dipole moment, D",
             1: "α Isotropic polarizability, a₀³",
             2: "ε_HOMO Highest occupied molecular orbital energy, eV",

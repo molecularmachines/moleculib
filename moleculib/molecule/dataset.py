@@ -12,15 +12,18 @@ from pandas import Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
-from .datum import MoleculeDatum, PDBMoleculeDatum, QM9Datum
+from .datum import PDBMoleculeDatum, QM9Datum
 from .transform import (
     MoleculeTransform,
     MoleculePad,
     DescribeGraph,
     Permuter,
-    Centralize
+    Centralize,
+    AtomFeatures
 )
-from .utils import pids_file_to_list, register_pytree
+from .utils import pids_file_to_list
+from .alphabet import elements
+
 
 class PDBMoleculeDataset(Dataset):
     """
@@ -212,6 +215,7 @@ class QM9Dataset(Dataset):
         self.padding = MoleculePad(29)
         self.permute = Permuter() if permute else None
         self.centralize = Centralize() if centralize else None
+        self.atom_features = AtomFeatures()
         self.splits = {"train": self}  # FIXME: patch to kheiron
 
     def __len__(self):
@@ -248,7 +252,7 @@ class QM9Dataset(Dataset):
 
         datum = self.graph.transform(datum)
         datum = self.padding.transform(datum)
-
+        datum = self.atom_features.transform(datum)
         return datum
 
 

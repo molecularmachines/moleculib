@@ -121,7 +121,7 @@ class Permuter(MoleculeTransform):
     def __init__(self, seed: int = 0):
         self.seed = seed
 
-    def __call__(self, datum: MoleculeDatum) -> MoleculeDatum:
+    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
         np.random.seed(self.seed)
         permutation = np.random.permutation(len(datum.atom_token))
         permuted_bonds = np.zeros_like(datum.bonds)
@@ -136,3 +136,80 @@ class Permuter(MoleculeTransform):
         #     atom_mask=datum.atom_mask[permutation],
         #     bonds=permutation[datum.bonds],
         # )
+
+
+from moleculib.molecule.alphabet import elements
+
+
+class AtomFeatures(MoleculeTransform):
+    """Compute atomistic features from the atom tokens"""
+
+    def __init__(self):
+        self.relevant_features = [
+            "atomic_radius",
+            "atomic_volume",
+            "density",
+            "dipole_polarizability",
+            "electron_affinity",
+            # "electronic_configuration", complex object
+            "evaporation_heat",
+            "fusion_heat",
+            # "group_id", make onehot
+            "lattice_constant",
+            # "lattice_structure", complex object
+            # "period", make onehot
+            # "series_id", make onehot ?
+            "specific_heat_capacity",
+            "thermal_conductivity",
+            "vdw_radius",
+            "covalent_radius_cordero",
+            "covalent_radius_pyykko",
+            "en_pauling",
+            "en_allen",
+            "proton_affinity",
+            "gas_basicity",
+            "heat_of_formation",
+            "c6",
+            "covalent_radius_bragg",
+            "vdw_radius_bondi",
+            "vdw_radius_truhlar",
+            "vdw_radius_rt",
+            "vdw_radius_batsanov",
+            "vdw_radius_dreiding",
+            "vdw_radius_uff",
+            "vdw_radius_mm3",
+            # "abundance_crust", relevant? maybe in an evolutionary manner..
+            # "abundance_sea",
+            "en_ghosh",
+            "vdw_radius_alvarez",
+            "c6_gb",
+            "atomic_weight",
+            "atomic_weight_uncertainty",
+            # "is_monoisotopic",
+            # "is_radioactive",
+            "atomic_radius_rahm",
+            # "geochemical_class",
+            # "goldschmidt_class",
+            "metallic_radius",
+            "metallic_radius_c12",
+            "covalent_radius_pyykko_double",
+            "covalent_radius_pyykko_triple",
+            "dipole_polarizability_unc",
+            "pettifor_number",
+            "glawe_number",
+            "molar_heat_capacity",
+        ]
+
+    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
+        tokens = datum.atom_token
+        atom_types = tokens[datum.atom_mask] - 1
+        atom_features = -2 * np.ones(
+            (len(tokens), len(self.relevant_features))
+        )  #TODO: -2 for masks, find better solution
+        atoms = elements.iloc[atom_types]
+        for i, feature in enumerate(self.relevant_features):
+            atom_features[datum.atom_mask, i] = (
+                atoms[feature].fillna(-1).values
+            )  #TODO: -1 for missing, find better solution
+
+        return datum.__class__(**vars(datum), atom_features=atom_features)
