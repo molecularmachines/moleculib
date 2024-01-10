@@ -19,7 +19,7 @@ from .transform import (
     DescribeGraph,
     Permuter,
     Centralize,
-    AtomFeatures
+    AtomFeatures,
 )
 from .utils import pids_file_to_list
 from .alphabet import elements
@@ -207,6 +207,7 @@ class QM9Dataset(Dataset):
         molecule_transform: List = [],
         permute=False,
         centralize=True,
+        use_atom_features=False,
     ):
         with open(os.path.join(base_path, "data.pyd"), "rb") as f:
             print("Loading data...")
@@ -252,7 +253,8 @@ class QM9Dataset(Dataset):
 
         datum = self.graph.transform(datum)
         datum = self.padding.transform(datum)
-        datum = self.atom_features.transform(datum)
+        if self.use_atom_features:
+            datum = self.atom_features.transform(datum)
         return datum
 
 
