@@ -1,5 +1,5 @@
 import numpy as np
-from .alphabet import elements, PERIODIC_TABLE
+from .alphabet import elements
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
@@ -31,8 +31,14 @@ class MoleculeDatum:
         coords = self.atom_coord[self.atom_mask]
         atoms = []
         for coord, token in zip(coords, tokens):
-            el = PERIODIC_TABLE[token - 1]
-            atom = Atom(coord, chain_id="A", element=el, hetero=False, atom_name=el)
+            el = elements.iloc[token - 1]
+            atom = Atom(
+                coord,
+                chain_id="A",
+                element=el.symbol,
+                hetero=False,
+                atom_name=el.symbol,
+            )
             atoms.append(atom)
         arr = array(atoms)
         bonds = BondList(len(atoms))
@@ -241,9 +247,9 @@ class PDBMoleculeDatum(MoleculeDatum):
             atom = Atom(
                 coord,
                 chain_id="A",
-                element=el.symbol,
+                element=el.symbol.upper(),
                 hetero=False,
-                atom_name=el.symbol,
+                atom_name=el.symbol.upper(),
             )
             atoms.append(atom)
         arr = array(atoms)
