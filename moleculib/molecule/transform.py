@@ -215,7 +215,7 @@ class AtomFeatures(MoleculeTransform):
         atom_types = datum.atom_token[datum.atom_mask] - 1
         atom_features = -3 * np.ones(
             (datum.atom_token.shape[0], len(self.relevant_features))
-        )  # TODO: -3 for masks, find better solution
+        )  # TODO: -3 for masks, find better solution, prob use an embedding
         atoms = elements.iloc[atom_types]
         for i, feature in enumerate(self.relevant_features):
             atom_features[datum.atom_mask, i] = self.shift(

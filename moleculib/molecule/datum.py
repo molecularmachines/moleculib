@@ -11,14 +11,12 @@ from .utils import register_pytree
 class MoleculeDatum:
     def __init__(
         self,
-        idcode: str,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
         bonds: np.ndarray,
         **kwargs,
     ):
-        self.idcode = idcode
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
@@ -59,7 +57,6 @@ register_pytree(MoleculeDatum)
 class QM9Datum(MoleculeDatum):
     def __init__(
         self,
-        idcode: str,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
@@ -68,7 +65,7 @@ class QM9Datum(MoleculeDatum):
         stds: np.ndarray,
         **kwargs,
     ):
-        super().__init__(idcode, atom_token, atom_coord, atom_mask, bonds, **kwargs)
+        super().__init__(atom_token, atom_coord, atom_mask, bonds, **kwargs)
         """
         Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
         """
@@ -98,6 +95,26 @@ class QM9Datum(MoleculeDatum):
 
 
 register_pytree(QM9Datum)
+
+class RSDatum(MoleculeDatum):
+    def __init__(
+        self,
+        atom_token: np.ndarray,
+        atom_coord: np.ndarray,
+        atom_mask: np.ndarray,
+        bonds: np.ndarray,
+        properties: np.ndarray,
+        adjacency: np.ndarray,
+        laplacian: np.ndarray,
+        **kwargs,
+    ):
+        super().__init__(atom_token, atom_coord, atom_mask, bonds, **kwargs)
+        self.properties = properties
+        self.adjacency = adjacency
+        self.laplacian = laplacian
+    
+register_pytree(RSDatum)
+
 
 from biotite.database import rcsb
 from biotite.structure import get_molecule_masks

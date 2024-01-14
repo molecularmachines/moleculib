@@ -5,6 +5,7 @@ from functools import partial
 from pathlib import Path
 from tempfile import gettempdir
 from typing import List, Union
+from scipy.sparse.csgraph import laplacian
 import numpy as np
 import biotite
 import pandas as pd
@@ -12,7 +13,7 @@ from pandas import Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
-from .datum import PDBMoleculeDatum, QM9Datum
+from .datum import PDBMoleculeDatum, QM9Datum, MoleculeDatum, RSDatum
 from .transform import (
     MoleculeTransform,
     MoleculePad,
@@ -20,10 +21,9 @@ from .transform import (
     Permuter,
     Centralize,
     AtomFeatures,
-    NormalizeProperties
+    NormalizeProperties,
 )
-from .utils import pids_file_to_list
-from .alphabet import elements
+from .utils import pids_file_to_list, extract_rdkit_mol_properties
 
 
 class PDBMoleculeDataset(Dataset):
@@ -240,16 +240,16 @@ class QM9Dataset(Dataset):
         )
 
         datum = QM9Datum(
-            idcode,
-            atom_token,
-            atom_coord,
-            atom_mask,
-            bonds,
+            idcode=idcode,
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=atom_mask,
+            bonds=bonds,
             properties=properties,
             stds=np.ones_like(properties),
         )
         datum = self.normalize_properties.transform(datum)
-        
+
         if self.centralize:
             datum = self.centralize.transform(datum)
 
@@ -260,6 +260,100 @@ class QM9Dataset(Dataset):
         datum = self.padding.transform(datum)
         if self.use_atom_features:
             datum = self.atom_features.transform(datum)
+        return datum
+
+
+class RSDataset(Dataset):
+    def __init__(
+        self,
+        base_path="ChIRo",
+        molecule_transform: List = [],
+        permute=False,
+        use_atom_features=True,
+        max_num_atoms=50,
+        _split="train",
+    ):
+        print(f"Loading {_split} data...")
+        if _split == "train":
+            f = "train_RS_classification_enantiomers_MOL_326865_55084_27542.pkl"
+        elif _split == "valid":
+            f = "validation_RS_classification_enantiomers_MOL_70099_11748_5874.pkl"
+        elif _split == "test":
+            f = "test_RS_classification_enantiomers_MOL_69719_11680_5840.pkl"
+        else:
+            raise ValueError("Invalid split")
+
+        self.data = pd.read_pickle(os.path.join(base_path, f))
+        self.max_num_atoms = max_num_atoms
+        if self.max_num_atoms is not None:
+            self.data = self.data[
+                self.data.rdkit_mol_cistrans_stereo.apply(
+                    lambda x: x.GetNumAtoms() <= self.max_num_atoms
+                )
+            ]
+        self.data = self.data.iloc
+
+        self.padding = MoleculePad(max_num_atoms)
+        self.permute = Permuter() if permute else None
+        self.atom_features = AtomFeatures()
+        self.use_atom_features = use_atom_features
+        if _split == "train":
+            self.splits = {
+                "train": self,
+                "valid": self.__class__(
+                    base_path,
+                    molecule_transform,
+                    permute,
+                    use_atom_features,
+                    max_num_atoms,
+                    "valid",
+                ),
+                "test": self.__class__(
+                    base_path,
+                    molecule_transform,
+                    permute,
+                    use_atom_features,
+                    max_num_atoms,
+                    "test",
+                ),
+            }  # FIXME: patch to kheiron
+
+    def __len__(self):
+        return self.data[:].shape[0]
+
+    def __getitem__(self, idx):
+        """
+        Some lines taken from
+        https://github.com/keiradams/ChIRo/blob/main/model/datasets_samplers.py#L167
+        """
+        datum = self.data[idx]
+        atom_token, atom_coord, bonds, adj = extract_rdkit_mol_properties(
+            datum.rdkit_mol_cistrans_stereo
+        )
+        atom_mask = np.ones_like(atom_token, dtype=bool)
+        properties = np.zeros((2,))
+        properties[datum.RS_label_binary] = 1.0
+
+        L = laplacian(adj, normed=False).astype(np.float32)
+
+        datum = RSDatum(
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=atom_mask,
+            bonds=bonds,
+            properties=properties,
+            adjacency=adj,
+            laplacian=L,
+        )
+
+        if self.permute is not None:
+            datum = self.permute(datum)
+
+        datum = self.padding.transform(datum)
+
+        if self.use_atom_features:
+            datum = self.atom_features.transform(datum)
+
         return datum
 
 

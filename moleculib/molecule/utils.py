@@ -10,6 +10,7 @@ from biotite.structure import (
 import numpy as np
 import biotite.structure.io.mmtf as mmtf
 import py3Dmol
+import rdkit
 import jax.numpy as jnp
 import jaxlib
 from jax.tree_util import register_pytree_node
@@ -123,3 +124,25 @@ def register_pytree(Datum):
         return Datum(**dict(zip(keys, values)))
 
     register_pytree_node(Datum, encode_datum_pytree, decode_datum_pytree)
+
+
+def extract_rdkit_mol_properties(mol):
+    if isinstance(mol, rdkit.Chem.rdchem.Conformer):
+        mol = mol.GetOwningMol()
+        conformer = mol
+    elif isinstance(mol, rdkit.Chem.rdchem.Mol):
+        conformer = mol.GetConformer()
+
+    atoms = rdkit.Chem.rdchem.Mol.GetAtoms(mol)
+    atom_token = np.array([atom.GetAtomicNum() for atom in atoms])  # Z
+    atom_coord = np.array(
+        [conformer.GetAtomPosition(atom.GetIdx()) for atom in atoms]
+    )  # xyz positions
+    adj = rdkit.Chem.GetAdjacencyMatrix(mol)
+    bonds = np.array(
+        [
+            [bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondType()]
+            for bond in rdkit.Chem.rdchem.Mol.GetBonds(mol)
+        ]
+    )
+    return atom_token, atom_coord, bonds, adj
