@@ -1,10 +1,10 @@
-from torch.utils.data import DataLoader
+# from torch.utils.data import DataLoader
 
 from .batch import ProteinCollator
 from .dataset import ProteinDataset
 
 
-class ProteinDataLoader(DataLoader):
+class ProteinDataLoader:
     """
     PyTorch DataLoader for Protein Datasets
 

@@ -10,7 +10,6 @@ import biotite
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
 from .alphabet import UNK_TOKEN
@@ -32,7 +31,7 @@ PDB_METADATA_FIELDS = PDB_HEADER_FIELDS + CHAIN_COUNTER_FIELDS
 SAMPLE_PDBS = ["1C5E", "1C9O", "1CKU", "1CSE", "7ZKR", "7ZYS", "8AJQ", "8AQL", "8DCH"]
 
 
-class PDBDataset(Dataset):
+class PDBDataset:
     """
     Holds ProteinDatum dataset with specified PDB IDs
 

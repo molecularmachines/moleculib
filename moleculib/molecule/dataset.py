@@ -9,7 +9,6 @@ from typing import List, Union
 import biotite
 import pandas as pd
 from pandas import Series
-from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
 from .datum import MoleculeDatum
@@ -17,7 +16,7 @@ from .transform import MoleculeTransform
 from .utils import pids_file_to_list
 
 
-class MoleculeDataset(Dataset):
+class MoleculeDataset:
     """
     Holds MoleculeDatum dataset with specified PDB IDs
 

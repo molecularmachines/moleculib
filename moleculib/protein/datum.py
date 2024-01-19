@@ -1,6 +1,6 @@
 import numpy as np
 from biotite.database import rcsb
-from biotite.sequence import ProteinSequence
+from biotite.sequence import ProteinSequence as _ProteinSequence
 from biotite.structure import (
     apply_chain_wise,
     apply_residue_wise,
@@ -30,6 +30,28 @@ from .alphabet import (
 from einops import rearrange, repeat
 
 
+class ProteinSequence:
+
+    def __init__(
+        self,
+        idcode: str,
+        sequence: _ProteinSequence,
+        residue_token: np.ndarray,
+        residue_index: np.ndarray,
+        residue_mask: np.ndarray,
+        chain_token: np.ndarray,
+        **kwargs,
+    ):
+        self.idcode = idcode
+        self.sequence = str(sequence)
+        self.residue_token = residue_token
+        self.residue_index = residue_index
+        self.residue_mask = residue_mask
+        self.chain_token = chain_token
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
 class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
@@ -40,7 +62,7 @@ class ProteinDatum:
         self,
         idcode: str,
         resolution: float,
-        sequence: ProteinSequence,
+        sequence: _ProteinSequence,
         residue_token: np.ndarray,
         residue_index: np.ndarray,
         residue_mask: np.ndarray,
@@ -111,7 +133,7 @@ class ProteinDatum:
         return cls(
             idcode="",
             resolution=0.0,
-            sequence=ProteinSequence(""),
+            sequence=_ProteinSequence(""),
             residue_index=np.array([]),
             residue_token=np.array([]),
             residue_mask=np.array([]),
@@ -157,7 +179,7 @@ class ProteinDatum:
     @classmethod
     def fetch_pdb_id(cls, id, format='mmtf', save_path=None):
         filepath = rcsb.fetch(id, format, save_path)
-        return cls.from_filepath(filepath)
+        return cls.from_filepath(filepath, format)
 
     @classmethod
     def from_atom_array(
@@ -177,7 +199,7 @@ class ProteinDatum:
         res_names = [
             ("UNK" if (name not in all_residues) else name) for name in res_names
         ]
-        sequence = ProteinSequence(list(res_names))
+        sequence = _ProteinSequence(list(res_names))
 
         # index residues globally
         atom_array.add_annotation("seq_uid", int)
@@ -302,6 +324,13 @@ class ProteinDatum:
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
         all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+
+        # move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens)
+        all_atom_res_indices = np.array(all_atom_res_indices)
 
         lines = []
         for idx, (coord, token, res_token, res_index) in enumerate(
