@@ -5,15 +5,22 @@ from functools import partial
 from pathlib import Path
 from tempfile import gettempdir
 from typing import List, Union
-
+import numpy as np
 import biotite
 import pandas as pd
 from pandas import Series
 from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
+from .datum import MoleculeDatum, PDBMoleculeDatum
+from .transform import (
+    MoleculeTransform,
+    MoleculePad,
+    DescribeGraph,
+    Permuter,
+)
+from .utils import pids_file_to_list, register_pytree
 
-from .datum import MoleculeDatum
-from .transform import MoleculeTransform
-from .utils import pids_file_to_list
+register_pytree(MoleculeDatum)
 
 
 class MoleculeDataset:
@@ -67,6 +74,8 @@ class MoleculeDataset:
             self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
         print(f"Loaded metadata with {len(self.metadata)} samples")
 
+        self.splits = {"train": self.metadata}  # TODO: patch to kheiron
+
         # specific Molecule attributes
         molecule_attrs = [
             "idcode",
@@ -100,7 +109,7 @@ class MoleculeDataset:
         pdb_id = self.metadata.iloc[idx]["idcode"]
         molecule_idx = self.metadata.iloc[idx]["molecule_idx"]
         filepath = os.path.join(self.base_path, f"{pdb_id}.mmtf")
-        molecule = MoleculeDatum.from_filepath(filepath, molecule_idx=molecule_idx)
+        molecule = PDBMoleculeDatum.from_filepath(filepath, molecule_idx=molecule_idx)
         return molecule
 
     def __len__(self):
@@ -133,7 +142,7 @@ class MoleculeDataset:
     @staticmethod
     def _maybe_fetch_and_extract(pdb_id, save_path):
         try:
-            datum = MoleculeDatum.fetch_pdb_id(pdb_id, save_path=save_path)
+            datum = PDBMoleculeDatum.fetch_pdb_id(pdb_id, save_path=save_path)
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError, biotite.InvalidFileError) as error:
@@ -151,7 +160,7 @@ class MoleculeDataset:
             return None
         if len(datum.atom_mask) == 0:
             return None
-        return MoleculeDataset._extract_datum_row(datum)
+        return PDBMoleculeDataset._extract_datum_row(datum)
 
     @classmethod
     def build(
@@ -187,3 +196,108 @@ class MoleculeDataset:
                 pickle.dump(metadata, file)
 
         return cls(base_path=save_path, metadata=metadata, **kwargs)
+
+
+class QM9Dataset(Dataset):
+    def __init__(self, base_path="QM9", molecule_transform: List = [], permute=False):
+        with open(os.path.join(base_path, "data.pyd"), "rb") as f:
+            print("Loading data...")
+            self.data = pickle.load(f)
+        self.graph = DescribeGraph()
+        self.padding = MoleculePad(29)
+        self.permute = Permuter() if permute else None
+        self.centralize = True
+        self.splits = {"train": self}  # FIXME: patch to kheiron
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        datum = self.data[idx]
+        idcode = datum["name"]
+        atom_coord = datum["pos"]
+        atom_token = datum["z"]
+        atom_mask = np.ones_like(atom_token, dtype=bool)
+
+        bonds = datum["edge_index"].T
+        # allan come back here
+        bonds = np.concatenate([bonds, np.ones((len(bonds), 1))], axis=1).astype(
+            np.int32
+        )
+
+        # atom_coord -= atom_coord.mean(axis=0)
+
+        datum = MoleculeDatum(
+            idcode,
+            atom_token,
+            atom_coord,
+            atom_mask,
+            bonds,
+        )
+
+        if self.permute is not None:
+            datum = self.permute(datum)
+
+        datum = self.graph.transform(datum)
+        datum = self.padding.transform(datum)
+
+        return datum
+
+
+from functools import reduce
+import os
+import pickle
+from typing import Callable, List
+
+from tqdm.contrib.concurrent import process_map
+
+
+class _TransformWrapper:
+    def __init__(self, ds, transform):
+        self.ds = ds
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.ds)
+
+    def __getitem__(self, idx):
+        return reduce(lambda x, t: t.transform(x), self.transform, self.ds[idx])
+
+
+class PreProcessedDataset:
+    def __init__(
+        self,
+        splits,
+        transform: List[Callable] = None,
+        shuffle=True,
+        pre_transform=False,
+    ):
+        self.splits = splits
+
+        if shuffle:
+            for split, data in list(self.splits.items()):
+                print(f"Shuffling {split}...")
+                self.splits[split] = np.random.permutation(data)
+
+        self.transform = transform
+        if pre_transform:
+            if self.transform is None:
+                raise ValueError("Cannot pre-transform without a transform")
+            for split, data in list(self.splits.items()):
+                self.splits[split] = [
+                    reduce(lambda x, t: t.transform(x), self.transform, datum)
+                    for datum in tqdm(data)
+                ]
+        else:
+            if self.transform is not None:
+                for split, data in list(self.splits.items()):
+                    self.splits[split] = _TransformWrapper(data, self.transform)
+
+
+class QM9Processed(PreProcessedDataset):
+    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
+        base_path = os.path.join(base_path, "data.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle, pre_transform=False)
