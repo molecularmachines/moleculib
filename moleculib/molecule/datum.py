@@ -1,5 +1,5 @@
 import numpy as np
-from .alphabet import elements, PERIODIC_TABLE
+# from .alphabet import elements, PERIODIC_TABLE
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol

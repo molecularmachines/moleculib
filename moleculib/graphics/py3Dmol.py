@@ -5,7 +5,7 @@ import os
 from typing import Callable
 
 
-def plot_py3dmol_protein_grid(
+def plot_py3dmol_grid(
         grid, 
         window_size=(250, 250), 
         sphere=False,
