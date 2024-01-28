@@ -67,7 +67,7 @@ class SeqDatum:
         sequence_mask = []
         for name in residues:
             residue_name=all_residues[name]
-            if residue_name!="PAD":
+            if residue_name!="PAD" and residue_name!="MASK":
                 sequence_list.append(ProteinSequence.convert_letter_3to1(residue_name))
                 sequence_mask.append(True)
             else:
@@ -99,7 +99,7 @@ class SeqDatum:
         sequence_mask = []
         for name in residue_tokens:
             residue_name=all_residues[name]
-            if residue_name!="PAD":
+            if residue_name!="PAD" and residue_name!="MASK":
                 sequence_mask.append(True)
             else:
                 sequence_mask.append(False)

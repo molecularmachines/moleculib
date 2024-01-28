@@ -20,6 +20,28 @@ from biotite.sequence.io import fasta
 alphabet = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
                          'Y', "X"]
 
+def onehot_encode_datum(sequencedatum:SeqDatum):
+    residue_tokens = sequencedatum.residue_token
+    one_hot_tensor = torch.zeros(len(residue_tokens), len(all_residues))
+    for i, token in enumerate(residue_tokens):
+        one_hot_tensor[i, token] = 1
+    return one_hot_tensor
+
+def decode_one_hot(x):
+    decoded = np.argmax(x, axis=2)
+    return decoded
+
+def residue_tokens_to_sequence(sequencedatum:SeqDatum):
+    sequence_list = [all_residues[i] for i in sequencedatum.residue_token]
+    residues=[]
+    for name in sequence_list:
+        if name!="MASK":
+            residues.append(ProteinSequence.convert_letter_3to1(name))
+        else:
+            residues.append("U")
+#     residues = [ProteinSequence.convert_letter_3to1(name) for name in sequence_list if name != "MASK"]
+    return "".join(residues)
+
 def load_fasta_file(input: str) -> List[Tuple[str]]:
     # read input fasta file
     fasta_file = fasta.FastaFile.read(input)
