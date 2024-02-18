@@ -1,6 +1,6 @@
 import numpy as np
 from biotite.database import rcsb
-from biotite.sequence import ProteinSequence
+from biotite.sequence import ProteinSequence as _ProteinSequence
 from biotite.structure import (
     apply_chain_wise,
     apply_residue_wise,
@@ -16,6 +16,7 @@ from biotite.structure import filter_amino_acids
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.pdb as pdb
+import biotite.structure.io.pdbx as pdbx
 
 from .alphabet import (
     all_atoms,
@@ -29,6 +30,28 @@ from .alphabet import (
 from einops import rearrange, repeat
 
 
+class ProteinSequence:
+
+    def __init__(
+        self,
+        idcode: str,
+        sequence: _ProteinSequence,
+        residue_token: np.ndarray,
+        residue_index: np.ndarray,
+        residue_mask: np.ndarray,
+        chain_token: np.ndarray,
+        **kwargs,
+    ):
+        self.idcode = idcode
+        self.sequence = str(sequence)
+        self.residue_token = residue_token
+        self.residue_index = residue_index
+        self.residue_mask = residue_mask
+        self.chain_token = chain_token
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
 class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
@@ -39,7 +62,7 @@ class ProteinDatum:
         self,
         idcode: str,
         resolution: float,
-        sequence: ProteinSequence,
+        sequence: _ProteinSequence,
         residue_token: np.ndarray,
         residue_index: np.ndarray,
         residue_mask: np.ndarray,
@@ -110,7 +133,7 @@ class ProteinDatum:
         return cls(
             idcode="",
             resolution=0.0,
-            sequence=ProteinSequence(""),
+            sequence=_ProteinSequence(""),
             residue_index=np.array([]),
             residue_token=np.array([]),
             residue_mask=np.array([]),
@@ -121,8 +144,8 @@ class ProteinDatum:
         )
 
     @classmethod
-    def from_filepath(cls, filepath, chain_id=None):
-        if filepath.endswith(".pdb"):
+    def from_filepath(cls, filepath, format=None, chain_id=None):
+        if format == 'pdb' or filepath.endswith(".pdb"):
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=1)
             header = dict(
@@ -138,6 +161,14 @@ class ProteinDatum:
                 if ("resolution" not in mmtf_file)
                 else mmtf_file["resolution"],
             )
+        elif filepath.endswith(".mmcif"):
+            mmcif_file = pdbx.PDBxFile.read(filepath)
+            atom_array = pdbx.get_structure(mmcif_file, model=1)
+            header = dict(
+                idcode=None,
+                resolution=None
+            )
+
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
         if chain_id is not None:
@@ -146,9 +177,9 @@ class ProteinDatum:
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path)
-        return cls.from_filepath(filepath)
+    def fetch_pdb_id(cls, id, format='mmtf', save_path=None):
+        filepath = rcsb.fetch(id, format, save_path)
+        return cls.from_filepath(filepath, format)
 
     @classmethod
     def from_atom_array(
@@ -168,7 +199,7 @@ class ProteinDatum:
         res_names = [
             ("UNK" if (name not in all_residues) else name) for name in res_names
         ]
-        sequence = ProteinSequence(list(res_names))
+        sequence = _ProteinSequence(list(res_names))
 
         # index residues globally
         atom_array.add_annotation("seq_uid", int)
@@ -293,6 +324,13 @@ class ProteinDatum:
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
         all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+
+        # move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens)
+        all_atom_res_indices = np.array(all_atom_res_indices)
 
         lines = []
         for idx, (coord, token, res_token, res_index) in enumerate(
