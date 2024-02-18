@@ -56,7 +56,7 @@ class ProteinCrop(ProteinTransform):
             else:
                 new_datum_[attr] = obj
 
-        new_datum = ProteinDatum(**new_datum_)
+        new_datum = type(datum)(**new_datum_)
         return new_datum
 
 
@@ -131,6 +131,7 @@ class ToJraph(ProteinTransform):
             graph = self.jraph.pad_with_graphs(graph, n_node=63, n_edge=63**2)
         return graph
 
+
 class ProteinPad(ProteinTransform):
     def __init__(self, pad_size: int, random_position: bool = False):
         self.pad_size = pad_size
@@ -162,7 +163,8 @@ class ProteinPad(ProteinTransform):
             pad_mask = np.roll(pad_mask, shift, axis=0)
         new_datum_["pad_mask"] = pad_mask
 
-        new_datum = ProteinDatum(**new_datum_)
+        new_datum = type(datum)(**new_datum_)
+
         return new_datum
 
 
@@ -490,9 +492,12 @@ class MaskResidues(ProteinTransform):
             mask[choice] = True
 
         mask = mask * datum.residue_mask
+        
         datum.residue_token_masked = np.where(
             mask, all_residues.index("MASK"), datum.residue_token
         )
-        datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
+        if hasattr(datum, 'atom_coord'):
+            datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
         datum.mask_mask = mask
+
         return datum
