@@ -1,19 +1,14 @@
 from scipy.linalg.decomp import nonzero
 # Standard libraries
-import os, sys
-import re
-import random
 # Python Packages
 import pandas as pd
 import numpy as np
 # Deep Learning ones
 import torch
-from torch.utils.data import Dataset, DataLoader
-from Bio.PDB import PDBParser
-from Bio.SeqUtils import seq1
-import ankh
-import esm
-from transformers import T5Tokenizer, T5EncoderModel
+# from torch.utils.data import Dataset, DataLoader
+# from Bio.PDB import PDBParser
+# from Bio.SeqUtils import seq1
+# from transformers import T5Tokenizer, T5EncoderModel
 from typing import List, Tuple
 from biotite.sequence.io import fasta
 
@@ -78,64 +73,64 @@ def one_hot_encode_seq(protein_seq, max_length=14):
         pad_hot_array.append(letter)
     return np.array(one_hot_array + pad_hot_array)
 
-def encode_seq_with_ankh(protein_seq):
-    model, tokenizer = ankh.load_large_model()
-    model.eval()
-    embeddings = None
-    protein_sequences = [list(seq) for seq in protein_seq]
-    outputs = tokenizer.batch_encode_plus(protein_sequences,
-                                               add_special_tokens=True,
-                                               padding=True,
-                                               is_split_into_words=True,
-                                               return_tensors="pt")
-    with torch.no_grad():
-        embeddings = model(input_ids=outputs['input_ids'], attention_mask=outputs['attention_mask'])
+# def encode_seq_with_ankh(protein_seq):
+#     model, tokenizer = ankh.load_large_model()
+#     model.eval()
+#     embeddings = None
+#     protein_sequences = [list(seq) for seq in protein_seq]
+#     outputs = tokenizer.batch_encode_plus(protein_sequences,
+#                                                add_special_tokens=True,
+#                                                padding=True,
+#                                                is_split_into_words=True,
+#                                                return_tensors="pt")
+#     with torch.no_grad():
+#         embeddings = model(input_ids=outputs['input_ids'], attention_mask=outputs['attention_mask'])
 
-    return embeddings.last_hidden_state
+#     return embeddings.last_hidden_state
 
-def encode_seq_with_protT5(protein_seq):
-    tokenizer = T5Tokenizer.from_pretrained('Rostlab/prot_t5_xl_half_uniref50-enc', do_lower_case=False)
-    model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_half_uniref50-enc")
-    embeddings = None
-    seqs = [list(seq) for seq in protein_seq]
-    protein_sequences = []
-    for sequence in seqs:
-        sequence = "".join(list(sequence))
-        protein_sequences.append(" ".join(list(re.sub(r"[UZOB]", "X", sequence))))
+# def encode_seq_with_protT5(protein_seq):
+#     tokenizer = T5Tokenizer.from_pretrained('Rostlab/prot_t5_xl_half_uniref50-enc', do_lower_case=False)
+#     model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_half_uniref50-enc")
+#     embeddings = None
+#     seqs = [list(seq) for seq in protein_seq]
+#     protein_sequences = []
+#     for sequence in seqs:
+#         sequence = "".join(list(sequence))
+#         protein_sequences.append(" ".join(list(re.sub(r"[UZOB]", "X", sequence))))
 
-    # tokenize sequences and pad up to the longest sequence in the batch
-    ids = tokenizer.batch_encode_plus(protein_sequences, add_special_tokens=True, padding="longest")
+#     # tokenize sequences and pad up to the longest sequence in the batch
+#     ids = tokenizer.batch_encode_plus(protein_sequences, add_special_tokens=True, padding="longest")
 
-    input_ids = torch.tensor(ids['input_ids']).to(device)
-    attention_mask = torch.tensor(ids['attention_mask']).to(device)
+#     input_ids = torch.tensor(ids['input_ids']).to(device)
+#     attention_mask = torch.tensor(ids['attention_mask']).to(device)
 
-    # generate embeddings
-    with torch.no_grad():
-        embedding_rpr = model(input_ids=input_ids, attention_mask=attention_mask)
+#     # generate embeddings
+#     with torch.no_grad():
+#         embedding_rpr = model(input_ids=input_ids, attention_mask=attention_mask)
 
-    return embedding_rpr
+#     return embedding_rpr
 
-def encode_seq_with_esm(protein_seq):
-    model, esm_alphabet = esm.pretrained.esm2_t33_650M_UR50D()
-    batch_converter = esm_alphabet.get_batch_converter()
-    model.eval()  # disables dropout for deterministic results
-    embeddings = None
+# def encode_seq_with_esm(protein_seq):
+#     model, esm_alphabet = esm.pretrained.esm2_t33_650M_UR50D()
+#     batch_converter = esm_alphabet.get_batch_converter()
+#     model.eval()  # disables dropout for deterministic results
+#     embeddings = None
 
-    # Prepare raw_data
-    data = []
-    for idx, ps in enumerate(protein_seq):
-        data.append(('protein{}'.format(idx), ps))
+#     # Prepare raw_data
+#     data = []
+#     for idx, ps in enumerate(protein_seq):
+#         data.append(('protein{}'.format(idx), ps))
 
-    batch_labels, batch_strs, batch_tokens = batch_converter(data)
-    batch_lens = (batch_tokens != esm_alphabet.padding_idx).sum(1)
+#     batch_labels, batch_strs, batch_tokens = batch_converter(data)
+#     batch_lens = (batch_tokens != esm_alphabet.padding_idx).sum(1)
 
-    # Extract per-residue representations (on CPU)
-    with torch.no_grad():
-        results = model(batch_tokens, repr_layers=[33], return_contacts=True)
-    token_representations = results["representations"][33]
+#     # Extract per-residue representations (on CPU)
+#     with torch.no_grad():
+#         results = model(batch_tokens, repr_layers=[33], return_contacts=True)
+#     token_representations = results["representations"][33]
 
-    sequence_representations = []
-    for i, tokens_len in enumerate(batch_lens):
-        sequence_representations.append(token_representations[i, 1: tokens_len - 1].mean(0))
-    # num_seqsx1280
-    return sequence_representations[0]
+#     sequence_representations = []
+#     for i, tokens_len in enumerate(batch_lens):
+#         sequence_representations.append(token_representations[i, 1: tokens_len - 1].mean(0))
+#     # num_seqsx1280
+#     return sequence_representations[0]
