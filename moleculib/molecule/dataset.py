@@ -198,7 +198,7 @@ class MoleculeDataset:
         return cls(base_path=save_path, metadata=metadata, **kwargs)
 
 
-class QM9Dataset(Dataset):
+class QM9Dataset():
     def __init__(self, base_path="QM9", molecule_transform: List = [], permute=False):
         with open(os.path.join(base_path, "data.pyd"), "rb") as f:
             print("Loading data...")
