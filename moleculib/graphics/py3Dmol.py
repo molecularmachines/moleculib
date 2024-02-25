@@ -19,13 +19,7 @@ def plot_py3dmol_grid(
     )
     for i, row in enumerate(grid):
         for j, datum in enumerate(row):
-            v.addModel(datum.to_pdb_str(), 'pdb', viewer=(i, j))
-            if sphere:
-                v.setStyle({'sphere': {'radius': 0.3}}, viewer=(i, j))
-            elif ribbon:
-                v.setStyle({'cartoon': {'color': 'spectrum', 'ribbon': True, 'thickness': 0.7}}, viewer=(i, j))
-            else:
-                v.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.2}}, viewer=(i, j))
+            datum.plot(v, viewer=(i, j), sphere=sphere, ribbon=ribbon)
     v.zoomTo()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v

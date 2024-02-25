@@ -129,18 +129,18 @@ class ProteinDatum:
         return len(self.sequence)
 
     @classmethod
-    def empty_protein(cls):
+    def empty(cls):
         return cls(
             idcode="",
             resolution=0.0,
             sequence=_ProteinSequence(""),
-            residue_index=np.array([]),
-            residue_token=np.array([]),
-            residue_mask=np.array([]),
-            chain_token=np.array([]),
-            atom_token=np.array([]),
-            atom_coord=np.array([]),
-            atom_mask=np.array([]),
+            residue_index=np.zeros(0, dtype=int),
+            residue_token=np.zeros(0, dtype=int),
+            residue_mask=np.zeros(0, dtype=bool),
+            chain_token=np.zeros(0, dtype=int),
+            atom_token=np.zeros((0, 14), dtype=int),
+            atom_mask=np.zeros((0, 14), dtype=bool),
+            atom_coord=np.zeros((0, 14, 3), dtype=float)
         )
 
     @classmethod
@@ -193,7 +193,7 @@ class ProteinDatum:
         """
 
         if atom_array.array_length() == 0:
-            return cls.empty_protein()
+            return cls.empty()
 
         _, res_names = get_residues(atom_array)
         res_names = [
@@ -358,3 +358,18 @@ class ProteinDatum:
             lines.append("".join(line))
         lines = "\n".join(lines)
         return lines
+
+
+    def plot(self, view, viewer=None, sphere=False, ribbon=False):
+        if viewer is None:
+            viewer = (0, 0)
+        view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
+        if sphere:
+            view.setStyle({'sphere': {'radius': 0.3}}, viewer=viewer)
+        elif ribbon:
+            view.setStyle({'cartoon': {'color': 'spectrum', 'ribbon': True, 'thickness': 0.7}}, viewer=viewer)
+        else:
+            view.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.2}}, viewer=viewer)
+        return view
+
+
