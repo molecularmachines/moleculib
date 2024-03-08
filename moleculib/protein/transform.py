@@ -362,6 +362,7 @@ class TokenizeSequenceBoundaries(ProteinTransform):
     def transform(self, datum):
         boundary_token = np.zeros(len(datum.residue_token), dtype=np.int32)
         boundary_mask = np.zeros(len(datum.residue_token), dtype=np.bool_)
+
         if len(boundary_token) != 0:
             boundary_token[0] = 1
             boundary_token[-1] = 2
@@ -369,11 +370,9 @@ class TokenizeSequenceBoundaries(ProteinTransform):
             boundary_mask[0] = True & datum.atom_mask[0, 1]
             boundary_mask[-1] = True & datum.atom_mask[-1, 1]
 
-        datum.boundary_token = boundary_token
-        datum.boundary_mask = boundary_mask
-
-        return datum
-
+        return ProteinDatum(
+            **{k: v for (k, v) in vars(datum).items() if not k.startswith("__")}
+        )
 
 def normalize(vector):
     norms_sqr = np.sum(vector**2, axis=-1, keepdims=True)

@@ -28,7 +28,7 @@ from .alphabet import (
 )
 
 from einops import rearrange, repeat
-
+from simple_pytree import Pytree
 
 class ProteinSequence:
 
@@ -52,7 +52,7 @@ class ProteinSequence:
             setattr(self, key, value)
 
 
-class ProteinDatum:
+class ProteinDatum(Pytree, mutable=True):
     """
     Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
@@ -72,9 +72,9 @@ class ProteinDatum:
         atom_mask: np.ndarray,
         **kwargs,
     ):
-        self.idcode = idcode
+        self.idcode = None
         self.resolution = resolution
-        self.sequence = str(sequence)
+        self.sequence = None #str(sequence)
         self.residue_token = residue_token
         self.residue_index = residue_index
         self.residue_mask = residue_mask
@@ -82,6 +82,19 @@ class ProteinDatum:
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
+        self.atom_element = None
+        self.atom_radius = None
+        self.flips_list = None
+        self.flips_mask = None
+        self.pad_mask = None
+        self.bonds_list = None
+        self.bonds_mask = None
+        self.angles_list = None
+        self.angles_mask = None
+        self.dihedrals_list = None
+        self.dihedrals_mask = None
+        self.boundary_token = None
+        self.boundary_mask = None
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -124,6 +137,23 @@ class ProteinDatum:
             _atom_slice(atom_name, atom_array, atom_token)
 
         return extraction, mask
+
+    @staticmethod
+    def separate_chains(datum): 
+        chains = np.unique(datum.chain_token)
+        protein_list = []
+        for chain in chains:
+            new_datum_ = dict()
+            cut = np.where(datum.chain_token == chain)[0][0]
+            length = np.sum(datum.chain_token == chain)
+            for attr, obj in vars(datum).items():
+                if type(obj) in [np.ndarray, list, tuple, str]:
+                    new_datum_[attr] = obj[cut : cut + length]
+                else:
+                    new_datum_[attr] = obj
+            new_datum = ProteinDatum(**new_datum_)
+            protein_list.append(new_datum)
+        return protein_list
 
     def __len__(self):
         return len(self.sequence)
@@ -318,7 +348,6 @@ class ProteinDatum:
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
         # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.residue_token.shape) == 1
-
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]

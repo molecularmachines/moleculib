@@ -101,3 +101,47 @@ class FilterProteinChains(ComplexTransform):
                 i for i, distance in enumerate(distances) if (distance < 10) and (i != index) and (i in remaining_indices) ]
 
         return ComplexDatum(new_protein_data)            
+
+
+
+class StackProteins(ComplexTransform):
+
+    def transform(self, datum):
+        protein_data = datum.protein_data
+        sample_datum = protein_data[0]
+        attrs = dict()
+
+        for attr, _ in vars(sample_datum).items():
+            batched = []
+            for protein in protein_data:
+                batched.append(getattr(protein, attr))
+            if isinstance(batched[0], np.ndarray):
+                attrs[attr] = np.stack(batched, axis=0)
+            else:
+                attrs[attr] = np.empty((len(batched), ))
+
+        return ComplexDatum(protein_data=type(sample_datum)(**attrs))
+
+
+class UnstackProteins(ComplexTransform):
+
+    def transform(self, datum):
+        protein_data = datum.protein_data
+        num_prot = len(protein_data.residue_token)
+
+        attr_lists = {}
+        for attr, _ in vars(protein_data).items():
+            for i in range(num_prot):
+                if attr not in attr_lists:
+                    attr_lists[attr] = []
+                if getattr(protein_data, attr) is None:
+                    attr_lists[attr].append(None)
+                else:
+                    attr_lists[attr].append(getattr(protein_data, attr)[i])
+
+        new_protein_data = []
+        for i in range(num_prot):
+            attrs = { attr: values[i] for attr, values in attr_lists.items() }
+            new_protein_data.append(type(protein_data)(**attrs))
+        
+        return ComplexDatum(new_protein_data)
