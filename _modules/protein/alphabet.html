@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: protein.alphabet</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for protein.alphabet</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ordered_set</span> <span class="kn">import</span> <span class="n">OrderedSet</span>
+
+<span class="n">UNK_TOKEN</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># data collected by Jonathan King in</span>
+<span class="c1"># SidechainNet https://github.com/jonathanking/sidechainnet</span>
+<span class="c1"># Further processed by Eric Alcaide in</span>
+<span class="c1"># MP-NeRF: Massively Parallel Natural Extension of Reference Frame</span>
+<span class="c1"># https://github.com/EleutherAI/mp_nerf</span>
+<span class="c1"># And modified in this version to allow cycles in sidechains</span>
+<span class="c1"># number of listed properties significantly reduced from original</span>
+<span class="c1">#</span>
+<span class="c1"># This document inherits the license from SidechainNet</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright 2020 Jonathan King</span>
+<span class="c1"># Redistribution and use in source and binary forms, with or without modification, are permitted provided that the</span>
+<span class="c1"># following conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1"># 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#</span>
+<span class="c1"># 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following</span>
+<span class="c1"># disclaimer in the documentation and/or other materials provided with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote</span>
+<span class="c1"># products derived from this software without specific prior written permission.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES,</span>
+<span class="c1"># INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE</span>
+<span class="c1"># DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR</span>
+<span class="c1"># SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,</span>
+<span class="c1"># WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF</span>
+<span class="c1"># THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="n">van_der_walls_radii</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>  <span class="c1"># in angstroms</span>
+    <span class="n">C</span><span class="o">=</span><span class="mf">1.7</span><span class="p">,</span>
+    <span class="n">H</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+    <span class="n">O</span><span class="o">=</span><span class="mf">1.52</span><span class="p">,</span>
+    <span class="n">N</span><span class="o">=</span><span class="mf">1.55</span><span class="p">,</span>
+    <span class="n">P</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span>
+    <span class="n">S</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span>
+    <span class="n">F</span><span class="o">=</span><span class="mf">1.47</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">sidechain_atoms_per_residue</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+    <span class="n">ALA</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+    <span class="n">ARG</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH1&quot;</span><span class="p">,</span> <span class="s2">&quot;NH2&quot;</span><span class="p">],</span>
+    <span class="n">ASN</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">,</span> <span class="s2">&quot;ND2&quot;</span><span class="p">],</span>
+    <span class="n">ASP</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">],</span>
+    <span class="n">CYS</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;SG&quot;</span><span class="p">],</span>
+    <span class="n">GLN</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+    <span class="n">GLU</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">],</span>
+    <span class="n">GLY</span><span class="o">=</span><span class="p">[],</span>
+    <span class="n">HIS</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+    <span class="n">ILE</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+    <span class="n">LEU</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+    <span class="n">LYS</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">,</span> <span class="s2">&quot;NZ&quot;</span><span class="p">],</span>
+    <span class="n">MET</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span>
+    <span class="n">PHE</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+    <span class="n">PRO</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+    <span class="n">SER</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG&quot;</span><span class="p">],</span>
+    <span class="n">THR</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+    <span class="n">TRP</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+    <span class="n">TYR</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;OH&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+    <span class="n">VAL</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">sidechain_chemistry_per_residue</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+    <span class="n">ALA</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.52</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">ARG</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NH1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;NH2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.46</span><span class="p">,</span> <span class="mf">1.33</span><span class="p">,</span> <span class="mf">1.33</span><span class="p">,</span> <span class="mf">1.33</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">ASN</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.51</span><span class="p">,</span> <span class="mf">1.23</span><span class="p">,</span> <span class="mf">1.33</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">ASP</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;OD1&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">]],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;OD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">CYS</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;SG&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;SG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;SG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;SG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.81</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">GLN</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.23</span><span class="p">,</span> <span class="mf">1.33</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">GLU</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;OE1&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">]],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;OE2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">GLY</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[],</span>
+    <span class="p">),</span>
+    <span class="n">HIS</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;ND1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.49</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.32</span><span class="p">,</span> <span class="mf">1.32</span><span class="p">,</span> <span class="mf">1.37</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">ILE</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.54</span><span class="p">,</span> <span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.53</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">LEU</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">LYS</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CE&quot;</span><span class="p">,</span> <span class="s2">&quot;NZ&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">,</span> <span class="s2">&quot;NZ&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">,</span> <span class="s2">&quot;NZ&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.49</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">MET</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;SD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;SD&quot;</span><span class="p">,</span> <span class="s2">&quot;CE&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.80</span><span class="p">,</span> <span class="mf">1.79</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">PHE</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">]],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.50</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">PRO</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.49</span><span class="p">,</span> <span class="mf">1.51</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">SER</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">]],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.42</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">THR</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;OG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.54</span><span class="p">,</span> <span class="mf">1.43</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">TRP</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;NE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CH2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ3&quot;</span><span class="p">,</span> <span class="s2">&quot;CE3&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span>
+            <span class="mf">1.53</span><span class="p">,</span>
+            <span class="mf">1.50</span><span class="p">,</span>
+            <span class="mf">1.37</span><span class="p">,</span>
+            <span class="mf">1.37</span><span class="p">,</span>
+            <span class="mf">1.37</span><span class="p">,</span>
+            <span class="mf">1.40</span><span class="p">,</span>
+            <span class="mf">1.37</span><span class="p">,</span>
+            <span class="mf">1.40</span><span class="p">,</span>
+            <span class="mf">1.39</span><span class="p">,</span>
+            <span class="mf">1.40</span><span class="p">,</span>
+            <span class="mf">1.41</span><span class="p">,</span>
+            <span class="mf">1.43</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">TYR</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;OH&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">]],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;OH&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OH&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;OH&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CD1&quot;</span><span class="p">,</span> <span class="s2">&quot;CG&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CE1&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;OH&quot;</span><span class="p">,</span> <span class="s2">&quot;CZ&quot;</span><span class="p">,</span> <span class="s2">&quot;CE2&quot;</span><span class="p">,</span> <span class="s2">&quot;CD2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.51</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.38</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">,</span> <span class="mf">1.39</span><span class="p">],</span>
+    <span class="p">),</span>
+    <span class="n">VAL</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">]],</span>
+        <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;CG1&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">dihedrals</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG1&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">,</span> <span class="s2">&quot;CG2&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;CB&quot;</span><span class="p">],</span>
+        <span class="p">],</span>
+        <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.54</span><span class="p">,</span> <span class="mf">1.53</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">],</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="c1"># build base vocabularies for atoms</span>
+<span class="n">backbone_atoms</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">]</span>
+<span class="n">backbone_chemistry</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">bonds</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">]],</span>
+    <span class="n">angles</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]],</span>
+    <span class="n">dihedrals</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;O&quot;</span><span class="p">]],</span>
+    <span class="n">flippable</span><span class="o">=</span><span class="p">[],</span>
+    <span class="n">bond_lens</span><span class="o">=</span><span class="p">[</span><span class="mf">1.46</span><span class="p">,</span> <span class="mf">1.52</span><span class="p">,</span> <span class="mf">1.23</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">special_tokens</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PAD&quot;</span><span class="p">,</span> <span class="s2">&quot;MASK&quot;</span><span class="p">,</span> <span class="s2">&quot;UNK&quot;</span><span class="p">]</span>
+
+<span class="n">atoms_per_residue</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<span class="n">atoms_per_residue</span><span class="p">[</span><span class="s2">&quot;PAD&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">atoms_per_residue</span><span class="p">[</span><span class="s2">&quot;MASK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">atoms_per_residue</span><span class="p">[</span><span class="s2">&quot;UNK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">backbone_atoms</span>
+<span class="k">for</span> <span class="n">res</span><span class="p">,</span> <span class="n">sidechain_atoms</span> <span class="ow">in</span> <span class="n">sidechain_atoms_per_residue</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">atoms_per_residue</span><span class="p">[</span><span class="n">res</span><span class="p">]</span> <span class="o">=</span> <span class="n">backbone_atoms</span> <span class="o">+</span> <span class="n">sidechain_atoms</span>
+
+<span class="n">all_atoms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">OrderedSet</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">atoms_per_residue</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="p">[])))</span>
+<span class="n">all_atoms</span> <span class="o">=</span> <span class="n">special_tokens</span> <span class="o">+</span> <span class="n">all_atoms</span>
+<span class="n">all_atoms_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_atoms</span><span class="p">))</span>
+
+<span class="n">elements</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">OrderedSet</span><span class="p">([</span><span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">all_atoms</span><span class="p">]))</span>
+<span class="n">all_atoms_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">elements</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">all_atoms</span><span class="p">])</span>
+<span class="n">all_atoms_radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="n">van_der_walls_radii</span><span class="p">[</span><span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">if</span> <span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">van_der_walls_radii</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">all_atoms</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">all_residues</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sidechain_atoms_per_residue</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">all_residues</span> <span class="o">=</span> <span class="n">special_tokens</span> <span class="o">+</span> <span class="n">all_residues</span>
+<span class="n">all_residues_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_residues</span><span class="p">))</span>
+<span class="n">all_residues_atom_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">([</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">14</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">atoms</span><span class="p">)</span> <span class="ow">in</span> <span class="n">atoms_per_residue</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">]</span>
+<span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+<span class="n">all_residues_atom_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">([</span><span class="n">all_atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">14</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">atoms</span><span class="p">)</span> <span class="ow">in</span> <span class="n">atoms_per_residue</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># and base vocabularies for chemistry</span>
+<div class="viewcode-block" id="geometry_to_per_residue_indexing_array">
+<a class="viewcode-back" href="../../protein.html#protein.alphabet.geometry_to_per_residue_indexing_array">[docs]</a>
+<span class="k">def</span> <span class="nf">geometry_to_per_residue_indexing_array</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="s2">&quot;bonds&quot;</span><span class="p">):</span>
+    <span class="n">connecting_atoms_per_residue</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">special_tokens</span><span class="p">:</span>
+        <span class="n">connecting_atoms_per_residue</span><span class="p">[</span><span class="n">token</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">res</span><span class="p">,</span> <span class="n">sidechain_indices</span> <span class="ow">in</span> <span class="n">sidechain_chemistry_per_residue</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">connecting_atoms_per_residue</span><span class="p">[</span><span class="n">res</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">backbone_chemistry</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span> <span class="o">+</span> <span class="n">sidechain_indices</span><span class="p">[</span><span class="nb">property</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="n">index_per_residue</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">res</span><span class="p">,</span> <span class="n">residue_indices</span> <span class="ow">in</span> <span class="n">connecting_atoms_per_residue</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">index_per_residue</span><span class="p">[</span><span class="n">res</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="n">atoms_per_residue</span><span class="p">[</span><span class="n">res</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">atom_indices</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">atom_indices</span> <span class="ow">in</span> <span class="n">residue_indices</span>
+        <span class="p">]</span>
+
+    <span class="n">num_indices</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">backbone_chemistry</span><span class="p">[</span><span class="nb">property</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="nb">property</span> <span class="o">!=</span> <span class="s2">&quot;flippable&quot;</span> <span class="k">else</span> <span class="mi">2</span>
+    <span class="n">indices_arr_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="k">for</span> <span class="n">indices</span> <span class="ow">in</span> <span class="n">index_per_residue</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="n">indices_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">all_residues</span><span class="p">),</span> <span class="n">indices_arr_len</span><span class="p">,</span> <span class="n">num_indices</span><span class="p">))</span>
+    <span class="n">indices_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">all_residues</span><span class="p">),</span> <span class="n">indices_arr_len</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">indices</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">index_per_residue</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="n">len_difference</span> <span class="o">=</span> <span class="n">indices_arr_len</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+        <span class="n">indices_mask</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">len_difference</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">indices_arr_len</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_indices</span><span class="p">]</span> <span class="o">*</span> <span class="n">len_difference</span><span class="p">)</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">pad</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                <span class="k">else</span> <span class="n">pad</span>
+            <span class="p">)</span>
+            <span class="n">indices_mask</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="o">-</span><span class="n">len_difference</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">indices_arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">indices</span>
+
+    <span class="k">return</span> <span class="n">indices_arr</span><span class="p">,</span> <span class="n">indices_mask</span></div>
+
+
+
+<span class="n">bonds_arr</span><span class="p">,</span> <span class="n">bonds_mask</span> <span class="o">=</span> <span class="n">geometry_to_per_residue_indexing_array</span><span class="p">(</span><span class="s2">&quot;bonds&quot;</span><span class="p">)</span>
+
+<span class="n">bond_lens_arr</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">special_tokens</span><span class="p">]</span>
+<span class="n">bond_lens_arr</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="n">backbone_chemistry</span><span class="p">[</span><span class="s2">&quot;bond_lens&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">sidechain_chemistry</span><span class="p">[</span><span class="s2">&quot;bond_lens&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sidechain_chemistry</span> <span class="ow">in</span> <span class="n">sidechain_chemistry_per_residue</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+<span class="p">]</span>
+<span class="n">max_arr_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bond_lens_arr</span><span class="p">])</span>
+<span class="n">bond_lens_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_arr_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">bond_lens_arr</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">angles_arr</span><span class="p">,</span> <span class="n">angles_mask</span> <span class="o">=</span> <span class="n">geometry_to_per_residue_indexing_array</span><span class="p">(</span><span class="s2">&quot;angles&quot;</span><span class="p">)</span>
+<span class="n">dihedrals_arr</span><span class="p">,</span> <span class="n">dihedrals_mask</span> <span class="o">=</span> <span class="n">geometry_to_per_residue_indexing_array</span><span class="p">(</span><span class="s2">&quot;dihedrals&quot;</span><span class="p">)</span>
+<span class="n">flippable_arr</span><span class="p">,</span> <span class="n">flippable_mask</span> <span class="o">=</span> <span class="n">geometry_to_per_residue_indexing_array</span><span class="p">(</span><span class="s2">&quot;flippable&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_atom_to_all_residues_index</span><span class="p">(</span><span class="n">atom</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_atom_to_residue_index</span><span class="p">(</span><span class="n">residue</span><span class="p">):</span>
+        <span class="n">residue_atoms</span> <span class="o">=</span> <span class="n">atoms_per_residue</span><span class="p">[</span><span class="n">residue</span><span class="p">]</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">residue_atoms</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">residue_atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span> <span class="k">if</span> <span class="n">mask</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">index</span><span class="p">,</span> <span class="n">mask</span>
+
+    <span class="n">indices</span><span class="p">,</span> <span class="n">masks</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_atom_to_residue_index</span><span class="p">,</span> <span class="n">all_residues</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">masks</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_index</span><span class="p">(</span><span class="n">lst</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">lst</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">UNK_TOKEN</span>  <span class="c1"># UNK</span>
+    <span class="k">return</span> <span class="n">index</span>
+
+
+<div class="viewcode-block" id="atom_index">
+<a class="viewcode-back" href="../../protein.html#protein.alphabet.atom_index">[docs]</a>
+<span class="k">def</span> <span class="nf">atom_index</span><span class="p">(</span><span class="n">atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_index</span><span class="p">(</span><span class="n">all_atoms</span><span class="p">,</span> <span class="n">atom</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_residue_index">
+<a class="viewcode-back" href="../../protein.html#protein.alphabet.get_residue_index">[docs]</a>
+<span class="k">def</span> <span class="nf">get_residue_index</span><span class="p">(</span><span class="n">residue</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_index</span><span class="p">(</span><span class="n">all_residues</span><span class="p">,</span> <span class="n">residue</span><span class="p">)</span></div>
+
+
+
+<span class="n">atom_to_residues_index</span><span class="p">,</span> <span class="n">atom_to_residues_mask</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_atom_to_all_residues_index</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">))</span>
+<span class="p">)</span>
+<span class="n">atom_to_residues_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atom_to_residues_index</span><span class="p">)</span>
+<span class="n">atom_to_residues_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atom_to_residues_mask</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">breakpoint</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">)</span>
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

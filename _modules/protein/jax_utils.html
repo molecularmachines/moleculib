@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: protein.jax_utils</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for protein.jax_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># From Experimental Branch for Pandax (Pandas + Jax), by @jakevdp</span>
+<span class="c1"># Copyright 2022 Google LLC</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     https://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;stringarray: JAX-compatible object array for manipulating strings.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">tree_util</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="StringArray">
+<a class="viewcode-back" href="../../protein.html#protein.jax_utils.StringArray">[docs]</a>
+<span class="k">class</span> <span class="nc">StringArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;StringArray: JAX-compatible representation of an array of strings.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">      &gt;&gt;&gt; arr = StringArray([&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;])</span>
+<span class="sd">      &gt;&gt;&gt; arr</span>
+<span class="sd">      StringArray([&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;], dtype=object)</span>
+<span class="sd">      &gt;&gt;&gt; len(arr)</span>
+<span class="sd">      4</span>
+<span class="sd">      &gt;&gt;&gt; arr.shape</span>
+<span class="sd">      (4,)</span>
+<span class="sd">      &gt;&gt;&gt; arr.dtype</span>
+<span class="sd">      dtype(&#39;O&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; arr[0]</span>
+<span class="sd">      StringArray(&#39;A&#39;, dtype=object)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_labels</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">_data</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">_npy_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">dtype</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="nb">object</span><span class="p">))</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">ndim</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">StringArray</span><span class="p">]):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">labels</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">labels</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_simple_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">def</span> <span class="nf">_forward_to_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simple_new</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">name</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_npy_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_npy_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)],</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_npy_value</span>
+
+    <span class="k">def</span> <span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_simple_new</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">arr_repr</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">arr_repr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;array&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;StringArray</span><span class="si">{</span><span class="n">arr_repr</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">arr_repr</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only convert scalar StringArray to string.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StringArray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_to_data</span><span class="p">(</span><span class="s2">&quot;__getitem__&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StringArray.transpose">
+<a class="viewcode-back" href="../../protein.html#protein.jax_utils.StringArray.transpose">[docs]</a>
+    <span class="k">def</span> <span class="nf">transpose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StringArray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_to_data</span><span class="p">(</span><span class="s2">&quot;transpose&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">axes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StringArray.ravel">
+<a class="viewcode-back" href="../../protein.html#protein.jax_utils.StringArray.ravel">[docs]</a>
+    <span class="k">def</span> <span class="nf">ravel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StringArray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_to_data</span><span class="p">(</span><span class="s2">&quot;ravel&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StringArray.reshape">
+<a class="viewcode-back" href="../../protein.html#protein.jax_utils.StringArray.reshape">[docs]</a>
+    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StringArray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_to_data</span><span class="p">(</span><span class="s2">&quot;reshape&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StringArray.astype">
+<a class="viewcode-back" href="../../protein.html#protein.jax_utils.StringArray.astype">[docs]</a>
+    <span class="k">def</span> <span class="nf">astype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StringArray</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;cannot convert StringArray to dtype=</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;only dtype=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> is supported.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_tree_flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_tree_unflatten</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">aux_data</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_simple_new</span><span class="p">(</span><span class="n">aux_data</span><span class="p">,</span> <span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+
+<span class="n">tree_util</span><span class="o">.</span><span class="n">register_pytree_node</span><span class="p">(</span>
+    <span class="n">StringArray</span><span class="p">,</span>
+    <span class="k">lambda</span> <span class="n">obj</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">_tree_flatten</span><span class="p">(),</span>  <span class="c1"># pylint: disable=protected-access</span>
+    <span class="n">StringArray</span><span class="o">.</span><span class="n">_tree_unflatten</span><span class="p">,</span>
+<span class="p">)</span>  <span class="c1"># pylint: disable=protected-access</span>
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

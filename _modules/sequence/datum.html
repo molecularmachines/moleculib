@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: sequence.datum</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for sequence.datum</h1><div class="highlight"><pre>
+<span></span><span class="c1">#biotite dependencies</span>
+<span class="kn">import</span> <span class="nn">biotite.structure.io.pdbx</span> <span class="k">as</span> <span class="nn">pdbx</span>
+<span class="kn">import</span> <span class="nn">biotite.database.rcsb</span> <span class="k">as</span> <span class="nn">rcsb</span>
+<span class="kn">import</span> <span class="nn">biotite.database.uniprot</span> <span class="k">as</span> <span class="nn">uniprot</span>
+<span class="kn">from</span> <span class="nn">biotite.structure</span> <span class="kn">import</span> <span class="n">get_residues</span>
+<span class="kn">from</span> <span class="nn">biotite.sequence</span> <span class="kn">import</span> <span class="n">ProteinSequence</span>
+<span class="kn">import</span> <span class="nn">biotite.sequence.io.fasta</span> <span class="k">as</span> <span class="nn">fasta</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">biotite.database.entrez</span> <span class="k">as</span> <span class="nn">entrez</span>
+
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span><span class="p">,</span> <span class="n">parse_qs</span><span class="p">,</span> <span class="n">urlencode</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">requests.adapters</span> <span class="kn">import</span> <span class="n">HTTPAdapter</span><span class="p">,</span> <span class="n">Retry</span>
+
+<span class="kn">from</span> <span class="nn">moleculib.protein.alphabet</span> <span class="kn">import</span> <span class="n">all_residues</span><span class="p">,</span><span class="n">get_residue_index</span>
+
+<span class="n">API_URL</span> <span class="o">=</span> <span class="s2">&quot;https://rest.uniprot.org&quot;</span>
+<span class="n">allowed_aa</span><span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ALA&#39;</span><span class="p">,</span> <span class="s1">&#39;ARG&#39;</span><span class="p">,</span> <span class="s1">&#39;ASN&#39;</span><span class="p">,</span> <span class="s1">&#39;ASP&#39;</span><span class="p">,</span> <span class="s1">&#39;CYS&#39;</span><span class="p">,</span> <span class="s1">&#39;GLN&#39;</span><span class="p">,</span> <span class="s1">&#39;GLU&#39;</span><span class="p">,</span> <span class="s1">&#39;GLY&#39;</span><span class="p">,</span> <span class="s1">&#39;HIS&#39;</span><span class="p">,</span> <span class="s1">&#39;ILE&#39;</span><span class="p">,</span> <span class="s1">&#39;LEU&#39;</span><span class="p">,</span> <span class="s1">&#39;LYS&#39;</span><span class="p">,</span> <span class="s1">&#39;MET&#39;</span><span class="p">,</span> <span class="s1">&#39;PHE&#39;</span><span class="p">,</span> <span class="s1">&#39;PRO&#39;</span><span class="p">,</span> <span class="s1">&#39;SER&#39;</span><span class="p">,</span> <span class="s1">&#39;THR&#39;</span><span class="p">,</span> <span class="s1">&#39;TRP&#39;</span><span class="p">,</span> <span class="s1">&#39;TYR&#39;</span><span class="p">,</span> <span class="s1">&#39;VAL&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="SeqDatum">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum">[docs]</a>
+<span class="k">class</span> <span class="nc">SeqDatum</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Incorporates protein data to MolecularDatum</span>
+<span class="sd">    and reshapes atom arrays to residue-based representation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">idcode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">sequence</span><span class="p">:</span> <span class="n">ProteinSequence</span><span class="p">,</span>
+        <span class="n">residue_token</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcode</span> <span class="o">=</span> <span class="n">idcode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span><span class="n">sequence</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">=</span> <span class="n">residue_token</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SeqDatum.onehot_encode_datum">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.onehot_encode_datum">[docs]</a>
+    <span class="k">def</span> <span class="nf">onehot_encode_datum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">residue_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span>
+        <span class="n">one_hot_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">residue_tokens</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_residues</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">residue_tokens</span><span class="p">):</span>
+            <span class="n">one_hot_tensor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">token</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">one_hot_tensor</span></div>
+
+
+<div class="viewcode-block" id="SeqDatum.empty_seqrecord">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.empty_seqrecord">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">empty_seqrecord</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">ProteinSequence</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">residue_token</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SeqDatum.from_tokens">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.from_tokens">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_tokens</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">residues</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fasta file would only have sequence entry</span>
+<span class="sd">        :param filepath:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sequence_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sequence_mask</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">residues</span><span class="p">:</span>
+            <span class="n">residue_name</span><span class="o">=</span><span class="n">all_residues</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">residue_name</span><span class="o">!=</span><span class="s2">&quot;PAD&quot;</span> <span class="ow">and</span> <span class="n">residue_name</span><span class="o">!=</span><span class="s2">&quot;MASK&quot;</span><span class="p">:</span>
+                <span class="n">sequence_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_3to1</span><span class="p">(</span><span class="n">residue_name</span><span class="p">))</span>
+                <span class="n">sequence_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sequence_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sequence_list</span><span class="p">),</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">residues</span><span class="p">),</span>
+            <span class="n">sequence_mask</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sequence_mask</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SeqDatum.from_filepath">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.from_filepath">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_filepath</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span><span class="n">filepath</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fasta file would only have sequence entry</span>
+<span class="sd">        :param filepath:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fasta_file</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">FastaFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="p">[</span><span class="n">ProteinSequence</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">fasta_file</span><span class="o">.</span><span class="n">values</span><span class="p">()][</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="n">residues</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;UNK&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_residues</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">selected_sequence</span><span class="p">)</span>
+        <span class="p">]</span>
+        
+        <span class="n">residue_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n">get_residue_index</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">residues</span><span class="p">)))</span>
+      
+        <span class="n">sequence_mask</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">residue_tokens</span><span class="p">:</span>
+            <span class="n">residue_name</span><span class="o">=</span><span class="n">all_residues</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">residue_name</span><span class="o">!=</span><span class="s2">&quot;PAD&quot;</span> <span class="ow">and</span> <span class="n">residue_name</span><span class="o">!=</span><span class="s2">&quot;MASK&quot;</span><span class="p">:</span>
+                <span class="n">sequence_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sequence_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">residue_tokens</span><span class="p">,</span>
+            <span class="n">sequence_mask</span><span class="o">=</span><span class="n">sequence_mask</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SeqDatum.from_sequence">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.from_sequence">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_sequence</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span><span class="n">idcode</span><span class="p">,</span><span class="n">sequence</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fasta file would only have sequence entry</span>
+<span class="sd">        :param filepath:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+         
+        <span class="n">residues</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;UNK&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_residues</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="p">]</span>
+        
+        <span class="n">residue_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n">get_residue_index</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">residues</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="n">idcode</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span>
+            <span class="n">sequence_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">residue_tokens</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">),</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">residue_tokens</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SeqDatum.from_pdb_id">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.from_pdb_id">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_pdb_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pdb_id</span><span class="p">,</span><span class="n">chain_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">pdbx_file</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">PDBxFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">rcsb</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">pdb_id</span><span class="p">,</span> <span class="s2">&quot;mmcif&quot;</span><span class="p">))</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">pdbx_file</span><span class="p">,</span><span class="n">model</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">chain_structures</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">chain_sequence</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">chain_id</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">get_annotation</span><span class="p">(</span><span class="s1">&#39;chain_id&#39;</span><span class="p">))):</span>
+            <span class="n">chain_structure</span> <span class="o">=</span> <span class="n">structure</span><span class="p">[(</span><span class="n">structure</span><span class="o">.</span><span class="n">chain_id</span> <span class="o">==</span> <span class="n">chain_id</span><span class="p">)]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">res_names</span> <span class="o">=</span> <span class="n">get_residues</span><span class="p">(</span><span class="n">chain_structure</span><span class="p">)</span>
+            <span class="n">res_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">res_names</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">allowed_aa</span><span class="p">]</span>
+            <span class="n">sequence</span> <span class="o">=</span> <span class="n">ProteinSequence</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">res_names</span><span class="p">))</span>
+            <span class="n">chain_sequence</span><span class="p">[</span><span class="n">chain_id</span><span class="p">]</span><span class="o">=</span><span class="n">sequence</span>
+            <span class="n">chain_structures</span><span class="p">[</span><span class="n">chain_id</span><span class="p">]</span><span class="o">=</span><span class="n">chain_structure</span>
+        <span class="n">selected_sequence</span> <span class="o">=</span> <span class="n">chain_sequence</span><span class="p">[</span><span class="n">chain_id</span><span class="p">]</span>
+        <span class="n">chain_id</span> <span class="o">=</span> <span class="n">chain_id</span>
+        <span class="n">selected_structure</span> <span class="o">=</span> <span class="n">chain_structures</span><span class="p">[</span><span class="n">chain_id</span><span class="p">]</span>
+        
+        <span class="n">residues</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;UNK&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_residues</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">selected_sequence</span><span class="p">)</span>
+        <span class="p">]</span>
+        
+        <span class="n">residue_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n">get_residue_index</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">residues</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="n">pdb_id</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">selected_sequence</span><span class="p">,</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">residue_tokens</span><span class="p">,</span>
+            <span class="n">structure</span><span class="o">=</span><span class="n">selected_structure</span><span class="p">,</span>
+            <span class="n">chain_id</span> <span class="o">=</span> <span class="n">chain_id</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SeqDatum.from_uniprot_id">
+<a class="viewcode-back" href="../../sequence.html#sequence.datum.SeqDatum.from_uniprot_id">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_uniprot_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">uniprotid</span><span class="p">,</span><span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">map_uniprot_id</span><span class="p">(</span><span class="n">to_db</span><span class="p">,</span> <span class="n">search_id</span><span class="p">):</span>
+            <span class="n">request</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">API_URL</span><span class="si">}</span><span class="s2">/idmapping/run&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;from&quot;</span><span class="p">:</span> <span class="s2">&quot;UniProtKB_AC-ID&quot;</span><span class="p">,</span> <span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="n">to_db</span><span class="p">,</span> <span class="s2">&quot;ids&quot;</span><span class="p">:</span> <span class="n">search_id</span><span class="p">},</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;jobId&quot;</span><span class="p">]</span>
+    
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">uniprot</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">uniprotid</span><span class="p">,</span> <span class="s2">&quot;fasta&quot;</span><span class="p">)</span>
+        <span class="n">fasta_file</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">FastaFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="c1">#take only the first one</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="p">[</span><span class="n">ProteinSequence</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">fasta_file</span><span class="o">.</span><span class="n">values</span><span class="p">()][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">chain_id</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chain_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">))][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">uniprot</span><span class="o">.</span><span class="n">SimpleQuery</span><span class="p">(</span><span class="s2">&quot;accession&quot;</span><span class="p">,</span><span class="n">uniprotid</span><span class="p">)</span>
+
+       
+        <span class="n">residues</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;UNK&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_residues</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProteinSequence</span><span class="o">.</span><span class="n">convert_letter_1to3</span><span class="p">(</span><span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">residue_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n">get_residue_index</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">residues</span><span class="p">)))</span>
+        
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="n">uniprotid</span><span class="p">,</span>
+            <span class="n">sequences</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">residue_tokens</span><span class="p">,</span>
+            <span class="n">structure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">chain_ids</span> <span class="o">=</span> <span class="n">chain_id</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

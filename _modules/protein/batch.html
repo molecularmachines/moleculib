@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: protein.batch</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for protein.batch</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span><span class="p">,</span> <span class="n">repeat</span>
+
+<span class="kn">from</span> <span class="nn">.alphabet</span> <span class="kn">import</span> <span class="n">backbone_atoms</span>
+<span class="kn">from</span> <span class="nn">.datum</span> <span class="kn">import</span> <span class="n">ProteinDatum</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">pad_array</span>
+
+
+<div class="viewcode-block" id="ProteinCollator">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator">[docs]</a>
+<span class="k">class</span> <span class="nc">ProteinCollator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for collation of multiple ProteinDatum instances</span>
+<span class="sd">    into a single batch instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ProteinCollator.collate">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator.collate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">collate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ProteinDatum</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a list of ProteinDatum instances and produces</span>
+<span class="sd">        a ProteinCollate instance with all the instances collated</span>
+<span class="sd">        according to the appropriate collate function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;collate method has to be implemented&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinCollator.revert">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator.revert">[docs]</a>
+    <span class="k">def</span> <span class="nf">revert</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ProteinDatum</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reverts a batch to its original list form</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;revert method has to be implemented&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinCollator.to">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator.to">[docs]</a>
+    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProteinCollator</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ProteinCollator.torch">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator.torch">[docs]</a>
+    <span class="k">def</span> <span class="nf">torch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProteinCollator</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">torch</span>
+
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ProteinCollator.to_dict">
+<a class="viewcode-back" href="../../protein.html#protein.batch.ProteinCollator.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attrs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">dict_</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+            <span class="c1"># strings are not JAX types</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="n">dict_</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">dict_</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PadBatch">
+<a class="viewcode-back" href="../../protein.html#protein.batch.PadBatch">[docs]</a>
+<span class="k">class</span> <span class="nc">PadBatch</span><span class="p">(</span><span class="n">ProteinCollator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PadBatch.revert">
+<a class="viewcode-back" href="../../protein.html#protein.batch.PadBatch.revert">[docs]</a>
+    <span class="k">def</span> <span class="nf">revert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constructor</span><span class="o">=</span><span class="n">ProteinDatum</span><span class="p">):</span>
+        <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">batch_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pad_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_mask</span><span class="p">[</span><span class="n">batch_index</span><span class="p">]</span>
+            <span class="n">data_attr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;pad_mask&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">batch_index</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="n">data_attr</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constructor</span><span class="p">(</span><span class="o">**</span><span class="n">data_attr</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">data_list</span></div>
+
+
+<div class="viewcode-block" id="PadBatch.collate">
+<a class="viewcode-back" href="../../protein.html#protein.batch.PadBatch.collate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">collate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_list</span><span class="p">):</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">proxy</span><span class="p">)</span>
+        <span class="n">unique_type</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">is</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">data_list</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">unique_type</span><span class="p">,</span> <span class="s2">&quot;all data must have same type&quot;</span>
+
+        <span class="k">def</span> <span class="nf">_maybe_stack</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">obj_list</span> <span class="o">=</span> <span class="n">stream</span>
+            <span class="n">proxy_obj</span> <span class="o">=</span> <span class="n">obj_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">proxy_obj</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">obj_list</span>
+            <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obj_list</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">proxy</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">value_lists</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span>
+        <span class="p">]</span>
+        <span class="n">value_lists</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">_maybe_stack</span><span class="p">,</span> <span class="n">value_lists</span><span class="p">)</span>
+        <span class="n">batch_attr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value_lists</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">batch_attr</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GeometricBatch">
+<a class="viewcode-back" href="../../protein.html#protein.batch.GeometricBatch">[docs]</a>
+<span class="k">class</span> <span class="nc">GeometricBatch</span><span class="p">(</span><span class="n">ProteinCollator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_index</span><span class="p">,</span> <span class="n">num_nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_index</span> <span class="o">=</span> <span class="n">batch_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">=</span> <span class="n">num_nodes</span>
+
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeometricBatch.revert">
+<a class="viewcode-back" href="../../protein.html#protein.batch.GeometricBatch.revert">[docs]</a>
+    <span class="k">def</span> <span class="nf">revert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constructor</span><span class="o">=</span><span class="n">ProteinDatum</span><span class="p">):</span>
+        <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">batch_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">)):</span>
+            <span class="n">batch_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_index</span> <span class="o">==</span> <span class="n">batch_index</span>
+            <span class="n">data_attr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;batch_index&quot;</span><span class="p">,</span> <span class="s2">&quot;num_nodes&quot;</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">batch_mask</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">batch_index</span><span class="p">]</span>
+                <span class="n">data_attr</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constructor</span><span class="p">(</span><span class="o">**</span><span class="n">data_attr</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">data_list</span></div>
+
+
+<div class="viewcode-block" id="GeometricBatch.collate">
+<a class="viewcode-back" href="../../protein.html#protein.batch.GeometricBatch.collate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">collate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_list</span><span class="p">):</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">proxy</span><span class="p">)</span>
+        <span class="n">unique_type</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">is</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">data_list</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">unique_type</span><span class="p">,</span> <span class="s2">&quot;all data must have same type&quot;</span>
+
+        <span class="n">num_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">residue_index</span><span class="p">)</span> <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">])</span>
+        <span class="n">nodes_cumsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">num_nodes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">batch_index</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">size</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">num_nodes</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">batch_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">batch_index</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">maybe_reindex</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">obj_list</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;bonds_list&quot;</span><span class="p">,</span> <span class="s2">&quot;angles_list&quot;</span><span class="p">,</span> <span class="s2">&quot;dihedrals_list&quot;</span><span class="p">,</span> <span class="s2">&quot;flips_list&quot;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">obj_list</span>
+            <span class="n">reindex_obj_list</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">obj</span> <span class="o">+</span> <span class="n">reindex</span> <span class="o">*</span> <span class="mi">14</span> <span class="k">for</span> <span class="p">(</span><span class="n">reindex</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nodes_cumsum</span><span class="p">,</span> <span class="n">obj_list</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">reindex_obj_list</span>
+
+        <span class="k">def</span> <span class="nf">maybe_concatenate</span><span class="p">(</span><span class="n">obj_list</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obj_list</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">obj_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">proxy</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">value_lists</span> <span class="o">=</span> <span class="p">[</span><span class="nb">vars</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">]</span>
+        <span class="n">value_lists</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">value_lists</span><span class="p">)</span>
+        <span class="n">value_lists</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">maybe_reindex</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">value_lists</span><span class="p">)))</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">maybe_concatenate</span><span class="p">,</span> <span class="n">value_lists</span><span class="p">))</span>
+        <span class="n">batch_attr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">batch_index</span><span class="o">=</span><span class="n">batch_index</span><span class="p">,</span> <span class="n">num_nodes</span><span class="o">=</span><span class="n">num_nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">batch_attr</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

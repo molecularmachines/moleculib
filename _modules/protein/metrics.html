@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: protein.metrics</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for protein.metrics</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.measures</span> <span class="kn">import</span> <span class="n">STANDARD_CHEMICAL_MEASURES</span>
+
+<span class="kn">from</span> <span class="nn">moleculib.protein.datum</span> <span class="kn">import</span> <span class="n">ProteinDatum</span>
+<span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">jnp</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+
+<div class="viewcode-block" id="safe_norm">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.safe_norm">[docs]</a>
+<span class="k">def</span> <span class="nf">safe_norm</span><span class="p">(</span><span class="n">vector</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;safe_norm(x) = norm(x) if norm(x) != 0 else 1.0&quot;&quot;&quot;</span>
+    <span class="n">norms_sqr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vector</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">norms</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">norms_sqr</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">norms_sqr</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="k">return</span> <span class="n">norms</span></div>
+
+
+
+<div class="viewcode-block" id="ProteinMetric">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.ProteinMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">ProteinMetric</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datum</span><span class="p">:</span> <span class="n">ProteinDatum</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ProteinMetric is abstract&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CountClashes">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.CountClashes">[docs]</a>
+<span class="k">class</span> <span class="nc">CountClashes</span><span class="p">(</span><span class="n">ProteinMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius_multiplier</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">smooth</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius_multiplier</span> <span class="o">=</span> <span class="n">radius_multiplier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth</span> <span class="o">=</span> <span class="n">smooth</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datum</span><span class="p">:</span> <span class="n">ProteinDatum</span><span class="p">):</span>
+        <span class="n">seq_len</span> <span class="o">=</span> <span class="n">datum</span><span class="o">.</span><span class="n">atom_coord</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">all_atom_coords</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">atom_coord</span><span class="p">,</span> <span class="s2">&quot;r a c -&gt; (r a) c&quot;</span><span class="p">)</span>
+        <span class="n">all_atom_radii</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">atom_radius</span><span class="p">,</span> <span class="s2">&quot;r a -&gt; (r a)&quot;</span><span class="p">)</span>
+        <span class="n">all_atom_mask</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">atom_mask</span><span class="p">,</span> <span class="s2">&quot;r a -&gt; (r a)&quot;</span><span class="p">)</span>
+
+        <span class="n">vector_map</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">all_atom_coords</span><span class="p">,</span> <span class="s2">&quot;i c -&gt;  i () c&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="n">rearrange</span><span class="p">(</span>
+            <span class="n">all_atom_coords</span><span class="p">,</span> <span class="s2">&quot;j c -&gt; () j c&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">mask_bonds</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">bonds</span><span class="p">,</span> <span class="n">bonds_mask</span><span class="p">):</span>
+            <span class="n">bonds</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bonds_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">bonds</span><span class="p">,</span> <span class="n">seq_len</span> <span class="o">*</span> <span class="mi">14</span><span class="p">)</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">bonds</span><span class="p">,</span> <span class="s2">&quot;... b -&gt; b (...)&quot;</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mask</span>
+
+        <span class="n">distance_maps</span> <span class="o">=</span> <span class="n">safe_norm</span><span class="p">(</span><span class="n">vector_map</span><span class="p">)</span>
+        <span class="n">cross_radii</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">all_atom_radii</span><span class="p">,</span> <span class="s2">&quot; i -&gt; i ()&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">rearrange</span><span class="p">(</span>
+            <span class="n">all_atom_radii</span><span class="p">,</span> <span class="s2">&quot;j -&gt; () j&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">cross_mask</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">all_atom_mask</span><span class="p">,</span> <span class="s2">&quot;i -&gt; i ()&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">rearrange</span><span class="p">(</span>
+            <span class="n">all_atom_mask</span><span class="p">,</span> <span class="s2">&quot;... j -&gt; ... () j&quot;</span>
+        <span class="p">)</span>
+        <span class="n">cross_mask</span> <span class="o">=</span> <span class="n">mask_bonds</span><span class="p">(</span>
+            <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cross_mask</span><span class="p">),</span> <span class="n">datum</span><span class="o">.</span><span class="n">bonds_list</span><span class="p">,</span> <span class="n">datum</span><span class="o">.</span><span class="n">bonds_mask</span>
+        <span class="p">)</span>
+        <span class="n">cross_radii</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cross_radii</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">cross_radii</span><span class="p">)</span>
+
+        <span class="n">is_clash</span> <span class="o">=</span> <span class="n">distance_maps</span> <span class="o">&lt;</span> <span class="n">cross_radii</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius_multiplier</span>
+        <span class="n">num_clashes</span> <span class="o">=</span> <span class="p">(</span><span class="n">is_clash</span> <span class="o">*</span> <span class="n">cross_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">avg_num_clashes</span> <span class="o">=</span> <span class="n">num_clashes</span> <span class="o">/</span> <span class="p">(</span><span class="n">cross_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">num_clashes</span><span class="o">=</span><span class="n">num_clashes</span><span class="p">,</span>
+            <span class="n">avg_num_clashes</span><span class="o">=</span><span class="n">avg_num_clashes</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="norm">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.norm">[docs]</a>
+<span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">norms_sqr</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vector</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">norms</span> <span class="o">=</span> <span class="n">norms_sqr</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="k">return</span> <span class="n">norms</span></div>
+
+
+
+<div class="viewcode-block" id="normalize">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.normalize">[docs]</a>
+<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">vector</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">vector</span> <span class="o">/</span> <span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="measure_bonds">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.measure_bonds">[docs]</a>
+<span class="k">def</span> <span class="nf">measure_bonds</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="n">v</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">bonds_len</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">coord</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">-</span> <span class="n">coord</span><span class="p">[</span><span class="n">u</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">bonds_len</span></div>
+
+
+
+<div class="viewcode-block" id="measure_angles">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.measure_angles">[docs]</a>
+<span class="k">def</span> <span class="nf">measure_angles</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="s2">&quot;... a -&gt; a ...&quot;</span><span class="p">)</span>
+    <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span> <span class="n">normalize</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">v1</span> <span class="o">+</span> <span class="n">v2</span><span class="p">),</span> <span class="n">norm</span><span class="p">(</span><span class="n">v1</span> <span class="o">-</span> <span class="n">v2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="measure_dihedrals">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.measure_dihedrals">[docs]</a>
+<span class="k">def</span> <span class="nf">measure_dihedrals</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+    <span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="s2">&quot;... b -&gt; b ...&quot;</span><span class="p">)</span>
+    <span class="n">u1</span><span class="p">,</span> <span class="n">u2</span><span class="p">,</span> <span class="n">u3</span><span class="p">,</span> <span class="n">u4</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">v</span><span class="p">],</span> <span class="n">coords</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">u2</span> <span class="o">-</span> <span class="n">u1</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">u3</span> <span class="o">-</span> <span class="n">u2</span>
+    <span class="n">a3</span> <span class="o">=</span> <span class="n">u4</span> <span class="o">-</span> <span class="n">u3</span>
+
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">)</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">)</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">v2</span><span class="p">)</span>
+
+    <span class="n">porm</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">v1</span> <span class="o">*</span> <span class="n">a3</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">rad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arccos</span><span class="p">((</span><span class="n">v1</span> <span class="o">*</span> <span class="n">v2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">v1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">v2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">rad</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">porm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rad</span> <span class="o">*</span> <span class="n">porm</span><span class="p">,</span> <span class="n">rad</span><span class="p">)</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">u1</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">u2</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">u3</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="n">u4</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rad</span> <span class="o">*</span> <span class="n">mask</span></div>
+
+
+
+<div class="viewcode-block" id="ChemicalDeviationMetric">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.ChemicalDeviationMetric">[docs]</a>
+<span class="k">class</span> <span class="nc">ChemicalDeviationMetric</span><span class="p">(</span><span class="n">ProteinMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">measure</span><span class="p">,</span> <span class="n">var_clip</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">measure</span> <span class="o">=</span> <span class="n">measure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">var_clip</span> <span class="o">=</span> <span class="n">var_clip</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datum</span><span class="p">:</span> <span class="n">ProteinDatum</span><span class="p">):</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">atom_coord</span><span class="p">,</span> <span class="s2">&quot;r a c -&gt; (r a) c&quot;</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">_list&quot;</span><span class="p">),</span> <span class="s2">&quot;r a c -&gt; (r a) c&quot;</span><span class="p">)</span>
+
+        <span class="n">res_token</span> <span class="o">=</span> <span class="n">datum</span><span class="o">.</span><span class="n">residue_token</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">standard_values</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">STANDARD_CHEMICAL_MEASURES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">])[</span><span class="n">res_token</span><span class="p">]</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">_mask&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">var_clip</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">standard_vars</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">STANDARD_CHEMICAL_MEASURES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">][</span><span class="mi">1</span><span class="p">])[</span>
+                <span class="n">res_token</span>
+            <span class="p">]</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">*</span> <span class="p">(</span><span class="n">standard_vars</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">var_clip</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;(r a) -&gt; r a&quot;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">datum</span><span class="o">.</span><span class="n">residue_token</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">error</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">values</span> <span class="o">-</span> <span class="n">standard_values</span><span class="p">)</span> <span class="o">*</span> <span class="n">mask</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">_deviation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">error</span>
+
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="StandardBondDeviation">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.StandardBondDeviation">[docs]</a>
+<span class="k">class</span> <span class="nc">StandardBondDeviation</span><span class="p">(</span><span class="n">ChemicalDeviationMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;bonds&quot;</span><span class="p">,</span> <span class="n">measure_bonds</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="StandardAngleDeviation">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.StandardAngleDeviation">[docs]</a>
+<span class="k">class</span> <span class="nc">StandardAngleDeviation</span><span class="p">(</span><span class="n">ChemicalDeviationMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;angles&quot;</span><span class="p">,</span> <span class="n">measure_angles</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="StandardDihedralDeviation">
+<a class="viewcode-back" href="../../protein.html#protein.metrics.StandardDihedralDeviation">[docs]</a>
+<span class="k">class</span> <span class="nc">StandardDihedralDeviation</span><span class="p">(</span><span class="n">ChemicalDeviationMetric</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var_clip</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;dihedrals&quot;</span><span class="p">,</span> <span class="n">measure_dihedrals</span><span class="p">,</span> <span class="n">var_clip</span><span class="o">=</span><span class="n">var_clip</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">moleculib.protein.transform</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="n">DescribeChemistry</span><span class="p">,</span>
+        <span class="n">AnnotateSecondaryStructure</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">moleculib.metrics</span> <span class="kn">import</span> <span class="n">MetricsPipe</span>
+
+    <span class="n">datum</span> <span class="o">=</span> <span class="n">ProteinDatum</span><span class="o">.</span><span class="n">fetch_pdb_id</span><span class="p">(</span><span class="s2">&quot;1l2y&quot;</span><span class="p">)</span>
+    <span class="n">transforms</span> <span class="o">=</span> <span class="p">[</span><span class="n">DescribeChemistry</span><span class="p">(),</span> <span class="n">AnnotateSecondaryStructure</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">transform</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">:</span>
+        <span class="n">datum</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
+    <span class="n">metrics_pipe</span> <span class="o">=</span> <span class="n">MetricsPipe</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">StandardBondDeviation</span><span class="p">(),</span>
+            <span class="n">StandardAngleDeviation</span><span class="p">(),</span>
+            <span class="n">StandardDihedralDeviation</span><span class="p">(),</span>
+            <span class="n">CountClashes</span><span class="p">(),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">metrics_pipe</span><span class="p">(</span><span class="n">datum</span><span class="p">))</span>
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

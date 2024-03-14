@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: protein.datum</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_static/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_static/img/favicon-16x16.png">
+    <link rel="index" title="Index" href="../../genindex.html" />
+
+    <link rel="stylesheet" href="../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../"
+        src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../index.html"><img src="../../../../_static/logo.svg"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1>moleculib Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <h1>Source code for protein.datum</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">biotite.database</span> <span class="kn">import</span> <span class="n">rcsb</span>
+<span class="kn">from</span> <span class="nn">biotite.sequence</span> <span class="kn">import</span> <span class="n">ProteinSequence</span> <span class="k">as</span> <span class="n">_ProteinSequence</span>
+<span class="kn">from</span> <span class="nn">biotite.structure</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">apply_chain_wise</span><span class="p">,</span>
+    <span class="n">apply_residue_wise</span><span class="p">,</span>
+    <span class="n">get_chain_count</span><span class="p">,</span>
+    <span class="n">get_residue_count</span><span class="p">,</span>
+    <span class="n">get_residues</span><span class="p">,</span>
+    <span class="n">spread_chain_wise</span><span class="p">,</span>
+    <span class="n">spread_residue_wise</span><span class="p">,</span>
+    <span class="n">chain_iter</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">biotite.structure</span> <span class="kn">import</span> <span class="n">filter_amino_acids</span>
+
+<span class="kn">import</span> <span class="nn">biotite.structure.io.mmtf</span> <span class="k">as</span> <span class="nn">mmtf</span>
+<span class="kn">import</span> <span class="nn">biotite.structure.io.pdb</span> <span class="k">as</span> <span class="nn">pdb</span>
+<span class="kn">import</span> <span class="nn">biotite.structure.io.pdbx</span> <span class="k">as</span> <span class="nn">pdbx</span>
+
+<span class="kn">from</span> <span class="nn">.alphabet</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">all_atoms</span><span class="p">,</span>
+    <span class="n">all_residues</span><span class="p">,</span>
+    <span class="n">backbone_atoms</span><span class="p">,</span>
+    <span class="n">atom_index</span><span class="p">,</span>
+    <span class="n">atom_to_residues_index</span><span class="p">,</span>
+    <span class="n">get_residue_index</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span><span class="p">,</span> <span class="n">repeat</span>
+<span class="kn">from</span> <span class="nn">simple_pytree</span> <span class="kn">import</span> <span class="n">Pytree</span>
+
+<div class="viewcode-block" id="ProteinSequence">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinSequence">[docs]</a>
+<span class="k">class</span> <span class="nc">ProteinSequence</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">idcode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">sequence</span><span class="p">:</span> <span class="n">_ProteinSequence</span><span class="p">,</span>
+        <span class="n">residue_token</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">residue_index</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">residue_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">chain_token</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcode</span> <span class="o">=</span> <span class="n">idcode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">=</span> <span class="n">residue_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_index</span> <span class="o">=</span> <span class="n">residue_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_mask</span> <span class="o">=</span> <span class="n">residue_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_token</span> <span class="o">=</span> <span class="n">chain_token</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ProteinDatum">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum">[docs]</a>
+<span class="k">class</span> <span class="nc">ProteinDatum</span><span class="p">(</span><span class="n">Pytree</span><span class="p">,</span> <span class="n">mutable</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Incorporates protein data to MolecularDatum</span>
+<span class="sd">    and reshapes atom arrays to residue-based representation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">idcode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">resolution</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">sequence</span><span class="p">:</span> <span class="n">_ProteinSequence</span><span class="p">,</span>
+        <span class="n">residue_token</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">residue_index</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">residue_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">chain_token</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">atom_token</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">atom_coord</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">atom_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idcode</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1">#str(sequence)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">=</span> <span class="n">residue_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_index</span> <span class="o">=</span> <span class="n">residue_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residue_mask</span> <span class="o">=</span> <span class="n">residue_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chain_token</span> <span class="o">=</span> <span class="n">chain_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_token</span> <span class="o">=</span> <span class="n">atom_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_coord</span> <span class="o">=</span> <span class="n">atom_coord</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_mask</span> <span class="o">=</span> <span class="n">atom_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_element</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_radius</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flips_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flips_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bonds_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bonds_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angles_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angles_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dihedrals_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dihedrals_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundary_token</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundary_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_extract_reshaped_atom_attr</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">atom_array</span><span class="p">,</span>
+        <span class="n">atom_alphabet</span><span class="o">=</span><span class="n">all_atoms</span><span class="p">,</span>
+        <span class="n">atom_to_indices</span><span class="o">=</span><span class="n">atom_to_residues_index</span><span class="p">,</span>
+        <span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;coord&quot;</span><span class="p">,</span> <span class="s2">&quot;token&quot;</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="n">residue_count</span> <span class="o">=</span> <span class="n">get_residue_count</span><span class="p">(</span><span class="n">atom_array</span><span class="p">)</span>
+
+        <span class="n">extraction</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">residue_count</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">attr_shape</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">atom_array</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">attr_reshape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">residue_count</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">attr_reshape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">residue_count</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="n">attr_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">extraction</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_reshape</span>
+
+        <span class="k">def</span> <span class="nf">_atom_slice</span><span class="p">(</span><span class="n">atom_name</span><span class="p">,</span> <span class="n">atom_array</span><span class="p">,</span> <span class="n">atom_token</span><span class="p">):</span>
+            <span class="n">atom_array_</span> <span class="o">=</span> <span class="n">atom_array</span><span class="p">[(</span><span class="n">atom_array</span><span class="o">.</span><span class="n">atom_name</span> <span class="o">==</span> <span class="n">atom_name</span><span class="p">)]</span>
+            <span class="c1"># kill pads and kill unks that are not backbone</span>
+            <span class="n">atom_array_</span> <span class="o">=</span> <span class="n">atom_array_</span><span class="p">[(</span><span class="n">atom_array_</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">atom_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">backbone_atoms</span><span class="p">:</span>
+                <span class="n">atom_array_</span> <span class="o">=</span> <span class="n">atom_array_</span><span class="p">[(</span><span class="n">atom_array_</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)]</span>
+
+            <span class="n">res_tokens</span><span class="p">,</span> <span class="n">seq_id</span> <span class="o">=</span> <span class="n">atom_array_</span><span class="o">.</span><span class="n">residue_token</span><span class="p">,</span> <span class="n">atom_array_</span><span class="o">.</span><span class="n">seq_uid</span>
+            <span class="n">atom_indices</span> <span class="o">=</span> <span class="n">atom_to_indices</span><span class="p">[</span><span class="n">atom_token</span><span class="p">][</span><span class="n">res_tokens</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+                <span class="n">attr_tensor</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">atom_array_</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                <span class="n">extraction</span><span class="p">[</span><span class="n">attr</span><span class="p">][</span><span class="n">seq_id</span><span class="p">,</span> <span class="n">atom_indices</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_tensor</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">seq_id</span><span class="p">,</span> <span class="n">atom_indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">atom_name</span> <span class="ow">in</span> <span class="n">atom_alphabet</span><span class="p">:</span>
+            <span class="n">atom_token</span> <span class="o">=</span> <span class="n">atom_alphabet</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atom_name</span><span class="p">)</span>
+            <span class="n">_atom_slice</span><span class="p">(</span><span class="n">atom_name</span><span class="p">,</span> <span class="n">atom_array</span><span class="p">,</span> <span class="n">atom_token</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">extraction</span><span class="p">,</span> <span class="n">mask</span>
+
+<div class="viewcode-block" id="ProteinDatum.separate_chains">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.separate_chains">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">separate_chains</span><span class="p">(</span><span class="n">datum</span><span class="p">):</span> 
+        <span class="n">chains</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">chain_token</span><span class="p">)</span>
+        <span class="n">protein_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">:</span>
+            <span class="n">new_datum_</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">chain_token</span> <span class="o">==</span> <span class="n">chain</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">datum</span><span class="o">.</span><span class="n">chain_token</span> <span class="o">==</span> <span class="n">chain</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+                    <span class="n">new_datum_</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">cut</span> <span class="p">:</span> <span class="n">cut</span> <span class="o">+</span> <span class="n">length</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_datum_</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+            <span class="n">new_datum</span> <span class="o">=</span> <span class="n">ProteinDatum</span><span class="p">(</span><span class="o">**</span><span class="n">new_datum_</span><span class="p">)</span>
+            <span class="n">protein_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_datum</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">protein_list</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ProteinDatum.empty">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.empty">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">resolution</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">_ProteinSequence</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">residue_index</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="n">residue_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+            <span class="n">chain_token</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="n">atom_token</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+            <span class="n">atom_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+            <span class="n">atom_coord</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.from_filepath">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.from_filepath">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_filepath</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chain_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;pdb&#39;</span> <span class="ow">or</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.pdb&quot;</span><span class="p">):</span>
+            <span class="n">pdb_file</span> <span class="o">=</span> <span class="n">pdb</span><span class="o">.</span><span class="n">PDBFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">atom_array</span> <span class="o">=</span> <span class="n">pdb</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">idcode</span><span class="o">=</span><span class="s1">&#39;allancomebackhere&#39;</span><span class="p">,</span>
+                <span class="n">resolution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.mmtf&quot;</span><span class="p">):</span> 
+            <span class="n">mmtf_file</span> <span class="o">=</span> <span class="n">mmtf</span><span class="o">.</span><span class="n">MMTFFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">atom_array</span> <span class="o">=</span> <span class="n">mmtf</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">mmtf_file</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">idcode</span><span class="o">=</span><span class="n">mmtf_file</span><span class="p">[</span><span class="s2">&quot;structureId&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;structureId&quot;</span> <span class="ow">in</span> <span class="n">mmtf_file</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">resolution</span><span class="o">=</span><span class="kc">None</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;resolution&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mmtf_file</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">mmtf_file</span><span class="p">[</span><span class="s2">&quot;resolution&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">filepath</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.mmcif&quot;</span><span class="p">):</span>
+            <span class="n">mmcif_file</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">PDBxFile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+            <span class="n">atom_array</span> <span class="o">=</span> <span class="n">pdbx</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">mmcif_file</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">idcode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">resolution</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+
+        <span class="n">aa_filter</span> <span class="o">=</span> <span class="n">filter_amino_acids</span><span class="p">(</span><span class="n">atom_array</span><span class="p">)</span>
+        <span class="n">atom_array</span> <span class="o">=</span> <span class="n">atom_array</span><span class="p">[</span><span class="n">aa_filter</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">chain_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">atom_arrays</span> <span class="o">=</span> <span class="n">chain_iter</span><span class="p">(</span><span class="n">atom_array</span><span class="p">)</span>
+            <span class="n">atom_array</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">atom_arrays</span><span class="p">)[</span><span class="n">chain_id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_atom_array</span><span class="p">(</span><span class="n">atom_array</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.fetch_pdb_id">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.fetch_pdb_id">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">fetch_pdb_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mmtf&#39;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">rcsb</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_filepath</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.from_atom_array">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.from_atom_array">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_atom_array</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">atom_array</span><span class="p">,</span>
+        <span class="n">header</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reshapes atom array to residue-indexed representation to</span>
+<span class="sd">        build a protein datum.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">atom_array</span><span class="o">.</span><span class="n">array_length</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">empty</span><span class="p">()</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">res_names</span> <span class="o">=</span> <span class="n">get_residues</span><span class="p">(</span><span class="n">atom_array</span><span class="p">)</span>
+        <span class="n">res_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;UNK&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_residues</span><span class="p">)</span> <span class="k">else</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">res_names</span>
+        <span class="p">]</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="n">_ProteinSequence</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">res_names</span><span class="p">))</span>
+
+        <span class="c1"># index residues globally</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s2">&quot;seq_uid&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">seq_uid</span> <span class="o">=</span> <span class="n">spread_residue_wise</span><span class="p">(</span>
+            <span class="n">atom_array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">get_residue_count</span><span class="p">(</span><span class="n">atom_array</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># tokenize atoms</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s2">&quot;token&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">atom</span><span class="p">:</span> <span class="n">atom_index</span><span class="p">(</span><span class="n">atom</span><span class="p">),</span> <span class="n">atom_array</span><span class="o">.</span><span class="n">atom_name</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># tokenize residues</span>
+        <span class="n">residue_token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">res</span><span class="p">:</span> <span class="n">get_residue_index</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">atom_array</span><span class="o">.</span><span class="n">res_name</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">residue_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">residue_token</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s2">&quot;residue_token&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">residue_token</span> <span class="o">=</span> <span class="n">residue_token</span>
+        <span class="n">chain_token</span> <span class="o">=</span> <span class="n">spread_chain_wise</span><span class="p">(</span>
+            <span class="n">atom_array</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">get_chain_count</span><span class="p">(</span><span class="n">atom_array</span><span class="p">))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># count number of residues per chain</span>
+        <span class="c1"># and index residues per chain using cumulative sum</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s2">&quot;res_uid&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_count_residues_per_chain</span><span class="p">(</span><span class="n">chain_atom_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">get_residue_count</span><span class="p">(</span><span class="n">chain_atom_array</span><span class="p">)</span>
+
+        <span class="n">chain_res_sizes</span> <span class="o">=</span> <span class="n">apply_chain_wise</span><span class="p">(</span>
+            <span class="n">atom_array</span><span class="p">,</span> <span class="n">atom_array</span><span class="p">,</span> <span class="n">_count_residues_per_chain</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">chain_res_cumsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">chain_res_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">atom_array</span><span class="o">.</span><span class="n">res_uid</span> <span class="o">=</span> <span class="n">atom_array</span><span class="o">.</span><span class="n">res_id</span> <span class="o">+</span> <span class="n">chain_res_cumsum</span><span class="p">[</span><span class="n">chain_token</span><span class="p">]</span>
+
+        <span class="c1"># reshape atom attributes to residue-based representation</span>
+        <span class="c1"># with the correct ordering</span>
+        <span class="c1"># [N * 14, ...] -&gt; [N, 14, ...]</span>
+        <span class="n">atom_extract</span><span class="p">,</span> <span class="n">atom_mask</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_extract_reshaped_atom_attr</span><span class="p">(</span>
+            <span class="n">atom_array</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;coord&quot;</span><span class="p">,</span> <span class="s2">&quot;token&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">atom_extract</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;atom_</span><span class="si">{</span><span class="n">kv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">atom_extract</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="p">)</span>
+
+        <span class="c1"># pool residue attributes and create residue features</span>
+        <span class="c1"># [N * 14, ...] -&gt; [N, ...]</span>
+        <span class="k">def</span> <span class="nf">_pool_residue_token</span><span class="p">(</span><span class="n">atom_residue_tokens</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">representative</span> <span class="o">=</span> <span class="n">atom_residue_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">representative</span>
+
+        <span class="k">def</span> <span class="nf">_reshape_residue_attr</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">apply_residue_wise</span><span class="p">(</span><span class="n">atom_array</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">_pool_residue_token</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">residue_token</span> <span class="o">=</span> <span class="n">_reshape_residue_attr</span><span class="p">(</span><span class="n">residue_token</span><span class="p">)</span>
+        <span class="n">residue_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">residue_token</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">residue_mask</span> <span class="o">=</span> <span class="n">_reshape_residue_attr</span><span class="p">(</span><span class="n">residue_mask</span><span class="p">)</span>
+        <span class="n">residue_mask</span> <span class="o">=</span> <span class="n">residue_mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">atom_extract</span><span class="p">[</span><span class="s2">&quot;atom_coord&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">chain_token</span> <span class="o">=</span> <span class="n">_reshape_residue_attr</span><span class="p">(</span><span class="n">chain_token</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">idcode</span><span class="o">=</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;idcode&quot;</span><span class="p">],</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span>
+            <span class="n">resolution</span><span class="o">=</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;resolution&quot;</span><span class="p">],</span>
+            <span class="n">residue_token</span><span class="o">=</span><span class="n">residue_token</span><span class="p">,</span>
+            <span class="n">residue_index</span><span class="o">=</span><span class="n">residue_index</span><span class="p">,</span>
+            <span class="n">residue_mask</span><span class="o">=</span><span class="n">residue_mask</span><span class="p">,</span>
+            <span class="n">chain_token</span><span class="o">=</span><span class="n">chain_token</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">atom_extract</span><span class="p">,</span>
+            <span class="n">atom_mask</span><span class="o">=</span><span class="n">atom_mask</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_apply_chemistry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="n">all_atoms</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom_coord</span><span class="p">,</span> <span class="s2">&quot;r a c -&gt; (r a) c&quot;</span><span class="p">)</span>
+        <span class="n">all_idx</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_list&quot;</span><span class="p">),</span> <span class="s2">&quot;r o i -&gt; (r o) i&quot;</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_mask&quot;</span><span class="p">)</span>
+
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">all_atoms</span><span class="p">,</span> <span class="n">all_idx</span><span class="p">)</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">measures</span><span class="p">,</span> <span class="s2">&quot;(r o) -&gt; r o&quot;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span><span class="p">))</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">measures</span> <span class="o">*</span> <span class="n">mask</span>
+        <span class="k">return</span> <span class="n">measures</span>
+
+<div class="viewcode-block" id="ProteinDatum.apply_bonds">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.apply_bonds">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_bonds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_chemistry</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;bonds&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.apply_angles">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.apply_angles">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_chemistry</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;angles&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.apply_dihedrals">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.apply_dihedrals">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_dihedrals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_chemistry</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;dihedrals&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.to_dict">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">attrs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">dict_</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+            <span class="c1"># strings are not JAX types</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="n">dict_</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">return</span> <span class="n">dict_</span></div>
+
+
+<div class="viewcode-block" id="ProteinDatum.to_pdb_str">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.to_pdb_str">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_pdb_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># https://colab.research.google.com/github/pb3lab/ibm3202/blob/</span>
+        <span class="c1"># master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">atom_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+        <span class="n">all_atom_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_coord</span><span class="p">[</span><span class="n">atom_mask</span><span class="p">]</span>
+        <span class="n">all_atom_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_token</span><span class="p">[</span><span class="n">atom_mask</span><span class="p">]</span>
+        <span class="n">all_atom_res_tokens</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">residue_token</span><span class="p">,</span> <span class="s2">&quot;r -&gt; r a&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">14</span><span class="p">)[</span><span class="n">atom_mask</span><span class="p">]</span>
+        <span class="n">all_atom_res_indices</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">residue_index</span><span class="p">,</span> <span class="s2">&quot;r -&gt; r a&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">14</span><span class="p">)[</span><span class="n">atom_mask</span><span class="p">]</span>
+
+        <span class="c1"># move to cpu</span>
+        <span class="n">atom_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atom_mask</span><span class="p">)</span>
+        <span class="n">all_atom_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_atom_coords</span><span class="p">)</span>
+        <span class="n">all_atom_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_atom_tokens</span><span class="p">)</span>
+        <span class="n">all_atom_res_tokens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_atom_res_tokens</span><span class="p">)</span>
+        <span class="n">all_atom_res_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_atom_res_indices</span><span class="p">)</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">res_token</span><span class="p">,</span> <span class="n">res_index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">all_atom_coords</span><span class="p">,</span>
+                <span class="n">all_atom_tokens</span><span class="p">,</span>
+                <span class="n">all_atom_res_tokens</span><span class="p">,</span>
+                <span class="n">all_atom_res_indices</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">all_atoms</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">)]</span>
+            <span class="n">res_name</span> <span class="o">=</span> <span class="n">all_residues</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">res_token</span><span class="p">)]</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">coord</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ATOM&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_name</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">21</span><span class="p">:</span><span class="mi">22</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">23</span><span class="p">:</span><span class="mi">27</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">res_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">38</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">38</span><span class="p">:</span><span class="mi">46</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">46</span><span class="p">:</span><span class="mi">54</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+            <span class="n">line</span><span class="p">[</span><span class="mi">76</span><span class="p">:</span><span class="mi">78</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lines</span></div>
+
+
+
+<div class="viewcode-block" id="ProteinDatum.plot">
+<a class="viewcode-back" href="../../protein.html#protein.datum.ProteinDatum.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">viewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sphere</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ribbon</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">viewer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">viewer</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">view</span><span class="o">.</span><span class="n">addModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_pdb_str</span><span class="p">(),</span> <span class="s1">&#39;pdb&#39;</span><span class="p">,</span> <span class="n">viewer</span><span class="o">=</span><span class="n">viewer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sphere</span><span class="p">:</span>
+            <span class="n">view</span><span class="o">.</span><span class="n">setStyle</span><span class="p">({</span><span class="s1">&#39;sphere&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radius&#39;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}},</span> <span class="n">viewer</span><span class="o">=</span><span class="n">viewer</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ribbon</span><span class="p">:</span>
+            <span class="n">view</span><span class="o">.</span><span class="n">setStyle</span><span class="p">({</span><span class="s1">&#39;cartoon&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;spectrum&#39;</span><span class="p">,</span> <span class="s1">&#39;ribbon&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;thickness&#39;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">}},</span> <span class="n">viewer</span><span class="o">=</span><span class="n">viewer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">view</span><span class="o">.</span><span class="n">setStyle</span><span class="p">({</span><span class="s1">&#39;cartoon&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;spectrum&#39;</span><span class="p">},</span> <span class="s1">&#39;stick&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;radius&#39;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">}},</span> <span class="n">viewer</span><span class="o">=</span><span class="n">viewer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">view</span></div>
+</div>
+
+
+
+</pre></div>
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../assembly.html">assembly package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-dataset-module">assembly.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-datum-module">assembly.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#assembly-transform-module">assembly.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../assembly.html#module-assembly">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#protein">Protein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../protein.html">protein package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.alphabet">protein.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.batch">protein.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-dataset-module">protein.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.datum">protein.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.jax_utils">protein.jax_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#protein-loader-module">protein.loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.measures">protein.measures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.metrics">protein.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.transform">protein.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein.utils">protein.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../protein.html#module-protein">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#sequence">Sequence</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sequence.html">sequence package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-dataset-module">sequence.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.datum">sequence.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.metrics">sequence.metrics module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence.transform">sequence.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#sequence-utils-module">sequence.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sequence.html#module-sequence">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#molecule">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../molecule.html">molecule package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule.alphabet">molecule.alphabet module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-batch-module">molecule.batch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-dataset-module">molecule.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-datum-module">molecule.datum module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-transform-module">molecule.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#molecule-utils-module">molecule.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../molecule.html#module-molecule">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#nucleic">Nucleic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html#abstract">Abstract</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../abstract.html">abstract package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.dataset">abstract.dataset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract.transform">abstract.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstract.html#module-abstract">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>
