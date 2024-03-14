@@ -1,16 +1,18 @@
-from .datum import ComplexDatum
+from .datum import AssemblyDatum 
 from ..protein.datum import ProteinDatum
 from typing import List
 import numpy as np 
 
+from copy import deepcopy
+from moleculib.protein.transform import ProteinTransform
 
 
-class ComplexTransform:
+class AssemblyTransform:
     """
     Abstract class for transformation of ProteinDatum datapoints
     """
 
-    def transform(self, datum: ComplexDatum) -> ComplexDatum:
+    def transform(self, datum: AssemblyDatum) -> AssemblyDatum:
         """
         Takes as input an individual data point, processes
         the values in it and returns a new ProteinDatum
@@ -18,10 +20,7 @@ class ComplexTransform:
         raise NotImplementedError("method transform must be implemented")
 
 
-from copy import deepcopy
-from moleculib.protein.transform import ProteinTransform
-
-class ApplyToProteins(ComplexTransform):
+class ApplyToProteins(AssemblyTransform):
     
     def __init__(self, protein_transform: List[ProteinTransform]):
         self.protein_transform = protein_transform
@@ -33,10 +32,10 @@ class ApplyToProteins(ComplexTransform):
             for transform in self.protein_transform:
                 protein = transform.transform(protein)
             new_protein_data.append(protein)
-        return ComplexDatum(new_protein_data)
+        return AssemblyDatum(new_protein_data)
             
 
-class ComplexPad(ComplexTransform):
+class ComplexPad(AssemblyTransform):
 
     def __init__(self, num_chains):
         self.num_chains = num_chains
@@ -48,12 +47,12 @@ class ComplexPad(ComplexTransform):
             protein_data = deepcopy(datum.protein_data)
             for _ in range(self.num_chains - num_chains):
                 protein_data.append(ProteinDatum.empty())
-            return ComplexDatum(protein_data)
+            return AssemblyDatum(protein_data)
         else:
             return datum
 
 
-class FilterProteinChains(ComplexTransform):
+class FilterProteinChains(AssemblyTransform):
 
     def __init__(self, num_chains):
         self.num_chains = num_chains
@@ -100,11 +99,11 @@ class FilterProteinChains(ComplexTransform):
             acceptable = [ 
                 i for i, distance in enumerate(distances) if (distance < 10) and (i != index) and (i in remaining_indices) ]
 
-        return ComplexDatum(new_protein_data)            
+        return AssemblyDatum(new_protein_data)            
 
 
 
-class StackProteins(ComplexTransform):
+class StackProteins(AssemblyTransform):
 
     def transform(self, datum):
         protein_data = datum.protein_data
@@ -120,10 +119,10 @@ class StackProteins(ComplexTransform):
             else:
                 attrs[attr] = np.empty((len(batched), ))
 
-        return ComplexDatum(protein_data=type(sample_datum)(**attrs))
+        return AssemblyDatum(protein_data=type(sample_datum)(**attrs))
 
 
-class UnstackProteins(ComplexTransform):
+class UnstackProteins(AssemblyTransform):
 
     def transform(self, datum):
         protein_data = datum.protein_data
@@ -144,4 +143,4 @@ class UnstackProteins(ComplexTransform):
             attrs = { attr: values[i] for attr, values in attr_lists.items() }
             new_protein_data.append(type(protein_data)(**attrs))
         
-        return ComplexDatum(new_protein_data)
+        return AssemblyDatum(new_protein_data)
