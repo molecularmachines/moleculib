@@ -279,14 +279,56 @@ def get_pdb_ids():
     return pdb_ids
 
 if __name__ == '__main__':
-    print("hey")
-    with open('/u/danaru/moleculib/moleculib/data/pids_all.txt', 'r') as file:
+
+    # print("hello")
+    # script_dir = os.path.dirname(os.path.realpath(__file__))
+    # with open('/u/danaru/moleculib/moleculib/moleculib/data/pids_all.txt', 'r') as file:
+    #     data = file.read()
+    #     pdbs = data.split(',')
+    
+    
+    # dataset = PDBDataset.build(pdbs, save_path = script_dir)
+    # breakpoint()
+    ###Check it saves to where i want it to save:
+    # print("hey")
+    # script_dir = os.path.dirname(os.path.realpath(__file__))
+    # # Create a dummy file
+    # with open("/u/danaru/moleculib/moleculib/moleculib/nucleic/dummy_file.txt", "w") as f:
+    #     f.write("This is a dummy file.")
+    #     print("saved")
+    # print(script_dir)
+
+
+    #check permissions:
+    # directory_path = "/u/danaru/moleculib/moleculib/moleculib/nucleic"
+
+    # # Get the permissions of the directory
+    # permissions = os.stat(directory_path).st_mode
+
+    # # Check if the directory is writable
+    # is_writable = bool(permissions & 0o200)
+
+    # if is_writable:
+    #     print(f"The directory '{directory_path}' is writable.")
+    # else:
+    #     print(f"The directory '{directory_path}' is not writable.")
+    print("new")
+    with open('/u/danaru/moleculib/moleculib/moleculib/data/pids_all.txt', 'r') as file:
         data = file.read()
         pdbs = data.split(',')
+    print(len(pdbs))
     
     
-    dataset = PDBDataset.build(pdbs)
-    breakpoint()
+    # dataset = PDBDataset.build(pdbs)
+    # breakpoint()
+    # # Call the function to get a list of PDB IDs
+    # all_pdb_ids = get_pdb_ids()
+    # print(all_pdb_ids)
+
+    # print(d.metadata)  
+    # breakpoint()
+
+
     # # Call the function to get a list of PDB IDs
     # all_pdb_ids = get_pdb_ids()
     # print(all_pdb_ids)
