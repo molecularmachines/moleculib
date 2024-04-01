@@ -87,8 +87,8 @@ class ProteinDatum(Pytree, mutable=True):
         self.flips_list = None
         self.flips_mask = None
         self.pad_mask = None
-        self.bonds_list = None
-        self.bonds_mask = None
+        # self.bonds_list = None
+        # self.bonds_mask = None
         self.angles_list = None
         self.angles_mask = None
         self.dihedrals_list = None
@@ -156,7 +156,7 @@ class ProteinDatum(Pytree, mutable=True):
         return protein_list
 
     def __len__(self):
-        return len(self.sequence)
+        return len(self.atom_coord)
 
     @classmethod
     def empty(cls):
@@ -174,7 +174,14 @@ class ProteinDatum(Pytree, mutable=True):
         )
 
     @classmethod
-    def from_filepath(cls, filepath, format=None, chain_id=None):
+    def from_filepath(
+        cls, 
+        filepath, 
+        format=None, 
+        chain_id=None,
+        chain=None,
+        model=None,
+    ):
         if format == 'pdb' or filepath.endswith(".pdb"):
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=1)
@@ -201,15 +208,28 @@ class ProteinDatum(Pytree, mutable=True):
 
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
-        if chain_id is not None:
-            atom_arrays = chain_iter(atom_array)
-            atom_array = list(atom_arrays)[chain_id]
+    
+        if chain is not None:
+            atom_array = atom_array[(atom_array.chain_id == chain)]
+
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_pdb_id(cls, id, format='mmtf', save_path=None):
+    def fetch_pdb_id(
+        cls, 
+        id, 
+        format='pdb', 
+        chain=None, 
+        model=None, 
+        save_path=None
+    ):
         filepath = rcsb.fetch(id, format, save_path)
-        return cls.from_filepath(filepath, format)
+        return cls.from_filepath(
+            filepath, 
+            format=format, 
+            chain=chain, 
+            model=model
+        )
 
     @classmethod
     def from_atom_array(
@@ -354,7 +374,7 @@ class ProteinDatum(Pytree, mutable=True):
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
         all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
 
-        # move to cpu
+        # just in case, move to cpu
         atom_mask = np.array(atom_mask)
         all_atom_coords = np.array(all_atom_coords)
         all_atom_tokens = np.array(all_atom_tokens)
@@ -389,16 +409,30 @@ class ProteinDatum(Pytree, mutable=True):
         return lines
 
 
-    def plot(self, view, viewer=None, sphere=False, ribbon=False):
+    def plot(
+        self, 
+        view, 
+        viewer=None, 
+        sphere=False, 
+        ribbon=True,
+        sidechain=True,
+        color='spectrum',
+    ):
         if viewer is None:
             viewer = (0, 0)
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         if sphere:
-            view.setStyle({'sphere': {'radius': 0.3}}, viewer=viewer)
-        elif ribbon:
-            view.setStyle({'cartoon': {'color': 'spectrum', 'ribbon': True, 'thickness': 0.7}}, viewer=viewer)
-        else:
-            view.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.2}}, viewer=viewer)
+            view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
+
+        if ribbon:
+            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer)
+
+        if sidechain:
+            if color != 'spectrum':
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
+            else:
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+
         return view
 
 

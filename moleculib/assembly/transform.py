@@ -42,11 +42,16 @@ class ComplexPad(AssemblyTransform):
 
     def transform(self, datum):
         num_chains = len(datum.protein_data)
+        sample_datum = datum.protein_data[0]
 
         if num_chains < self.num_chains:
             protein_data = deepcopy(datum.protein_data)
             for _ in range(self.num_chains - num_chains):
-                protein_data.append(ProteinDatum.empty())
+                if type(sample_datum) == ProteinDatum:
+                    protein_data.append(ProteinDatum(sample_datum).empty())
+                else:
+                    irreps = sample_datum.irreps_array.irreps
+                    protein_data.append(type(sample_datum).empty(irreps))
             return AssemblyDatum(protein_data)
         else:
             return datum
@@ -59,12 +64,14 @@ class FilterProteinChains(AssemblyTransform):
 
     def transform(self, datum):
         protein_data = datum.protein_data
-
+        coord = lambda prot: getattr(prot, 'atom_coord')[..., 1, :] if type(datum.protein_data[0]) == ProteinDatum else getattr(prot, 'coord') 
+        mask = lambda prot: getattr(prot, 'atom_mask')[..., 1] if type(datum.protein_data[0]) == ProteinDatum else getattr(prot, 'mask')
+        
         def protein_distance(protein1, protein2):
-            coord1 = protein1.atom_coord[..., 1, :]
-            coord2 = protein2.atom_coord[..., 1, :]
-            mask1 = protein1.atom_mask[..., 1]
-            mask2 = protein2.atom_mask[..., 1]
+            coord1 = coord(protein1)
+            mask1 = mask(protein1)
+            coord2 = coord(protein2)
+            mask2 = mask(protein2)
 
             vector_map = coord1[:, None] - coord2
             map_mask = mask1[:, None] | mask2
@@ -110,16 +117,21 @@ class StackProteins(AssemblyTransform):
         sample_datum = protein_data[0]
         attrs = dict()
 
+        assert all([type(protein) == type(sample_datum) for protein in protein_data]), "All proteins must be of the same type"
+
         for attr, _ in vars(sample_datum).items():
             batched = []
             for protein in protein_data:
                 batched.append(getattr(protein, attr))
             if isinstance(batched[0], np.ndarray):
-                attrs[attr] = np.stack(batched, axis=0)
+                try:
+                    attrs[attr] = np.stack(batched, axis=0)
+                except: 
+                    breakpoint()
             else:
                 attrs[attr] = np.empty((len(batched), ))
-
-        return AssemblyDatum(protein_data=type(sample_datum)(**attrs))
+        datum = AssemblyDatum(protein_data=type(sample_datum)(**attrs))
+        return datum
 
 
 class UnstackProteins(AssemblyTransform):

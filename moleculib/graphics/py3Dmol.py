@@ -8,8 +8,7 @@ from typing import Callable
 def plot_py3dmol_grid(
         grid, 
         window_size=(250, 250), 
-        sphere=False,
-        ribbon=False,
+        **kwargs
     ):
     v = py3Dmol.view(
         viewergrid=(len(grid), len(grid[0])),
@@ -19,31 +18,11 @@ def plot_py3dmol_grid(
     )
     for i, row in enumerate(grid):
         for j, datum in enumerate(row):
-            datum.plot(v, viewer=(i, j), sphere=sphere, ribbon=ribbon)
+            datum.plot(v, viewer=(i, j), **kwargs)
     v.zoomTo()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
 
-
-def plot_py3dmol_molecule(
-        grid, 
-        window_size=(250, 250), 
-        sphere=False,
-        ribbon=False,
-    ):
-    v = py3Dmol.view(
-        viewergrid=(len(grid), len(grid[0])), 
-        linked=True, 
-        width=len(grid[0]) * window_size[0],  
-        height=len(grid) * window_size[1],
-    )
-    for i, row in enumerate(grid):
-        for j, datum in enumerate(row):
-            v.addModel(datum.to_sdf_str(), 'sdf', viewer=(i, j))
-            v.setStyle({'sphere': {'radius': 0.4, 'color': 'orange'}, 'stick': {'radius': 0.2, 'color': 'orange'} }, viewer=(i, j))
-    v.zoomTo()
-    v.setBackgroundColor('rgb(0,0,0)', 0)
-    return v
 
 
 from tempfile import gettempdir
