@@ -36,7 +36,7 @@ class ProteinTransform:
         the values in it and returns a new ProteinDatum
         """
         raise NotImplementedError("method transform must be implemented")
-
+        
 
 class ProteinCrop(ProteinTransform):
     def __init__(self, crop_size):
@@ -123,14 +123,15 @@ class ProteinPad(ProteinTransform):
 
     def transform(self, datum: ProteinDatum) -> ProteinDatum:
         seq_len = len(datum)
+        
         if seq_len >= self.pad_size:
             if type(datum) == ProteinDatum:
-                datum.pad_mask = np.ones(seq_len)
-            return datum
-
+                pad_mask = np.ones(len(datum), dtype=np.bool_)
+                return ProteinDatum(
+                    **vars(datum), pad_mask=pad_mask
+                )
         size_diff = self.pad_size - seq_len
         shift = np.random.randint(0, size_diff)
-
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
