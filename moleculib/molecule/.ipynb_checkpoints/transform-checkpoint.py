@@ -81,31 +81,6 @@ class MoleculePad(MoleculeTransform):
         return new_datum
 
 
-class PairPad(MoleculeTransform):
-    def transform(self, datum: MoleculeDatum, attrs: dict) -> MoleculeDatum:
-        # mol_size = datum.atom_token.shape[0]
-        # if mol_size > self.pad_size:  # TODO: make sure not >=
-        #     return datum
-
-        new_datum_ = dict()
-        for attr, obj in vars(datum).items():
-            if attr in attrs:
-                pad_size = attrs[attr]
-                if type(obj) == np.ndarray:
-                    if attr == "bonds":
-                        obj = pad_array(
-                            obj, int(pad_size * pad_size // 2), value=-1
-                        )
-                    elif attr in ["adjacency", "laplacian"]:
-                        diff = pad_size - obj.shape[0]
-                        obj = np.pad(obj, ((0, diff), (0, diff)))
-                    else:
-                        obj = pad_array(obj, pad_size)
-            new_datum_[attr] = obj
-
-        new_datum = datum.__class__(**new_datum_)
-        return new_datum
-
 class Centralize(MoleculeTransform):
     def transform(self, datum):
         idxs = np.where(datum.atom_mask)
@@ -114,11 +89,6 @@ class Centralize(MoleculeTransform):
         )
         return datum
 
-class SingleBonds(MoleculeTransform):
-    def transform(self, datum):
-        bonds = datum.bonds
-        datum.bonds = np.column_stack([bonds[:,:-1], np.ones((bonds.shape[0],1))]).astype(np.int32)
-        return datum
 
 class CastToBFloat(MoleculeTransform):
     def transform(self, datum):
@@ -151,54 +121,20 @@ class Permuter(MoleculeTransform):
         self.seed = seed
 
     def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
-        # np.random.seed(self.seed)
+        np.random.seed(self.seed)
         permutation = np.random.permutation(len(datum.atom_token))
-        
-        tokens = datum.atom_token
-        coords = datum.atom_coord
-        bonds = datum.bonds
-
-
-        tokens = tokens[permutation]
-        coords = coords[permutation]
-        mapping = np.empty(len(permutation), dtype=int)
-        mapping[permutation] = np.arange(len(permutation))
-        bonds = np.column_stack([mapping[bonds[:, :-1]], bonds[:, -1]])
-
-        return datum.__class__(
-            idcode=datum.idcode,
-            atom_token=tokens,
-            atom_coord=coords,
-            atom_mask=datum.atom_mask,
-            bonds=bonds,
-            properties=datum.properties,
-            stds=datum.stds,
-        )
-
-
-class SortAtoms(MoleculeTransform):
-    def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
-        tokens = datum.atom_token
-        coords = datum.atom_coord
-        bonds = datum.bonds
-
-        sorted_idxs = np.argsort(tokens)
-
-        tokens = tokens[sorted_idxs]
-        coords = coords[sorted_idxs]
-        mapping = np.empty(len(sorted_idxs), dtype=int)
-        mapping[sorted_idxs] = np.arange(len(sorted_idxs))
-        bonds = np.column_stack([mapping[bonds[:, :-1]], bonds[:, -1]])
-
-        return datum.__class__(
-            idcode=datum.idcode,
-            atom_token=tokens,
-            atom_coord=coords,
-            atom_mask=datum.atom_mask,
-            bonds=bonds,
-            properties=datum.properties,
-            stds=datum.stds,
-        )
+        permuted_bonds = np.zeros_like(datum.bonds)
+        for i in range(datum.bonds.shape[0]):
+            for j in range(datum.bonds.shape[1]):
+                permuted_bonds[i, j] = permutation[datum.bonds[i, j]]
+        raise NotImplementedError("bond perm must be corrected")
+        # return datum.__class__(
+        #     **vars(datum),
+        #     atom_token=datum.atom_token[permutation],
+        #     atom_coord=datum.atom_coord[permutation],
+        #     atom_mask=datum.atom_mask[permutation],
+        #     bonds=permutation[datum.bonds],
+        # )
 
 
 from moleculib.molecule.alphabet import elements
@@ -274,9 +210,8 @@ class AtomFeatures(MoleculeTransform):
         b = (-1) - m * mn
         x = m * x + b
         return np.nan_to_num(x, nan=-2.0)  # TODO: -2 for missing, find better solution
-
     # e3nn.soft_one_hot_linspace could use that for properties
-
+    
     def transform(self, datum: QM9Datum) -> QM9Datum:
         atom_types = datum.atom_token[datum.atom_mask] - 1
         atom_features = -3 * np.ones(
@@ -290,106 +225,29 @@ class AtomFeatures(MoleculeTransform):
 
         return datum.__class__(**vars(datum), atom_features=atom_features)
 
-
 class StandardizeProperties(MoleculeTransform):
     def __init__(self):
         self.mins, self.maxs, self.means, self.stds = (
-            np.array(
-                [
-                    0.00000000e00,
-                    1.29899998e01,
-                    -1.16627998e01,
-                    -4.76199245e00,
-                    1.88302791e00,
-                    3.53641014e01,
-                    4.34048831e-01,
-                    -1.69097949e04,
-                    -1.69095625e04,
-                    -1.69095371e04,
-                    -1.69107148e04,
-                    6.27799988e00,
-                    -1.13110725e02,
-                    -1.13889809e02,
-                    -1.14609604e02,
-                    -1.04810410e02,
-                    0.00000000e00,
-                    3.37119997e-01,
-                    3.31180006e-01,
-                ],
-                dtype=np.float32,
-            ),
-            np.array(
-                [
-                    2.29605007e01,
-                    1.30860001e02,
-                    -2.76739788e00,
-                    5.26540327e00,
-                    1.69282036e01,
-                    3.28602026e03,
-                    7.43942928e00,
-                    -1.10148779e03,
-                    -1.10140979e03,
-                    -1.10138403e03,
-                    -1.10202295e03,
-                    4.63810005e01,
-                    -1.30881882e01,
-                    -1.31352901e01,
-                    -1.31866665e01,
-                    -1.25200958e01,
-                    2.32663781e05,
-                    1.57709976e02,
-                    1.57706985e02,
-                ],
-                dtype=np.float32,
-            ),
-            np.array(
-                [
-                    2.6704957e00,
-                    7.5256264e01,
-                    -6.5378528e00,
-                    3.1930840e-01,
-                    6.8571572e00,
-                    1.1888519e03,
-                    4.0535598e00,
-                    -1.1182805e04,
-                    -1.1182573e04,
-                    -1.1182548e04,
-                    -1.1183713e04,
-                    3.1614559e01,
-                    -7.6084610e01,
-                    -7.6548729e01,
-                    -7.6986252e01,
-                    -7.0808083e01,
-                    1.0557292e01,
-                    1.4054270e00,
-                    1.1276687e00,
-                ],
-                dtype=np.float32,
-            ),
-            np.array(
-                [
-                    1.50735915e00,
-                    8.17282867e00,
-                    5.99983990e-01,
-                    1.27825534e00,
-                    1.28357017e00,
-                    2.79095245e02,
-                    9.03440654e-01,
-                    1.09038257e03,
-                    1.09037683e03,
-                    1.09037683e03,
-                    1.09039624e03,
-                    4.06875277e00,
-                    1.03288488e01,
-                    1.04204378e01,
-                    1.04946375e01,
-                    9.50233650e00,
-                    1.28643958e03,
-                    1.01723623e00,
-                    9.62196529e-01,
-                ],
-                dtype=np.float32,
-            ),
+            np.array([ 0.00000000e+00,  1.29899998e+01, -1.16627998e+01, -4.76199245e+00,
+                    1.88302791e+00,  3.53641014e+01,  4.34048831e-01, -1.69097949e+04,
+                    -1.69095625e+04, -1.69095371e+04, -1.69107148e+04,  6.27799988e+00,
+                    -1.13110725e+02, -1.13889809e+02, -1.14609604e+02, -1.04810410e+02,
+                    0.00000000e+00,  3.37119997e-01,  3.31180006e-01], dtype=np.float32),
+            np.array([ 2.29605007e+01,  1.30860001e+02, -2.76739788e+00,  5.26540327e+00,
+                    1.69282036e+01,  3.28602026e+03,  7.43942928e+00, -1.10148779e+03,
+                    -1.10140979e+03, -1.10138403e+03, -1.10202295e+03,  4.63810005e+01,
+                    -1.30881882e+01, -1.31352901e+01, -1.31866665e+01, -1.25200958e+01,
+                    2.32663781e+05,  1.57709976e+02,  1.57706985e+02], dtype=np.float32),
+            np.array([ 2.6704957e+00,  7.5256264e+01, -6.5378528e+00,  3.1930840e-01,
+                    6.8571572e+00,  1.1888519e+03,  4.0535598e+00, -1.1182805e+04,
+                    -1.1182573e+04, -1.1182548e+04, -1.1183713e+04,  3.1614559e+01,
+                    -7.6084610e+01, -7.6548729e+01, -7.6986252e+01, -7.0808083e+01,
+                    1.0557292e+01,  1.4054270e+00,  1.1276687e+00], dtype=np.float32),
+            np.array([1.50735915e+00, 8.17282867e+00, 5.99983990e-01, 1.27825534e+00,
+                    1.28357017e+00, 2.79095245e+02, 9.03440654e-01, 1.09038257e+03,
+                    1.09037683e+03, 1.09037683e+03, 1.09039624e+03, 4.06875277e+00,
+                    1.03288488e+01, 1.04204378e+01, 1.04946375e+01, 9.50233650e+00,
+                    1.28643958e+03, 1.01723623e+00, 9.62196529e-01], dtype=np.float32)
         )
 
     def transform(self, datum: QM9Datum) -> QM9Datum:

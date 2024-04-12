@@ -21,9 +21,7 @@ from .transform import (
     Permuter,
     Centralize,
     AtomFeatures,
-    StandardizeProperties,
-    SortAtoms,
-    PairPad,
+    StandardizeProperties
 )
 from .utils import pids_file_to_list, extract_rdkit_mol_properties
 
@@ -219,8 +217,6 @@ class QM9Dataset(Dataset):
         shuffle=False,
         _split="train",
         _data=None,
-        _max_atoms=29,
-        _padding=True,
     ):
         if _data is None:
             data_path = "full_data.pyd" if full_data else "data.pyd"
@@ -245,10 +241,9 @@ class QM9Dataset(Dataset):
             self.data = self.data[num_train + num_val : num_train + num_val + num_test]
         print(f"Loaded {len(self.data)} {_split} datapoints!")
         self.graph = DescribeGraph()
-        self.padding = MoleculePad(_max_atoms) if _padding else False
+        self.padding = MoleculePad(29)
         self.permute = Permuter() if permute else None
         self.centralize = Centralize() if centralize else None
-        self.sorter = SortAtoms()
         self.atom_features = AtomFeatures()
         self.standardize = standardize
         if standardize:
@@ -319,16 +314,11 @@ class QM9Dataset(Dataset):
         if self.centralize:
             datum = self.centralize.transform(datum)
 
-        datum = self.sorter.transform(datum)
-
         if self.permute is not None:
-            datum = self.permute.transform(datum)
+            datum = self.permute(datum)
 
         datum = self.graph.transform(datum)
-
-        if self.padding:
-            datum = self.padding.transform(datum)
-
+        datum = self.padding.transform(datum)
         if self.use_atom_features:
             datum = self.atom_features.transform(datum)
         return datum
@@ -485,131 +475,3 @@ class QM9Processed(PreProcessedDataset):
             print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
-
-
-import lmdb
-from moleculib.molecule.datum import CrossdockDatum
-
-
-class CrossdockDataset(Dataset):
-
-    def __init__(self, max_ligand_atoms=29, max_protein_atoms=400, _split="train"):
-        super().__init__()
-
-        base_path = "/mas/projects/molecularmachines/db/crossdocked_targetdiff/"
-        self.processed_path = os.path.join(
-            base_path, "crossdocked_v1.1_rmsd1.0_pocket10_processed_final.lmdb"
-        )
-        self.split_file = os.path.join(base_path, "crossdocked_pocket10_pose_split.pkl")
-        self.index_file = os.path.join(base_path, "crossdocked_pocket10_pose_index.pkl")
-        self.db = None
-
-        self.padding = PairPad()
-        self.max_ligand_atoms = max_ligand_atoms
-        self.max_protein_atoms = max_protein_atoms
-
-        with open(self.index_file, "rb") as f:
-            data = pickle.load(f)
-        ligand_atoms = data["ligand_atoms"]
-        ligand_keys = set()
-        protein_atoms = data["protein_atoms"]
-        protein_keys = set()
-        for key, value in ligand_atoms:
-            if value <= self.max_ligand_atoms or self.max_ligand_atoms == -1:
-                ligand_keys.add(key)
-            else:
-                break
-        for key, value in protein_atoms:
-            if value <= self.max_protein_atoms or self.max_protein_atoms == -1:
-                protein_keys.add(key)
-            else:
-                break
-        with open(self.split_file, "rb") as f:
-            split_keys = set(pickle.load(f)[_split])
-        self.keys = ligand_keys & protein_keys & split_keys
-        self.keys = list(self.keys)
-        print(f"For {_split} loaded {len(self.keys)} pairs")
-        if _split == "train":
-            self.splits = {
-                "train": self,
-                "val": self.__class__(
-                    self.max_ligand_atoms, self.max_protein_atoms, _split="val"
-                ),
-                "test": self.__class__(
-                    self.max_ligand_atoms, self.max_protein_atoms, _split="test"
-                ),
-            }
-            self.splits = {k: v for k, v in self.splits.items() if len(v) > 0}
-
-    def _connect_db(self):
-        """
-        Establish read-only database connection
-        """
-        assert self.db is None, "A connection has already been opened."
-        self.db = lmdb.open(
-            self.processed_path,
-            map_size=10 * (1024 * 1024 * 1024),  # 10GB
-            create=False,
-            subdir=False,
-            readonly=True,
-            lock=False,
-            readahead=False,
-            meminit=False,
-        )
-
-    def _close_db(self):
-        self.db.close()
-        self.db = None
-        self.keys = None
-
-    def __len__(self):
-        return len(self.keys)
-
-    def __getitem__(self, idx):
-        data, key = self.get_ori_data(idx)
-        filename = data["ligand_filename"]
-        atom_token = np.array(data["ligand_element"])
-        atom_coord = np.array(data["ligand_pos"])
-        bonds = data["ligand_bond_index"]
-        bonds = np.row_stack((bonds, data["ligand_bond_type"])).T
-        atom_features = np.array(data["ligand_atom_feature"])
-
-        protein_token = np.array(data["protein_element"])
-        protein_coord = np.array(data["protein_pos"])
-
-        datum = CrossdockDatum(
-            key=key,
-            filename=filename,
-            atom_token=atom_token,
-            atom_coord=atom_coord,
-            atom_mask=np.ones_like(atom_token),
-            bonds=bonds,
-            atom_features=atom_features,
-            protein_token=protein_token,
-            protein_coord=protein_coord,
-            protein_mask=np.ones_like(protein_token),
-        )
-
-        datum = self.padding.transform(
-            datum,
-            {
-                "atom_token": self.max_ligand_atoms,
-                "atom_coord": self.max_ligand_atoms,
-                "atom_mask": self.max_ligand_atoms,
-                "bonds": self.max_ligand_atoms,
-                "atom_features": self.max_ligand_atoms,
-                "protein_token": self.max_protein_atoms,
-                "protein_coord": self.max_protein_atoms,
-                "protein_mask": self.max_protein_atoms,
-            },
-        )
-        return datum
-
-    def get_ori_data(self, idx):
-        if self.db is None:
-            self._connect_db()
-        key = self.keys[idx]
-        data = pickle.loads(self.db.begin().get(eval(f"b'{key}'")))
-        return data, key
-    
-

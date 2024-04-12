@@ -72,52 +72,6 @@ def plot_py3dmol_grid(grid, window_size=(250, 250), spin=False):
             v.setStyle(
                 {"sphere": {"radius": 0.4}, "stick": {"radius": 0.2}}, viewer=(i, j)
             )
-            if hasattr(datum, "fixed_atoms"):
-                for atom_index, b in enumerate(datum.fixed_atoms):
-                    if b:
-                        v.addStyle(
-                            {"index": atom_index},
-                            {"sphere": {"color": "yellow", "radius": 0.4}},
-                            viewer=(i, j),
-                        )
-    v.zoomTo()
-    if spin:
-        v.spin()
-    v.setBackgroundColor("rgb(0,0,0)", 0)
-    return v
-
-
-def plot_dock(grid, window_size=(400, 400), spin=False):
-    v = py3Dmol.view(
-        viewergrid=(len(grid), len(grid[0])),
-        linked=True,
-        width=len(grid[0]) * window_size[0],
-        height=len(grid) * window_size[1],
-    )
-    for i, row in enumerate(grid):
-        for j, datum in enumerate(row):
-            v.addModel(datum.protein_pdb_str(), "pdb", viewer=(i, j))
-            v.setStyle(
-                {"cartoon": {"color": "spectrum"}, "stick": {"radius": 0.04}},
-                viewer=(i, j),
-            )
-            v.addSurface(py3Dmol.VDW, {"opacity": 0.7, "color": "white"}, viewer=(i, j))
-
-            v.addModel(datum.to_sdf_str(), "sdf", viewer=(i, j))
-            v.setStyle(
-                {"model": -1},
-                {"sphere": {"radius": 0.4}, "stick": {"radius": 0.2}},
-                viewer=(i, j),
-            )
-            if hasattr(datum, "fixed_atoms"):
-                for atom_index, b in enumerate(datum.fixed_atoms):
-                    if b:
-                        v.addStyle(
-                            {"index": atom_index},
-                            {"sphere": {"color": "yellow", "radius": 0.4}},
-                            viewer=(i, j),
-                        )
-
     v.zoomTo()
     if spin:
         v.spin()

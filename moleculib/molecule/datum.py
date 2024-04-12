@@ -24,14 +24,22 @@ class MoleculeDatum:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def empty(self):
+        new_datum_ = dict()
+        for attr, obj in vars(self).items():
+            new_datum_[attr] = np.zeros_like(obj)
+        return self.__class__(**new_datum_)
+
     def to_atom_array(self):
-        tokens = self.atom_token[self.atom_mask]
-        coords = self.atom_coord[self.atom_mask]
+        tokens = self.atom_token
+        coords = self.atom_coord
         atoms = []
         for coord, token in zip(coords, tokens):
-            el = elements.iloc[token - 1]
+            if token == 0:
+                break
+            el = elements.iloc[int(token) - 1]
             atom = Atom(
-                coord,
+                np.array(coord),
                 chain_id="A",
                 element=el.symbol,
                 hetero=False,
@@ -41,7 +49,11 @@ class MoleculeDatum:
         arr = array(atoms)
         bonds = BondList(len(atoms))
         if self.bonds is not None:
-            bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
+            sub = np.array(self.bonds[self.bonds[:, 0] != -1])
+            pairs = np.sort(sub[:, :-1], axis=1)
+            sub = np.column_stack([pairs, sub[:, -1]])
+            sorted_indices = np.lexsort((sub[:, 1], sub[:, 0]))
+            bonds._bonds = sub[sorted_indices[::2]]
         arr.bonds = bonds
         return arr
 
@@ -70,18 +82,18 @@ class QM9Datum(MoleculeDatum):
         Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
         """
         self.relevant_properties = {
-            0: "μ Dipole moment, D",
-            1: "α Isotropic polarizability, a₀³",
+            # 0: "μ Dipole moment, D",
+            # 1: "α Isotropic polarizability, a₀³",
             2: "ε_HOMO Highest occupied molecular orbital energy, eV",
             3: "ε_LUMO Lowest unoccupied molecular orbital energy, eV",
             4: "Δε Gap between ε_HOMO and ε_LUMO, eV",
-            5: "⟨R²⟩ Electronic spatial extent, a₀²",
-            6: "ZPVE Zero point vibrational energy, eV",
-            7: "U₀ Internal energy at 0K, eV",
-            8: "U Internal energy at 298.15K, eV",
-            9: "H Enthalpy at 298.15K, eV",
-            10: "G Free energy at 298.15K, eV",
-            11: "c_v Heat capacity at 298.15K, cal/(mol K)",
+            # 5: "⟨R²⟩ Electronic spatial extent, a₀²",
+            # 6: "ZPVE Zero point vibrational energy, eV",
+            # 7: "U₀ Internal energy at 0K, eV",
+            # 8: "U Internal energy at 298.15K, eV",
+            # 9: "H Enthalpy at 298.15K, eV",
+            # 10: "G Free energy at 298.15K, eV",
+            # 11: "c_v Heat capacity at 298.15K, cal/(mol K)",
             # 12: "U₀_ATOM Atomization energy at 0K, eV",
             # 13: "U_ATOM Atomization energy at 298.15K, eV",
             # 14: "H_ATOM Atomization enthalpy at 298.15K, eV",
@@ -92,9 +104,11 @@ class QM9Datum(MoleculeDatum):
         }
         self.properties = properties
         self.stds = stds
+        # self.signature = np.bincount(self.atom_token, minlength=9 + 1)
 
 
 register_pytree(QM9Datum)
+
 
 class RSDatum(MoleculeDatum):
     def __init__(
@@ -112,7 +126,8 @@ class RSDatum(MoleculeDatum):
         self.properties = properties
         self.adjacency = adjacency
         self.laplacian = laplacian
-    
+
+
 register_pytree(RSDatum)
 
 
@@ -178,9 +193,9 @@ class PDBMoleculeDatum(MoleculeDatum):
             atom_array = pdb_to_atom_array(mmtf_file)
             header = dict(
                 idcode=mmtf_file["structureId"],
-                resolution=None
-                if ("resolution" not in mmtf_file)
-                else mmtf_file["resolution"],
+                resolution=(
+                    None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
+                ),
             )
         elif filepath.endswith(".sdf"):
             mol_file = mol.MOLFile.read(filepath)
@@ -208,9 +223,9 @@ class PDBMoleculeDatum(MoleculeDatum):
         # for attr in atom_attrs:
         #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
 
-        atom_array.element[
-            atom_array.element == "D"
-        ] = "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
+        atom_array.element[atom_array.element == "D"] = (
+            "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
+        )
 
         try:
             orig_indexes = (
@@ -282,3 +297,58 @@ class PDBMoleculeDatum(MoleculeDatum):
         file = mol.MOLFile()
         file.set_structure(self.to_atom_array())
         return str(file)
+
+
+import os
+
+
+class CrossdockDatum(MoleculeDatum):
+    AA_NAME_SYM = {
+        "ALA": "A",
+        "CYS": "C",
+        "ASP": "D",
+        "GLU": "E",
+        "PHE": "F",
+        "GLY": "G",
+        "HIS": "H",
+        "ILE": "I",
+        "LYS": "K",
+        "LEU": "L",
+        "MET": "M",
+        "ASN": "N",
+        "PRO": "P",
+        "GLN": "Q",
+        "ARG": "R",
+        "SER": "S",
+        "THR": "T",
+        "VAL": "V",
+        "TRP": "W",
+        "TYR": "Y",
+    }
+
+    AA_NAME_NUMBER = {k: i for i, (k, _) in enumerate(AA_NAME_SYM.items())}
+
+    AA_NUMBER_NAME = {v: k for k, v in AA_NAME_NUMBER.items()}
+
+    def __init__(self, *args, **kwargs):
+        self.key = kwargs.pop("key")
+        self.filename = kwargs.pop("filename")
+        self.atom_features = kwargs.pop("atom_features")
+        self.protein_token = kwargs.pop("protein_token")
+        self.protein_coord = kwargs.pop("protein_coord")
+        self.protein_mask = kwargs.pop("protein_mask")
+        self.base_path = "/mas/projects/molecularmachines/db/crossdocked_targetdiff/crossdocked_v1.1_rmsd1.0/"
+
+        super().__init__(*args, **kwargs)
+
+    def protein_pdb_str(self):
+        folder, file = self.filename.split("/")
+        pdb_path = os.path.join(
+            self.base_path, folder, "_".join(file.split("_")[:3]) + ".pdb"
+        )
+        with open(pdb_path, "r") as f:
+            s = str(f.read())
+        return s
+
+
+register_pytree(CrossdockDatum)
