@@ -3,7 +3,7 @@ from moleculib.molecule.datum import MoleculeDatum
 import py3Dmol
 import os
 from typing import Callable
-
+from colour import Color
 
 def plot_py3dmol_grid(
         grid, 
@@ -23,6 +23,31 @@ def plot_py3dmol_grid(
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
 
+DEFAULT_COLORS = [
+    "cyan",
+    "orange",
+    "lime",
+]
+
+
+def plot_py3dmol(
+        data, 
+        color: str = "DEFAULT",
+        **kwargs,
+    ):
+    v = py3Dmol.view()
+    if color == "DEFAULT":
+        colors = [ DEFAULT_COLORS[i] for i in range(len(data))]
+    else:
+        # make a gradient from red to green
+        colors = list(Color('green').range_to(Color('red'), len(data)))
+        colors = [c.get_hex_l() for c in colors]
+
+    for i, datum in enumerate(data):
+        datum.plot(v, color=colors[i], **kwargs)
+    v.zoomTo()
+    v.setBackgroundColor("rgb(0,0,0)", 0)
+    return v
 
 
 from tempfile import gettempdir

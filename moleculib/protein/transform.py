@@ -22,7 +22,7 @@ import numpy as np
 from einops import rearrange
 from .utils import pad_array
 
-import jax.numpy as jnp
+import jaxlib
 
 
 class ProteinTransform:
@@ -51,7 +51,7 @@ class ProteinCrop(ProteinTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray] and len(obj) == seq_len:
+            if type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
             else:
                 new_datum_[attr] = obj
@@ -130,6 +130,8 @@ class ProteinPad(ProteinTransform):
                 return ProteinDatum(
                     **vars(datum), pad_mask=pad_mask
                 )
+            else: 
+                return datum
         size_diff = self.pad_size - seq_len
         shift = np.random.randint(0, size_diff)
 
@@ -198,7 +200,6 @@ class ListBonds(ProteinTransform):
 
         peptide_bonds = np.stack((ns, cs)).T
         # NOTE(Allan): need a better interface for specifying peptide bonds
-
         peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
 
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
@@ -429,15 +430,6 @@ class MaybeMirror(ProteinTransform):
             datum.atom_coord[..., 0] = (-1) * datum.atom_coord[..., 0]
         return datum
 
-
-class CastToBFloat(ProteinTransform):
-    def transform(self, datum):
-        new_datum_ = dict()
-        for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray and (obj.dtype in [np.float32, np.float64]):
-                obj = obj.astype(jnp.bfloat16)
-            new_datum_[attr] = obj
-        return ProteinDatum(**new_datum_)
 
 
 SSE_TOKENS = ["", "c", "a", "b"]

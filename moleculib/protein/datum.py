@@ -17,6 +17,9 @@ from biotite.structure import filter_amino_acids
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.pdb as pdb
 import biotite.structure.io.pdbx as pdbx
+from biotite.structure import Atom
+from biotite.structure import array as AtomArrayConstructor
+from biotite.structure import superimpose
 
 from .alphabet import (
     all_atoms,
@@ -29,6 +32,7 @@ from .alphabet import (
 
 from einops import rearrange, repeat
 from simple_pytree import Pytree
+from tmtools import tm_align
 
 class ProteinSequence:
 
@@ -230,6 +234,14 @@ class ProteinDatum(Pytree, mutable=True):
             chain=chain, 
             model=model
         )
+    
+    def set(
+        self,
+        **kwargs,
+    ):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
 
     @classmethod
     def from_atom_array(
@@ -364,6 +376,12 @@ class ProteinDatum(Pytree, mutable=True):
             dict_[attr] = obj
         return dict_
 
+    def numpy(self):
+        for key, value in vars(self).items():
+            # if the value has a numpy() method, call it
+            if hasattr(value, "numpy"):
+                setattr(self, key, value.numpy())
+
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
         # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
@@ -421,6 +439,7 @@ class ProteinDatum(Pytree, mutable=True):
         if viewer is None:
             viewer = (0, 0)
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
+        view.setStyle({'model': -1}, {}, viewer=viewer)
         if sphere:
             view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
 
@@ -436,3 +455,60 @@ class ProteinDatum(Pytree, mutable=True):
         return view
 
 
+    def align_to(
+        self,
+        other,
+        window=[]
+    ):
+        """
+        Aligns the current protein datum to another protein datum based on CA atoms.
+        """
+        def to_atom_array(prot, mask):
+            cas = prot.atom_coord[..., 1, :]
+            atoms = [
+                Atom(
+                    atom_name="CA",
+                    element="C",
+                    coord=ca,
+                    res_id=prot.residue_index[i],
+                    chain_id=prot.chain_token[i],
+                )
+                for i, ca in enumerate(cas) if mask[i]
+            ]
+            return AtomArrayConstructor(atoms)
+
+        common_mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]
+        common_mask = common_mask & np.isin(np.arange(len(common_mask)), window)
+
+        self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
+        _, transform = superimpose(other_array, self_array) 
+        new_atom_coord = self.atom_coord + transform.center_translation
+        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
+        new_atom_coord += transform.target_translation
+        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
+
+        return self.set(atom_coord=new_atom_coord)
+
+    def tm_align_to(
+        self,
+        other,
+    ):
+        """
+        Aligns the current protein datum to another protein datum based on TM-align.
+        """
+        mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]        
+        cas_self = self.atom_coord[mask, 1, :]
+        cas_other = other.atom_coord[mask, 1, :]
+        sequence = ''.join(['G' for _ in range(len(cas_self))])
+
+        transform = tm_align(cas_self, cas_other, sequence, sequence)
+        translation, rotation = transform.t, transform.u
+
+        translation_to_center = np.mean(cas_self, axis=0)
+        new_atom_coord = self.atom_coord - translation_to_center
+        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, rotation)
+        # new_atom_coord += translation_to_center
+        # new_atom_coord += translation
+        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
+
+        return self.set(atom_coord=new_atom_coord)
