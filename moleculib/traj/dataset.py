@@ -115,7 +115,7 @@ class MODELDataset(Dataset):
         return list(data)
 
 
-class AdKEqDataset(Dataset):
+class AdKEquilibriumDataset(Dataset):
     """
     Holds ProteinDatum dataset across trajectories
     as catalogued in Molecular Dynamics Extended Library (MODEL)
@@ -168,20 +168,64 @@ class AdKEqDataset(Dataset):
         return len(self.models)
 
     def __getitem__(self, idx):
-        start = np.random.randint(1, self.num_models - self.num_steps)
+        datum = ProteinDatum.from_filepath(self.base_path / self.models[idx], format='pdb')
+        return [datum]
 
-        datum_prev = ProteinDatum.from_filepath(self.base_path / self.models[start - 1])
-        datum = ProteinDatum.from_filepath(self.base_path / self.models[start])
-        datum1 = ProteinDatum.from_filepath(
-            self.base_path / self.models[start + self.num_steps]
-        )
 
-        data = [datum_prev, datum, datum1]
-        if self.transform is not None:
-            for transformation in self.transform:
-                data = map(transformation.transform, data)
 
-        data = list(data)
-        data[1].atom_velocity = data[1].atom_coord - data[0].atom_coord
 
-        return data[1:]
+
+
+class AdKTransitionsDataset(Dataset):
+    """
+    Holds ProteinDatum dataset across trajectories
+    as catalogued in Molecular Dynamics Extended Library (MODEL)
+
+    Arguments:
+    ----------
+    base_path : str
+        directory to store all PDB files
+    format : str
+        the file format for each PDB file, either "npz" or "pdb"
+    """
+
+    def __init__(
+        self,
+        base_path: str,
+        frac: float = 1.0,
+        transform: list = [],
+        num_steps=15,
+        split: str = "train",
+    ):
+        super().__init__()
+        self.base_path = Path(base_path)
+        self.num_steps = num_steps
+        self.transform = transform
+        self.crop_size = 214
+
+        trajectory_folder = os.listdir(self.base_path)
+        trajectories = []
+        for folder in trajectory_folder:
+            files = os.listdir(self.base_path / folder)
+            files = [
+                (int(file[file.index("_") + 1 : file.index(".")]), file)
+                for file in files
+                if file.endswith(".pdb")
+            ]
+            files.sort()
+            files = [file[1] for file in files]
+            trajectories.append([folder, files])
+        self.trajectories = trajectories
+        
+
+    def __len__(self):
+        return len(self.models)
+
+    def __getitem__(self, idx):
+        # load all proteins from the trajectory and return the list
+        data = []
+        folder, traj = self.trajectories[idx]
+        for model in traj:
+            datum = ProteinDatum.from_filepath(self.base_path / folder / model, format='pdb')
+            data.append(datum)
+        return data

@@ -171,7 +171,6 @@ if __name__ == "__main__":
         DescribeChemistry,
         AnnotateSecondaryStructure,
     )
-    from moleculib.metrics import MetricsPipe
 
     datum = ProteinDatum.fetch_pdb_id("1l2y")
     transforms = [DescribeChemistry(), AnnotateSecondaryStructure()]

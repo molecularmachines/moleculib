@@ -574,8 +574,8 @@ special_tokens = ["PAD", "MASK", "UNK"]
 
 atoms_per_residue = OrderedDict()
 atoms_per_residue["PAD"] = []
-atoms_per_residue["UNK"] = backbone_atoms
 atoms_per_residue["MASK"] = []
+atoms_per_residue["UNK"] = backbone_atoms
 for res, sidechain_atoms in sidechain_atoms_per_residue.items():
     atoms_per_residue[res] = backbone_atoms + sidechain_atoms
 

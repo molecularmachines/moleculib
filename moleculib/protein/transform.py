@@ -1,3 +1,5 @@
+import math
+
 import biotite
 from .datum import ProteinDatum
 from .alphabet import (
@@ -20,7 +22,7 @@ import numpy as np
 from einops import rearrange
 from .utils import pad_array
 
-import jax.numpy as jnp
+import jaxlib
 
 
 class ProteinTransform:
@@ -34,14 +36,14 @@ class ProteinTransform:
         the values in it and returns a new ProteinDatum
         """
         raise NotImplementedError("method transform must be implemented")
-
+        
 
 class ProteinCrop(ProteinTransform):
     def __init__(self, crop_size):
         self.crop_size = crop_size
 
     def transform(self, datum, cut=None):
-        seq_len = datum.residue_token.shape[0]
+        seq_len = len(datum)
         if seq_len <= self.crop_size:
             return datum
         if cut is None:
@@ -49,12 +51,12 @@ class ProteinCrop(ProteinTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:
+            if type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
             else:
                 new_datum_[attr] = obj
 
-        new_datum = ProteinDatum(**new_datum_)
+        new_datum = type(datum)(**new_datum_)
         return new_datum
 
 
@@ -78,7 +80,6 @@ class ProteinRescale(ProteinTransform):
 
 
 class BackboneOnly(ProteinTransform):
-
     def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
         self.keep_seq = keep_seq
@@ -92,17 +93,45 @@ class BackboneOnly(ProteinTransform):
         return datum
 
 
+class CaOnly(ProteinTransform):
+    def __init__(self, filter: bool = True, keep_seq: bool = False):
+        self.filter = filter
+        self.keep_seq = keep_seq
+        
+    def transform(self, datum):
+        if self.filter:
+            datum.atom_mask[..., 0] = False
+            datum.atom_coord[..., 0, :] = 0.0
+
+            datum.atom_coord[..., 2:, :] = 0.0
+            datum.atom_mask[..., 2:] = False
+
+            if not self.keep_seq:
+                datum.residue_token[datum.residue_token > 2] = 10  # GLY
+
+        return datum
+    
+from einops import repeat
+import e3nn_jax as e3nn
+
+
+
 class ProteinPad(ProteinTransform):
     def __init__(self, pad_size: int, random_position: bool = False):
         self.pad_size = pad_size
         self.random_position = random_position
 
     def transform(self, datum: ProteinDatum) -> ProteinDatum:
-        seq_len = datum.residue_token.shape[0]
+        seq_len = len(datum)
+        
         if seq_len >= self.pad_size:
-            datum.pad_mask = np.ones_like(datum.residue_token)
-            return datum
-
+            if type(datum) == ProteinDatum:
+                pad_mask = np.ones(len(datum), dtype=np.bool_)
+                return ProteinDatum(
+                    **vars(datum), pad_mask=pad_mask
+                )
+            else: 
+                return datum
         size_diff = self.pad_size - seq_len
         shift = np.random.randint(0, size_diff)
 
@@ -114,32 +143,54 @@ class ProteinPad(ProteinTransform):
                     obj = np.roll(obj, shift, axis=0)
                     if attr in ["bonds_list", "angles_list", "dihedrals_list"]:
                         obj += shift * 14
-                new_datum_[attr] = obj
-            else:
-                new_datum_[attr] = obj
+            elif type(obj) == e3nn.IrrepsArray:
+                obj = e3nn.IrrepsArray(
+                    obj.irreps, pad_array(obj.array, self.pad_size)
+                )
+            new_datum_[attr] = obj
 
-        pad_mask = pad_array(np.ones_like(datum.residue_token), self.pad_size)
+        pad_mask = pad_array(np.ones(len(datum)), self.pad_size)
         if self.random_position:
             pad_mask = np.roll(pad_mask, shift, axis=0)
-        new_datum_["pad_mask"] = pad_mask
+        if type(datum) == ProteinDatum:
+            new_datum_["pad_mask"] = pad_mask
 
-        new_datum = ProteinDatum(**new_datum_)
+        new_datum = type(datum)(**new_datum_)
+
         return new_datum
 
 
+
+
 class ListBonds(ProteinTransform):
+    def __init__(self, peptide_bonds: bool = True):
+        self.peptide_bonds = peptide_bonds
+
     def transform(self, datum):
         # solve for intra-residue bonds
+        if hasattr(datum, 'bonds_list'):
+           return datum
+
         num_atoms = datum.atom_coord.shape[-2]
         count = num_atoms * np.expand_dims(
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
         )
 
         bonds_per_residue = bonds_arr[datum.residue_token]
-
-        bond_list = (bonds_per_residue + count).astype(np.int32)
+        bond_list = bonds_per_residue.astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
+
+        if not self.peptide_bonds:
+            return ProteinDatum(
+                **vars(datum), bonds_list=bond_list, bonds_mask=bond_mask
+            )
+
+        count = num_atoms * np.expand_dims(
+            np.arange(0, len(datum.residue_token)), axis=(-1, -2)
+        )
+
+        bond_list = bond_list + count
 
         # add peptide bonds
         n_page = backbone_atoms.index("N")
@@ -149,7 +200,6 @@ class ListBonds(ProteinTransform):
 
         peptide_bonds = np.stack((ns, cs)).T
         # NOTE(Allan): need a better interface for specifying peptide bonds
-
         peptide_mask = np.ones(peptide_bonds.shape[:-1], dtype=np.bool_)
 
         peptide_bonds = np.pad(peptide_bonds, ((0, 1), (0, 0)), constant_values=0)
@@ -164,10 +214,10 @@ class ListBonds(ProteinTransform):
             atom_mask[left] & atom_mask[right], "(s b) -> s b", b=bond_list.shape[1]
         )
 
-        datum.bonds_list = bond_list
-        datum.bonds_mask = bond_mask
+        return ProteinDatum(
+            **vars(datum), bonds_list=bond_list, bonds_mask=bond_mask
+        )
 
-        return datum
 
 
 class ListAngles(ProteinTransform):
@@ -321,6 +371,7 @@ class TokenizeSequenceBoundaries(ProteinTransform):
     def transform(self, datum):
         boundary_token = np.zeros(len(datum.residue_token), dtype=np.int32)
         boundary_mask = np.zeros(len(datum.residue_token), dtype=np.bool_)
+
         if len(boundary_token) != 0:
             boundary_token[0] = 1
             boundary_token[-1] = 2
@@ -328,11 +379,9 @@ class TokenizeSequenceBoundaries(ProteinTransform):
             boundary_mask[0] = True & datum.atom_mask[0, 1]
             boundary_mask[-1] = True & datum.atom_mask[-1, 1]
 
-        datum.boundary_token = boundary_token
-        datum.boundary_mask = boundary_mask
-
-        return datum
-
+        return ProteinDatum(
+            **{k: v for (k, v) in vars(datum).items() if not k.startswith("__")}
+        )
 
 def normalize(vector):
     norms_sqr = np.sum(vector**2, axis=-1, keepdims=True)
@@ -382,15 +431,6 @@ class MaybeMirror(ProteinTransform):
         return datum
 
 
-class CastToBFloat(ProteinTransform):
-    def transform(self, datum):
-        new_datum_ = dict()
-        for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray and (obj.dtype in [np.float32, np.float64]):
-                obj = obj.astype(jnp.bfloat16)
-            new_datum_[attr] = obj
-        return ProteinDatum(**new_datum_)
-
 
 SSE_TOKENS = ["", "c", "a", "b"]
 
@@ -405,7 +445,7 @@ class AnnotateSecondaryStructure(ProteinTransform):
         array.set_annotation(
             "res_name", [all_residues[token] for token in datum.residue_token]
         )
-        array.set_annotation("res_id", np.arange(0, len(coords)))
+        array.set_annotation("res_id", np.arange(1, len(coords) + 1))
         annotations = biotite.structure.annotate_sse(array, chain_id="A")
 
         present, count = np.unique(annotations, return_counts=True)
@@ -445,12 +485,18 @@ class MaskResidues(ProteinTransform):
                 for p, s in zip(pos, sizes):
                     mask[int(p):min(int(p+s),len(datum.residue_token))] = True
         else:
-            mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
+            num_mask = math.ceil(self.mask_ratio * datum.residue_token.shape[0])
+            mask = np.zeros_like(datum.residue_token, dtype=np.bool_)
+            choice = np.random.choice(len(datum.residue_token), num_mask, replace=False)
+            mask[choice] = True
 
         mask = mask * datum.residue_mask
+        
         datum.residue_token_masked = np.where(
             mask, all_residues.index("MASK"), datum.residue_token
         )
-        datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
+        if hasattr(datum, 'atom_coord'):
+            datum.atom_coord_masked = datum.atom_coord * (1 - mask[:, None, None])
         datum.mask_mask = mask
+
         return datum
