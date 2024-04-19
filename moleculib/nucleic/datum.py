@@ -109,6 +109,14 @@ all_nucs_atom_mask = np.array(
     ]
 ).astype(np.bool_)
 
+all_nucs_atom_tokens = np.array(
+    [
+        ([all_atoms.index(atom) for atom in atoms] + [0] * (24 - len(atoms)))
+        for (_, atoms) in atoms_per_nuc.items()
+    ]
+)
+
+
 def _atom_to_all_nucs_index(atom):
     def _atom_to_nuc_index(nuc):
         nuc_atoms = atoms_per_nuc[nuc]
