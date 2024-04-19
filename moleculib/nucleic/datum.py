@@ -417,6 +417,77 @@ class NucleicDatum:
         )
 
 
+    def to_pdb_str(self):
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
+        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        assert len(self.nuc_token.shape) == 1
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.nuc_token, "r -> r a", a=24)[atom_mask]
+        all_atom_res_indices = repeat(self.nuc_index, "r -> r a", a=24)[atom_mask]
+
+        # just in case, move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens) #all_nucs_atom_tokens
+        all_atom_res_indices = np.array(all_atom_res_indices)
+
+        lines = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_nucs[int(res_token)]
+            x, y, z = coord
+            line = list(" " * 80)
+            line[0:6] = "ATOM".ljust(6)
+            line[6:11] = str(idx + 1).ljust(5)
+            line[12:16] = name.ljust(4)
+            line[17:20] = res_name.ljust(3)
+            line[21:22] = "A"
+            line[23:27] = str(res_index + 1).ljust(4)
+            line[30:38] = f"{x:.3f}".rjust(8)
+            line[38:46] = f"{y:.3f}".rjust(8)
+            line[46:54] = f"{z:.3f}".rjust(8)
+            line[76:78] = name[0].rjust(2)
+            lines.append("".join(line))
+        lines = "\n".join(lines)
+        return lines
+
+
+    def plot(
+        self, 
+        view, 
+        viewer=None, 
+        sphere=False, 
+        ribbon=True,
+        sidechain=True,
+        color='spectrum',
+    ):
+        if viewer is None:
+            viewer = (0, 0)
+        view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
+        view.setStyle({'model': -1}, {}, viewer=viewer)
+        if sphere:
+            view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
+
+        if ribbon:
+            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer)
+
+        if sidechain:
+            if color != 'spectrum':
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
+            else:
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+
+        return view
 
 
 
@@ -571,7 +642,3 @@ if __name__ == '__main__':
     #total number of nucleotides, 
     
     breakpoint()
-    
-
-
-
