@@ -15,6 +15,8 @@ from biotite.structure import (
 from biotite.structure import filter_nucleotides
 import os
 import biotite.structure.io.mmtf as mmtf
+from einops import rearrange, repeat
+
 
 import sys
 sys.path.append('.')
@@ -418,8 +420,7 @@ class NucleicDatum:
 
 
     def to_pdb_str(self):
-        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
-        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.nuc_token.shape) == 1
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
@@ -473,6 +474,7 @@ class NucleicDatum:
     ):
         if viewer is None:
             viewer = (0, 0)
+        print(self.to_pdb_str())
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         view.setStyle({'model': -1}, {}, viewer=viewer)
         if sphere:

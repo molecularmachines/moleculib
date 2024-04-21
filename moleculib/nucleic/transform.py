@@ -4,11 +4,11 @@ import os
 from einops import repeat, rearrange
 import math
 import biotite
-from datum import NucleicDatum,dna_res_tokens, rna_res_tokens
-from alphabet import * 
+from moleculib.nucleic.datum import NucleicDatum,dna_res_tokens, rna_res_tokens
+from moleculib.nucleic.alphabet import * 
 #UNK_TOKEN
 import numpy as np
-from utils import pad_array,pids_file_to_list
+from moleculib.nucleic.utils import pad_array,pids_file_to_list
 
 import jax.numpy as jnp
 from tqdm import tqdm
@@ -20,7 +20,7 @@ class NucTransform:
     """
     Abstract class for nucleic transform
     """
-    def transform(self, datum: ProteinDatum) -> ProteinDatum:
+    def transform(self, datum: NucleicDatum) -> NucleicDatum:
         """
         Takes as input an individual data point, processes
         the values in it and returns a new ProteinDatum
