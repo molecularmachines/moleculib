@@ -32,7 +32,7 @@ class ApplyToProteins(AssemblyTransform):
             for transform in self.protein_transform:
                 protein = transform.transform(protein)
             new_protein_data.append(protein)
-        return AssemblyDatum(new_protein_data)
+        return AssemblyDatum(protein_data=new_protein_data)
             
 
 class ComplexPad(AssemblyTransform):
@@ -52,7 +52,7 @@ class ComplexPad(AssemblyTransform):
                 else:
                     irreps = sample_datum.irreps_array.irreps
                     protein_data.append(type(sample_datum).empty(irreps))
-            return AssemblyDatum(protein_data)
+            return AssemblyDatum(protein_data=protein_data)
         else:
             return datum
 
@@ -106,7 +106,7 @@ class FilterProteinChains(AssemblyTransform):
             acceptable = [ 
                 i for i, distance in enumerate(distances) if (distance < 10) and (i != index) and (i in remaining_indices) ]
 
-        return AssemblyDatum(new_protein_data)            
+        return AssemblyDatum(protein_data=new_protein_data)            
 
 
 
@@ -155,4 +155,4 @@ class UnstackProteins(AssemblyTransform):
             attrs = { attr: values[i] for attr, values in attr_lists.items() }
             new_protein_data.append(type(protein_data)(**attrs))
         
-        return AssemblyDatum(new_protein_data)
+        return AssemblyDatum(protein_data=new_protein_data)

@@ -32,7 +32,7 @@ from .alphabet import (
 
 from einops import rearrange, repeat
 from simple_pytree import Pytree
-from tmtools import tm_align
+# from tmtools import tm_align
 
 class ProteinSequence:
 
@@ -76,7 +76,7 @@ class ProteinDatum(Pytree, mutable=True):
         atom_mask: np.ndarray,
         **kwargs,
     ):
-        self.idcode = None
+        self.idcode = idcode 
         self.resolution = resolution
         self.sequence = None #str(sequence)
         self.residue_token = residue_token
@@ -177,11 +177,25 @@ class ProteinDatum(Pytree, mutable=True):
             atom_coord=np.zeros((0, 14, 3), dtype=float)
         )
 
+    def __getitem__(self, idx):
+        if type(idx) == int:
+            idx = [idx, idx + 1]
+        elif type(idx) == slice:
+            idx = [idx.start, idx.stop]
+        new_datum = dict()
+        for attr, obj in vars(self).items():
+            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == len(self):
+                new_datum[attr] = obj[idx[0] : idx[1]]
+            else:
+                new_datum[attr] = obj
+        return ProteinDatum(**new_datum)
+
     @classmethod
     def from_filepath(
         cls, 
         filepath, 
         format=None, 
+        idcode=None,
         chain_id=None,
         chain=None,
         model=None,
@@ -189,8 +203,10 @@ class ProteinDatum(Pytree, mutable=True):
         if format == 'pdb' or filepath.endswith(".pdb"):
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=1)
+            if idcode is None:
+                idcode = str(filepath).split("/")[-1].split(".")[0]
             header = dict(
-                idcode='allancomebackhere',
+                idcode=idcode,
                 resolution=None,
             )
         elif filepath.endswith(".mmtf"): 
@@ -232,7 +248,8 @@ class ProteinDatum(Pytree, mutable=True):
             filepath, 
             format=format, 
             chain=chain, 
-            model=model
+            model=model,
+            idcode=id if chain is None else f"{id}_{chain}"
         )
     
     def set(
@@ -390,7 +407,7 @@ class ProteinDatum(Pytree, mutable=True):
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
-        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+        all_atom_res_indices = repeat(np.arange(len(self.residue_token)), "r -> r a", a=14)[atom_mask]
 
         # just in case, move to cpu
         atom_mask = np.array(atom_mask)
@@ -458,7 +475,7 @@ class ProteinDatum(Pytree, mutable=True):
     def align_to(
         self,
         other,
-        window=[]
+        window=None
     ):
         """
         Aligns the current protein datum to another protein datum based on CA atoms.
@@ -478,7 +495,8 @@ class ProteinDatum(Pytree, mutable=True):
             return AtomArrayConstructor(atoms)
 
         common_mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]
-        common_mask = common_mask & np.isin(np.arange(len(common_mask)), window)
+        if window is not None:
+            common_mask = common_mask &( np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
 
         self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
         _, transform = superimpose(other_array, self_array) 
@@ -492,11 +510,15 @@ class ProteinDatum(Pytree, mutable=True):
     def tm_align_to(
         self,
         other,
+        window: tuple = None,
     ):
         """
         Aligns the current protein datum to another protein datum based on TM-align.
         """
         mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]        
+        if window is not None:
+            mask = mask &( np.arange(len(mask)) < window[1]) & (np.arange(len(mask)) >= window[0])
+
         cas_self = self.atom_coord[mask, 1, :]
         cas_other = other.atom_coord[mask, 1, :]
         sequence = ''.join(['G' for _ in range(len(cas_self))])
