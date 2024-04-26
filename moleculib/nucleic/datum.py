@@ -42,12 +42,21 @@ home_dir = str(Path.home()) #not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")} #not sure either
 
 
-def pdb_to_atom_array(pdb_path):
+def pdb_to_atom_array(pdb_path, RNA=True):
     pdb_file = PDBFile.read(pdb_path)
     atom_array = pdb_file.get_structure(
         model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
-    aa_filter = filter_nucleotides(atom_array)
-    atom_array = atom_array[aa_filter]
+    nuc_filter = filter_nucleotides(atom_array)
+    if RNA==True:
+        DNA = ["DA", "DC", "DG", "DI", "DT", "DU"]
+        dna_filter = np.isin(atom_array.res_name, DNA) #filters for DNA only
+        
+        no_dna_filter = np.logical_not(dna_filter)
+        # print(len(dna_filter),len(nuc_filter))
+        RNA_filter = np.logical_and(no_dna_filter, nuc_filter) #no DNA and only nucleotides filter
+        nuc_filter=RNA_filter
+
+    atom_array = atom_array[nuc_filter]
     return atom_array
 
 ##END OF UTILS
@@ -185,7 +194,7 @@ class NucleicDatum:
 
     @classmethod
     def from_filepath(cls, filepath):
-        atom_array =  pdb_to_atom_array(filepath) #filters pdb to only nucleotides
+        atom_array =  pdb_to_atom_array(filepath, RNA=True) #filters pdb to only nucleotides
         header = parse_pdb_header(filepath)    
         return cls.from_atom_array(atom_array, header=header)
 
@@ -204,7 +213,7 @@ class NucleicDatum:
         Reshapes atom array to residue-indexed representation to
         build a protein datum.
         """
-
+        # print("length of atom array: " , len(atom_array))
         if atom_array.array_length() == 0:
             return cls.empty_nuc()
         
@@ -231,6 +240,8 @@ class NucleicDatum:
         residue_token = np.array(
             list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
         )
+        # print("line 234 in datum, that is atom_array.res_name:", len(atom_array.res_name))
+        # print("line 234 in datum, that is atom_array.res_name:", len(residue_token))
         
         residue_mask = np.ones_like(residue_token).astype(bool)
 
