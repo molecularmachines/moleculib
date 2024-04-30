@@ -182,23 +182,22 @@ class SortAtoms(MoleculeTransform):
         coords = datum.atom_coord
         bonds = datum.bonds
 
-        sorted_idxs = np.argsort(tokens)
+        sorted_idxs = np.argsort(np.ma.masked_array(tokens, 1-datum.atom_mask))
 
         tokens = tokens[sorted_idxs]
         coords = coords[sorted_idxs]
-        mapping = np.empty(len(sorted_idxs), dtype=int)
-        mapping[sorted_idxs] = np.arange(len(sorted_idxs))
-        bonds = np.column_stack([mapping[bonds[:, :-1]], bonds[:, -1]])
-
-        return datum.__class__(
-            idcode=datum.idcode,
+        datum.__dict__.update(
             atom_token=tokens,
             atom_coord=coords,
-            atom_mask=datum.atom_mask,
-            bonds=bonds,
-            properties=datum.properties,
-            stds=datum.stds,
         )
+        if datum.bonds is not None:
+            mapping = np.empty(len(sorted_idxs), dtype=int)
+            mapping[sorted_idxs] = np.arange(len(sorted_idxs))
+            bonds = np.column_stack([mapping[bonds[:, :-1]], bonds[:, -1]])
+            datum.__dict__.update(
+                bonds=bonds,
+            )
+        return datum
 
 
 from moleculib.molecule.alphabet import elements
@@ -392,6 +391,11 @@ class StandardizeProperties(MoleculeTransform):
             ),
         )
 
+        self.mins_dict = {i:v for i,v in enumerate(self.mins)}
+        self.maxs_dict = {i:v for i,v in enumerate(self.maxs)}
+        self.means_dict = {i:v for i,v in enumerate(self.means)}
+        self.stds_dict = {i:v for i,v in enumerate(self.stds)}
+
     def transform(self, datum: QM9Datum) -> QM9Datum:
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
@@ -400,4 +404,5 @@ class StandardizeProperties(MoleculeTransform):
             if attr == "stds":
                 obj = self.stds
             new_datum_[attr] = obj
+        new_datum_["stds_dict"] = self.stds_dict
         return datum.__class__(**new_datum_)

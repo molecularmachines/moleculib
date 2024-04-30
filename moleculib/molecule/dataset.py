@@ -26,6 +26,8 @@ from .transform import (
     PairPad,
 )
 from .utils import pids_file_to_list, extract_rdkit_mol_properties
+from .alphabet import PERIODIC_TABLE, elements
+from rdkit import Chem
 
 
 class PDBMoleculeDataset(Dataset):
@@ -611,5 +613,371 @@ class CrossdockDataset(Dataset):
         key = self.keys[idx]
         data = pickle.loads(self.db.begin().get(eval(f"b'{key}'")))
         return data, key
-    
 
+
+import biotite.structure.io.pdb as pdb
+from moleculib.molecule.datum import PDBBindDatum
+import biotite.structure.io as strucio
+import pickle
+
+
+class PDBBindDataset(Dataset):
+    def __init__(self, max_ligand_atoms=29, max_protein_atoms=400, _split="train"):
+        super().__init__()
+        self.max_ligand_atoms = max_ligand_atoms
+        self.max_protein_atoms = max_protein_atoms
+        self.base_path = "/mas/projects/molecularmachines/db/PDBBind/refined-set"
+        self.index_path = os.path.join(self.base_path, "index/INDEX_refined_data.2020")
+        self.index = self._load_index(_split)
+        print(f"Loaded {self.index.shape[0]} {_split} datapoints")
+
+        self.padding = PairPad()
+        self.elements = elements.assign(
+            symbol=lambda df: df.symbol.str.lower()
+        ).symbol.tolist()  # TODO:
+
+        if _split == "train":
+            self.splits = {
+                "train": self,
+                # "val": self.__class__(
+                #     self.max_ligand_atoms, self.max_protein_atoms, _split="val"
+                # ),
+                "test": self.__class__(
+                    self.max_ligand_atoms, self.max_protein_atoms, _split="test"
+                ),
+            }
+            self.splits = {k: v for k, v in self.splits.items() if len(v) > 0}
+
+    def _load_index(self, split):
+        KMAP = {"Ki": 1, "Kd": 2, "IC50": 3}
+
+        all_files = os.listdir(self.base_path)
+        all_index = []
+        with open(self.index_path, "r") as f:
+            lines = f.readlines()
+        for line in lines:
+            if line.startswith("#"):
+                continue
+            index, res, year, pka, kv = line.split("//")[0].strip().split()
+
+            kind = [v for k, v in KMAP.items() if k in kv]
+            assert len(kind) == 1
+            if index in all_files:
+                all_index.append([index, res, year, pka, kind[0]])
+
+        all_index = np.array(all_index)
+        with open(os.path.join(self.base_path, "index/lengths.pkl"), "rb") as f:
+            atoms_count = pickle.load(f)
+            prot_len = np.array(atoms_count["prot_len"]).squeeze()
+            lig_len = np.array(atoms_count["lig_len"]).squeeze()
+        protm = prot_len <= self.max_protein_atoms
+        ligm = lig_len <= self.max_ligand_atoms
+        sub_index = all_index[protm & ligm]
+
+        with open(f"{self.base_path}/timesplit_test", "r") as f:
+            test_split = [l.strip("\n") for l in f.readlines()]
+        split_index = []
+        for d in sub_index:
+            if split == "train" and d[0] in test_split:
+                continue
+            if split == "test" and d[0] not in test_split:
+                continue
+            split_index.append(d)
+
+        return np.array(split_index)
+
+    def __len__(self):
+        return self.index.shape[0]
+
+    def __getitem__(self, idx):
+        pdb_id, _, _, pka, _ = self.index[idx]
+        pka = float(pka)
+        protein_coord, protein_token = self._get_protein_pocket(pdb_id)
+        atom_coord, atom_token, bonds, charge = self._get_ligand(pdb_id)
+
+        datum = PDBBindDatum(
+            pdb_id=pdb_id,
+            pka=np.array(pka),
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=np.ones_like(atom_token),
+            charge=charge,
+            bonds=bonds,
+            protein_coord=protein_coord,
+            protein_token=protein_token,
+            protein_mask=np.ones_like(protein_token),
+        )
+
+        datum = self.padding.transform(
+            datum,
+            {
+                "atom_token": self.max_ligand_atoms,
+                "atom_coord": self.max_ligand_atoms,
+                "atom_mask": self.max_ligand_atoms,
+                "charge": self.max_ligand_atoms,
+                "bonds": self.max_ligand_atoms,
+                "protein_token": self.max_protein_atoms,
+                "protein_coord": self.max_protein_atoms,
+                "protein_mask": self.max_protein_atoms,
+            },
+        )
+        return datum
+
+    def _get_protein_pocket(self, pdb_id):
+        filepath = os.path.join(self.base_path, pdb_id, f"{pdb_id}_pocket.pdb")
+        pdb_file = pdb.PDBFile.read(filepath)
+        atom_array = pdb.get_structure(pdb_file, model=1)
+        coord = atom_array.coord
+        token = [self.elements.index(e.lower()) + 1 for e in atom_array.element]
+
+        return np.array(coord), np.array(token)
+
+    def _get_ligand(self, pdb_id):
+        filepath = os.path.join(self.base_path, pdb_id, f"{pdb_id}_ligand.sdf")
+        mol = strucio.load_structure(filepath)
+        token = [self.elements.index(e.lower()) + 1 for e in mol.element]
+        return (
+            mol.coord,
+            np.array(token),
+            mol.bonds._bonds.astype(np.int32),
+            mol.charge.astype(np.int32),
+        )
+
+
+from ase.calculators.vasp import VaspChargeDensity
+import lz4.frame
+import tempfile
+
+
+def _decompress_file(filepath):
+    with lz4.frame.open(filepath, mode="rb") as fp:
+        filecontent = fp.read()
+    return filecontent
+
+
+def _read_vasp(filecontent):
+    # Write to tmp file and read using ASE
+    tmpfd, tmppath = tempfile.mkstemp(prefix="tmpdeepdft")
+    tmpfile = os.fdopen(tmpfd, "wb")
+    tmpfile.write(filecontent)
+    tmpfile.close()
+    vasp_charge = VaspChargeDensity(filename=tmppath)
+    os.remove(tmppath)
+    density = vasp_charge.chg[-1]  # separate density
+    atoms = vasp_charge.atoms[-1]  # separate atom positions
+
+    return density, atoms, np.zeros(3)  # TODO: Can we always assume origin at 0,0,0?
+
+
+def _calculate_grid_pos(density, origin, cell):
+    # Calculate grid positions
+    ngridpts = np.array(density.shape)  # grid matrix
+    grid_pos = np.meshgrid(
+        np.arange(ngridpts[0]) / density.shape[0],
+        np.arange(ngridpts[1]) / density.shape[1],
+        np.arange(ngridpts[2]) / density.shape[2],
+        indexing="ij",
+    )
+    grid_pos = np.stack(grid_pos, 3)
+    grid_pos = np.dot(grid_pos, cell)
+    grid_pos = grid_pos + origin
+    return grid_pos
+
+
+from moleculib.molecule.datum import DensityDatum
+import random
+
+
+class DensityDataDir(Dataset):
+    def __init__(self, directory, max_atoms=29, grid_size=36, to_split=True,_split="train", **kwargs):
+        super().__init__(**kwargs)
+
+        self.directory = directory
+        self.padding = PairPad()
+        self.max_atoms = max_atoms
+        self.grid_size = grid_size
+        self.member_list = []
+        for s in [
+            # "0",
+            # "2",
+            # "3",
+            # "4",
+            # "5",
+            "6",
+            "7",
+            "8",
+            "9"
+        ]:
+            self.member_list.extend(sorted(os.listdir(os.path.join(self.directory, s))))
+            # self.member_list.extend(
+            #     sorted(
+            #         [
+            #             f
+            #             for f in os.listdir(os.path.join(self.directory, s))
+            #             if f.endswith(".npz")
+            #         ]
+            #     )
+            # )
+
+        # random.shuffle(self.member_list)
+
+        dp = len(self.member_list)
+        if to_split:
+            if _split == "train":
+                self.member_list = self.member_list[: round(dp * 0.95)]
+            elif _split == "test":
+                self.member_list = self.member_list[round(dp * 0.95) :]
+
+        print(f"Loaded {_split} {len(self)} datapoints")
+
+        if _split == "train":
+            self.splits = {"train": self}
+            if to_split:
+                self.splits['test'] = self.__class__(
+                    directory=directory,
+                    max_atoms=max_atoms,
+                    grid_size=grid_size,
+                    _split="test",
+                )
+
+    def __len__(self):
+        return len(self.member_list)
+
+    def extractfile(self, index):
+        filename = self.member_list[index]
+        path = os.path.join(
+            self.directory, f"{int(filename.split('.')[0]) // 1000}", filename
+        )
+        if filename.endswith(".npz"):
+            with np.load(path) as f:
+                return {
+                    "density": f["density"],
+                    "coord": f["coord"],
+                    "token": f["token"],
+                    "grid": f["grid"],
+                    "filename": filename,
+                }
+            
+        filecontent = _decompress_file(path)
+        density, atoms, origin = _read_vasp(filecontent)
+
+        grid_pos = _calculate_grid_pos(density, origin, atoms.get_cell())
+
+        return {
+            "density": density,
+            "coord": atoms.positions,
+            "token": atoms.numbers,
+            "grid": grid_pos,
+            "filename": filename,
+        }
+
+    def _process(self, index):
+        dp = self.extractfile(index)
+        file_num = dp["filename"].split(".")[0]
+        path = os.path.join(
+            self.directory, f"{int(file_num) // 1000}", file_num + ".npz"
+        )
+        np.savez(
+            path,
+            density=dp["density"],
+            grid=dp["grid"],
+            coord=dp["coord"],
+            token=dp["token"],
+        )
+
+    def __getitem__(self, index):
+        dp = self.extractfile(index)
+
+        density = dp["density"]
+        grid = dp["grid"]
+
+        assert (
+            density.shape[0] >= self.grid_size
+        ), f"{density.shape[0]} < {self.grid_size}, idx {index}"
+        assert (
+            density.shape[1] >= self.grid_size
+        ), f"{density.shape[1]} < {self.grid_size}, idx {index}"
+        assert (
+            density.shape[2] >= self.grid_size
+        ), f"{density.shape[2]} < {self.grid_size}, idx {index}"
+
+        if self.grid_size:
+            center = self.com(density)
+            center += np.random.randint(-self.grid_size // 2, self.grid_size // 2, 3)
+            x_min, x_max, y_min, y_max, z_min, z_max = self.neighborhood(
+                center, density, self.grid_size
+            )
+            density = density[
+                x_min:x_max,
+                y_min:y_max,
+                z_min:z_max,
+            ].reshape(-1)
+            grid = grid[
+                x_min:x_max,
+                y_min:y_max,
+                z_min:z_max,
+            ].reshape((-1, 3))
+
+        datum = DensityDatum(
+            density=density,
+            grid=grid,
+            atom_coord=dp["coord"],
+            atom_token=dp["token"],
+            atom_mask=np.ones_like(dp["token"]),
+            bonds=None,
+        )
+
+        datum = self.padding.transform(
+            datum,
+            {
+                "atom_token": self.max_atoms,
+                "atom_coord": self.max_atoms,
+                "atom_mask": self.max_atoms,
+            },
+        )
+
+        return datum
+
+    def com(self, density_array):
+        # Create arrays of indices along each axis
+        x_indices, y_indices, z_indices = np.indices(density_array.shape)
+
+        # Calculate the total mass
+        total_mass = np.sum(density_array)
+
+        # Calculate the center of mass along each axis
+        center_x = np.sum(x_indices * density_array) / total_mass
+        center_y = np.sum(y_indices * density_array) / total_mass
+        center_z = np.sum(z_indices * density_array) / total_mass
+
+        return np.round([center_x, center_y, center_z]).astype(np.int32)
+
+    def neighborhood(self, center, density_array, n):
+        # Calculate the center of mass indices
+        center_x, center_y, center_z = center
+
+        # Calculate the boundaries for indexing
+        x_min = max(0, center_x - n // 2)
+        x_max = min(density_array.shape[0], center_x + n // 2)
+        y_min = max(0, center_y - n // 2)
+        y_max = min(density_array.shape[1], center_y + n // 2)
+        z_min = max(0, center_z - n // 2)
+        z_max = min(density_array.shape[2], center_z + n // 2)
+
+        if (x_max - x_min) < n:
+            if x_max == density_array.shape[0]:
+                x_min -= n - (x_max - x_min)
+            else:
+                x_max += n - (x_max - x_min)
+        if (y_max - y_min) < n:
+            if y_max == density_array.shape[1]:
+                y_min -= n - (y_max - y_min)
+            else:
+                y_max += n - (y_max - y_min)
+        if (z_max - z_min) < n:
+            if z_max == density_array.shape[2]:
+                z_min -= n - (z_max - z_min)
+            else:
+                z_max += n - (z_max - z_min)
+
+        return x_min, x_max, y_min, y_max, z_min, z_max

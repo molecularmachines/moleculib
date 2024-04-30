@@ -98,15 +98,18 @@ def plot_dock(grid, window_size=(400, 400), spin=False):
         for j, datum in enumerate(row):
             v.addModel(datum.protein_pdb_str(), "pdb", viewer=(i, j))
             v.setStyle(
-                {"cartoon": {"color": "spectrum"}, "stick": {"radius": 0.04}},
+                {
+                    "cartoon": {"color": "spectrum"}, 
+                    # "stick": {"radius": 0.04}
+                },
                 viewer=(i, j),
             )
-            v.addSurface(py3Dmol.VDW, {"opacity": 0.7, "color": "white"}, viewer=(i, j))
+            # v.addSurface(py3Dmol.VDW, {"opacity": 0.7, "color": "white"}, viewer=(i, j))
 
             v.addModel(datum.to_sdf_str(), "sdf", viewer=(i, j))
             v.setStyle(
                 {"model": -1},
-                {"sphere": {"radius": 0.4}, "stick": {"radius": 0.2}},
+                {"sphere": {"radius": 0.5}, "stick": {"radius": 0.3}},
                 viewer=(i, j),
             )
             if hasattr(datum, "fixed_atoms"):
@@ -123,6 +126,8 @@ def plot_dock(grid, window_size=(400, 400), spin=False):
         v.spin()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
+
+# def plot_density(grid, window_size=(400, 400)):
 
 
 def inner_stack(pytrees):

@@ -49,11 +49,11 @@ class MoleculeDatum:
         arr = array(atoms)
         bonds = BondList(len(atoms))
         if self.bonds is not None:
-            sub = np.array(self.bonds[self.bonds[:, 0] != -1])
+            sub = np.array(self.bonds[self.bonds[:, -1] != -1])
             pairs = np.sort(sub[:, :-1], axis=1)
-            sub = np.column_stack([pairs, sub[:, -1]])
+            sub = np.unique(np.column_stack([pairs, sub[:, -1]]), axis=0)
             sorted_indices = np.lexsort((sub[:, 1], sub[:, 0]))
-            bonds._bonds = sub[sorted_indices[::2]]
+            bonds._bonds = sub[sorted_indices]
         arr.bonds = bonds
         return arr
 
@@ -341,6 +341,9 @@ class CrossdockDatum(MoleculeDatum):
 
         super().__init__(*args, **kwargs)
 
+    def coord_center(self):
+        return (self.atom_coord * self.atom_mask[:, None]).sum(0) / self.atom_mask.sum()
+
     def protein_pdb_str(self):
         folder, file = self.filename.split("/")
         pdb_path = os.path.join(
@@ -352,3 +355,48 @@ class CrossdockDatum(MoleculeDatum):
 
 
 register_pytree(CrossdockDatum)
+
+
+class PDBBindDatum(MoleculeDatum):
+    def __init__(self, *args, **kwargs):
+        self.pdb_id = kwargs.pop("pdb_id")
+        self.pka = kwargs.pop("pka")
+        self.charge = kwargs.pop("charge")
+        self.protein_token = kwargs.pop("protein_token")
+        self.protein_coord = kwargs.pop("protein_coord")
+        self.protein_mask = kwargs.pop("protein_mask")
+        self.base_path = "/mas/projects/molecularmachines/db/PDBBind/refined-set"
+
+        super().__init__(*args, **kwargs)
+
+    def coord_center(self):
+        return (self.atom_coord * self.atom_mask[:, None]).sum(0) / self.atom_mask.sum()
+
+    def protein_pdb_str(self):
+        pdb_path = os.path.join(
+            self.base_path, f"{self.pdb_id}", f"{self.pdb_id}_protein.pdb"
+        )
+        with open(pdb_path, "r") as f:
+            s = str(f.read())
+        return s
+    
+    def pocket_pdb_str(self):
+        pdb_path = os.path.join(
+            self.base_path, f"{self.pdb_id}", f"{self.pdb_id}_pocket.pdb"
+        )
+        with open(pdb_path, "r") as f:
+            s = str(f.read())
+        return s
+
+
+register_pytree(PDBBindDatum)
+
+class DensityDatum(MoleculeDatum):
+    def __init__(self, *args, **kwargs):
+        self.density = kwargs.pop("density")
+        self.grid = kwargs.pop("grid")
+
+        super().__init__(*args, **kwargs)
+
+
+register_pytree(DensityDatum)
