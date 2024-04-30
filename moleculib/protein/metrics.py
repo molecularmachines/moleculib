@@ -20,6 +20,21 @@ class ProteinMetric:
         raise NotImplementedError("ProteinMetric is abstract")
 
 
+class AlignedRootMeanSquareDeviation(ProteinMetric):
+
+    def __call__(self, datum, other_datum):
+        datum = datum.align_to(other_datum)
+        other_datum = other_datum.align_to(datum)
+        other_ca_coord = other_datum.atom_coord[..., 1, :]
+        ca_coord = datum.atom_coord[..., 1, :]
+        mask = other_datum.atom_mask[..., 1] & datum.atom_mask[..., 1]
+        diff = jnp.square(ca_coord - other_ca_coord).sum(-1)
+        diff = diff[mask]
+        diff = diff.sum()
+        diff = diff / (mask.sum() + 1e-6)
+        return {"rmsd": diff ** 0.5}
+
+
 class CountClashes(ProteinMetric):
     def __init__(self, radius_multiplier=0.8, smooth: bool = False):
         self.radius_multiplier = radius_multiplier

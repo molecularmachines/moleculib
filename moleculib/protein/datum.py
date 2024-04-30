@@ -32,7 +32,6 @@ from .alphabet import (
 
 from einops import rearrange, repeat
 from simple_pytree import Pytree
-# from tmtools import tm_align
 
 class ProteinSequence:
 
@@ -496,7 +495,7 @@ class ProteinDatum(Pytree, mutable=True):
 
         common_mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]
         if window is not None:
-            common_mask = common_mask &( np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
+            common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
 
         self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
         _, transform = superimpose(other_array, self_array) 
@@ -515,6 +514,8 @@ class ProteinDatum(Pytree, mutable=True):
         """
         Aligns the current protein datum to another protein datum based on TM-align.
         """
+        from tmtools import tm_align
+
         mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]        
         if window is not None:
             mask = mask &( np.arange(len(mask)) < window[1]) & (np.arange(len(mask)) >= window[0])
