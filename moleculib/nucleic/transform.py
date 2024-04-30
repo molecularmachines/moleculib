@@ -4,11 +4,11 @@ import os
 from einops import repeat, rearrange
 import math
 import biotite
-from datum import NucleicDatum,dna_res_tokens, rna_res_tokens
-from alphabet import * 
+from moleculib.nucleic.datum import NucleicDatum,dna_res_tokens, rna_res_tokens
+from moleculib.nucleic.alphabet import * 
 #UNK_TOKEN
 import numpy as np
-from utils import pad_array,pids_file_to_list
+from moleculib.nucleic.utils import pad_array,pids_file_to_list
 
 import jax.numpy as jnp
 from tqdm import tqdm
@@ -20,7 +20,12 @@ class NucTransform:
     """
     Abstract class for nucleic transform
     """
-    raise NotImplementedError("Ask Allan lol")
+    def transform(self, datum: NucleicDatum) -> NucleicDatum:
+        """
+        Takes as input an individual data point, processes
+        the values in it and returns a new ProteinDatum
+        """
+        raise NotImplementedError("method transform must be implemented")
 
 class NucCrop(NucTransform):
     def __init__(self, crop_len):
@@ -32,7 +37,7 @@ class NucCrop(NucTransform):
         if seq_len<=self.crop_len:
             return datum
         
-        start_index =  np.random.randint(low=0, high=(seq_len - self.crop_size))
+        start_index =  np.random.randint(low=0, high=(seq_len - self.crop_len))
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
             if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:

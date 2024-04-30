@@ -15,132 +15,18 @@ from biotite.structure import (
 from biotite.structure import filter_nucleotides
 import os
 import biotite.structure.io.mmtf as mmtf
+from einops import rearrange, repeat
+
+
+import plotly.graph_objects as go
+import plotly.offline as pyo
 
 import sys
 sys.path.append('.')
 
-# from alphabet import (
-#     all_atoms,
-#     all_nucs,
-#     backbone_atoms_DNA,
-#     backbone_atoms_RNA,
-#     atom_index,
-#     atom_to_nucs_index,
-#     get_nucleotide_index,
-#     MAX_DNA_ATOMS
-# )
-
-## alphabet:
-from collections import OrderedDict
-from typing import List
-
-import numpy as np
-from ordered_set import OrderedSet
-
-UNK_TOKEN = 1
-#5 carbon atoms 8 hydrogen atoms 1 nitrogen atom (in the base) 
-# 1 phosphorus atom (in the phosphate group) 4 oxygen atoms (in the sugar and phosphate group)
-MAX_RES_ATOMS = 14
-# from https://x3dna.org/articles/name-of-base-atoms-in-pdb-formats#:~:text=Canonical%20bases%20(A%2C%20C%2C,%2C%20C8%2C%20N9)%20respectively.
-
-#ensure order and keep track of what atoms are present or missing
-base_atoms_per_nuc = OrderedDict(
-        A=["N1","C2","N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"], # GREEN
-        U=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"], #RED
-        RT=["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #Calman Didn't have C5M  'C5' instead
-        G=["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], #light pink (has N9, O6)
-        C=["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], # pink (has o2)
-        I = [], #from gpt: I=["N1", "C2", "N3", "C4", "C5", "C6"]
-        #NOTE: in the file where I took the atoms, DA's atoms are N1A, C2A, etc.
-        #but from working with the data I saw that they're regular without 'A'
-        DA = ["N1","C2", "N3", "C4", "C5", "N6", "C6", "N7","C8","N9"],#olive GREEN
-        DC =["N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"], #tourcize
-        DG =["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"], #light blue-violet
-        DI =[],
-        #NOTE: actually didn't see C5M in the data itself but leave it in case it will come up
-        DT = ["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C5M", "C6"], #purple
-        DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
-)
-
-backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #NOTE: add "" for carbons and Oxygens as in the file
-backbone_atoms_RNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"]  
-
-### TODO: Should it be the same as below (from alphabet protein)?
-# backbone_chemistry = dict(
-#     bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
-#     angles=[["CA", "C", "O"], ["N", "CA", "C"]],
-#     dihedrals=[["N", "CA", "C", "O"]],
-#     flippable=[],
-# )
-special_tokens = ["PAD", "UNK"] #what do whese represent?
-
-atoms_per_nuc = OrderedDict()
-atoms_per_nuc["PAD"] = []
-atoms_per_nuc["UNK"] = [] # backbone_atoms
-##TODO check the DUPLICATES situation
-#for every nuc we add the base and backbone atoms
-for nuc, base_atoms in base_atoms_per_nuc.items():
-    if nuc in ['A', 'U', 'RT', 'G', 'C', 'I']: #RNA
-        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_RNA
-    else:
-        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_DNA
-MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])###==24
-
-all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
-all_atoms = special_tokens + all_atoms
-all_atoms_tokens = np.arange(len(all_atoms))
-
-elements = list(OrderedSet([atom[0] for atom in all_atoms]))
-all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
-# all_atoms_radii = np.array(
-#     [
-#         (van_der_walls_radii[atom[0]] if (atom[0] in van_der_walls_radii) else 0.0)
-#         for atom in all_atoms
-#     ]
-# )
-
-all_nucs = list(base_atoms_per_nuc.keys())
-all_nucs = special_tokens + all_nucs
-all_nucs_tokens = np.arange(len(all_nucs))
-all_nucs_atom_mask = np.array(
-    [
-        ([1] * len(atoms) + [0] * (MAX_DNA_ATOMS - len(atoms)))
-        for (_, atoms) in atoms_per_nuc.items()
-    ]
-).astype(np.bool_)
-
-def _atom_to_all_nucs_index(atom):
-    def _atom_to_nuc_index(nuc):
-        nuc_atoms = atoms_per_nuc[nuc]
-        mask = atom in nuc_atoms
-        index = nuc_atoms.index(atom) if mask else 0
-        return index, mask
-
-    indices, masks = zip(*list(map(_atom_to_nuc_index, all_nucs)))
-    return np.array(indices), np.array(masks)
+from .alphabet import *
 
 
-def _index(lst: List[str], item: str) -> int:
-    try:
-        index = lst.index(item)
-    except ValueError:
-        index = UNK_TOKEN  # UNK
-    return index
-
-
-def atom_index(atom: str) -> int:
-    return _index(all_atoms, atom)
-
-def get_nucleotide_index(nucleotide: str) -> int:
-    return _index(all_nucs, nucleotide)
-
-atom_to_nucs_index, atom_to_nucs_mask = zip(
-    *list(map(_atom_to_all_nucs_index, all_atoms))
-)
-atom_to_nucs_index = np.array(atom_to_nucs_index)
-atom_to_nucs_mask = np.array(atom_to_nucs_mask)
-
-#### end of alphabet
 
 # from utils import  pdb_to_atom_array
 import os
@@ -156,12 +42,21 @@ home_dir = str(Path.home()) #not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")} #not sure either
 
 
-def pdb_to_atom_array(pdb_path):
+def pdb_to_atom_array(pdb_path, RNA=True):
     pdb_file = PDBFile.read(pdb_path)
     atom_array = pdb_file.get_structure(
         model=1, extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
-    aa_filter = filter_nucleotides(atom_array)
-    atom_array = atom_array[aa_filter]
+    nuc_filter = filter_nucleotides(atom_array)
+    if RNA==True:
+        DNA = ["DA", "DC", "DG", "DI", "DT", "DU"]
+        dna_filter = np.isin(atom_array.res_name, DNA) #filters for DNA only
+        
+        no_dna_filter = np.logical_not(dna_filter)
+        # print(len(dna_filter),len(nuc_filter))
+        RNA_filter = np.logical_and(no_dna_filter, nuc_filter) #no DNA and only nucleotides filter
+        nuc_filter=RNA_filter
+
+    atom_array = atom_array[nuc_filter]
     return atom_array
 
 ##END OF UTILS
@@ -299,7 +194,7 @@ class NucleicDatum:
 
     @classmethod
     def from_filepath(cls, filepath):
-        atom_array =  pdb_to_atom_array(filepath) #filters pdb to only nucleotides
+        atom_array =  pdb_to_atom_array(filepath, RNA=True) #filters pdb to only nucleotides
         header = parse_pdb_header(filepath)    
         return cls.from_atom_array(atom_array, header=header)
 
@@ -318,7 +213,7 @@ class NucleicDatum:
         Reshapes atom array to residue-indexed representation to
         build a protein datum.
         """
-
+        # print("length of atom array: " , len(atom_array))
         if atom_array.array_length() == 0:
             return cls.empty_nuc()
         
@@ -345,6 +240,8 @@ class NucleicDatum:
         residue_token = np.array(
             list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
         )
+        # print("line 234 in datum, that is atom_array.res_name:", len(atom_array.res_name))
+        # print("line 234 in datum, that is atom_array.res_name:", len(residue_token))
         
         residue_mask = np.ones_like(residue_token).astype(bool)
 
@@ -409,12 +306,79 @@ class NucleicDatum:
         )
 
 
+    def to_pdb_str(self):
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        assert len(self.nuc_token.shape) == 1
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.nuc_token, "r -> r a", a=24)[atom_mask]
+        all_atom_res_indices = repeat(self.nuc_index, "r -> r a", a=24)[atom_mask]
+
+        # just in case, move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens) #all_nucs_atom_tokens
+        all_atom_res_indices = np.array(all_atom_res_indices)
+
+        lines = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_nucs[int(res_token)]
+            x, y, z = coord
+            line = list(" " * 80)
+            line[0:6] = "ATOM".ljust(6)
+            line[6:11] = str(idx + 1).ljust(5)
+            line[12:16] = name.ljust(4)
+            line[17:20] = res_name.ljust(3)
+            line[21:22] = "A" ##if that is chain identifier it should go from a to z?
+            line[23:27] = str(res_index + 1).ljust(4)
+            line[30:38] = f"{x:.3f}".rjust(8)
+            line[38:46] = f"{y:.3f}".rjust(8)
+            line[46:54] = f"{z:.3f}".rjust(8)
+            line[76:78] = name[0].rjust(2)
+            lines.append("".join(line))
+        lines = "\n".join(lines)
+        return lines
+
+
+    def plot(
+        self, 
+        view, 
+        viewer=None, 
+        sphere=False, 
+        ribbon=True,
+        sidechain=True,
+        color='spectrum',
+    ):
+        if viewer is None:
+            viewer = (0, 0)
+        view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
+        view.setStyle({'model': -1}, {}, viewer=viewer)
+        if sphere:
+            view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
+
+        if ribbon:
+            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer)
+
+        if sidechain:
+            if color != 'spectrum':
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
+            else:
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+
+        return view
 
 
 
-
-import plotly.graph_objects as go
-import plotly.offline as pyo
 def _scatter_coord(name, coord, color='black', visible=True):
     sc_coords = []
     x, y, z = coord.T
@@ -563,7 +527,3 @@ if __name__ == '__main__':
     #total number of nucleotides, 
     
     breakpoint()
-    
-
-
-
