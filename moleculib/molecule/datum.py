@@ -360,7 +360,10 @@ register_pytree(CrossdockDatum)
 class PDBBindDatum(MoleculeDatum):
     def __init__(self, *args, **kwargs):
         self.pdb_id = kwargs.pop("pdb_id")
-        self.pka = kwargs.pop("pka")
+        try:
+            self.pka = kwargs.pop("pka")
+        except KeyError:
+            self.pka = None
         self.charge = kwargs.pop("charge")
         self.protein_token = kwargs.pop("protein_token")
         self.protein_coord = kwargs.pop("protein_coord")

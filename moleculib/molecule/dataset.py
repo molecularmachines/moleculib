@@ -789,7 +789,15 @@ import random
 
 
 class DensityDataDir(Dataset):
-    def __init__(self, directory, max_atoms=29, grid_size=36, to_split=True,_split="train", **kwargs):
+    def __init__(
+        self,
+        directory,
+        max_atoms=29,
+        grid_size=36,
+        to_split=True,
+        _split="train",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
 
         self.directory = directory
@@ -806,7 +814,7 @@ class DensityDataDir(Dataset):
             "6",
             "7",
             "8",
-            "9"
+            "9",
         ]:
             self.member_list.extend(sorted(os.listdir(os.path.join(self.directory, s))))
             # self.member_list.extend(
@@ -833,7 +841,7 @@ class DensityDataDir(Dataset):
         if _split == "train":
             self.splits = {"train": self}
             if to_split:
-                self.splits['test'] = self.__class__(
+                self.splits["test"] = self.__class__(
                     directory=directory,
                     max_atoms=max_atoms,
                     grid_size=grid_size,
@@ -857,7 +865,7 @@ class DensityDataDir(Dataset):
                     "grid": f["grid"],
                     "filename": filename,
                 }
-            
+
         filecontent = _decompress_file(path)
         density, atoms, origin = _read_vasp(filecontent)
 
@@ -981,3 +989,59 @@ class DensityDataDir(Dataset):
                 z_max += n - (z_max - z_min)
 
         return x_min, x_max, y_min, y_max, z_min, z_max
+
+
+import h5py
+
+
+class MISATO(Dataset):
+    def __init__(self, _split="train") -> None:
+        super().__init__()
+        self.base_path = "/mas/projects/molecularmachines/db/MISATO"
+        self.data = h5py.File("/mas/projects/molecularmachines/db/MISATO/MD.hdf5")
+        self.h5_properties = [
+            "trajectory_coordinates",
+            # "atoms_type",
+            # "atoms_number",
+            # "atoms_residue",
+            "atoms_element",
+            "molecules_begin_atom_index",
+            # "frames_rmsd_ligand",
+            # "frames_distance",
+            # "frames_interaction_energy",
+            # "frames_bSASA",
+        ]
+        if _split == "train":
+            self.index = open(os.path.join(self.base_path,"train_MD.txt"), 'r').read().split('\n')
+        elif _split == "val":
+            self.index = open(os.path.join(self.base_path,"val_MD.txt"), 'r').read().split('\n')
+        elif _split == "test":
+            self.index = open(os.path.join(self.base_path,"test_MD.txt"), 'r').read().split('\n')
+        
+        print(f"Loaded {_split} {len(self)} datapoints")
+
+    def __len__(self):
+        return len(self.index)
+    
+    def __getitem__(self, index):
+        pdb_id = self.index[index]
+        dp = self.get_entries(pdb_id)
+
+        traj_coord = dp["trajectory_coordinates"]
+        token = dp["atoms_number"]
+        mol_idx = dp["molecules_begin_atom_index"][-1]
+
+        atom_token = token[mol_idx:]
+        atom_coord = traj_coord[:, mol_idx:]
+        atom_mask = np.ones_like(atom_token)
+        
+        protein_token = token[:mol_idx]
+        protein_coord = traj_coord[:, :mol_idx]
+        protein_mask = np.ones_like(protein_token)
+        
+    
+    def get_entries(self, pdbid):
+        h5_entries = {}
+        for h5_property in self.h5_properties:
+            h5_entries[h5_property] = self.data.get(pdbid+'/'+h5_property)
+        return h5_entries
