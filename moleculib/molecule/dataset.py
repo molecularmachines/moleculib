@@ -992,7 +992,7 @@ class DensityDataDir(Dataset):
 
 
 import h5py
-
+from moleculib.molecule.datum import MISATODatum
 
 class MISATO(Dataset):
     def __init__(self, _split="train") -> None:
@@ -1002,9 +1002,9 @@ class MISATO(Dataset):
         self.h5_properties = [
             "trajectory_coordinates",
             # "atoms_type",
-            # "atoms_number",
+            "atoms_number",
             # "atoms_residue",
-            "atoms_element",
+            # "atoms_element",
             "molecules_begin_atom_index",
             # "frames_rmsd_ligand",
             # "frames_distance",
@@ -1019,6 +1019,15 @@ class MISATO(Dataset):
             self.index = open(os.path.join(self.base_path,"test_MD.txt"), 'r').read().split('\n')
         
         print(f"Loaded {_split} {len(self)} datapoints")
+
+        if _split == "train":
+            self.splits = {"train": self}
+            self.splits["val"] = self.__class__(
+                _split="val",
+            )
+            self.splits["test"] = self.__class__(
+                _split="test",
+            )
 
     def __len__(self):
         return len(self.index)
@@ -1039,6 +1048,17 @@ class MISATO(Dataset):
         protein_coord = traj_coord[:, :mol_idx]
         protein_mask = np.ones_like(protein_token)
         
+        datum = MISATODatum(
+            pdb_id=pdb_id,
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=atom_mask,
+            bonds=None,
+            protein_token=protein_token,
+            protein_coord=protein_coord,
+            protein_mask=protein_mask,
+        )
+        return datum
     
     def get_entries(self, pdbid):
         h5_entries = {}

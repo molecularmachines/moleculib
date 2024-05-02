@@ -382,7 +382,7 @@ class PDBBindDatum(MoleculeDatum):
         with open(pdb_path, "r") as f:
             s = str(f.read())
         return s
-    
+
     def pocket_pdb_str(self):
         pdb_path = os.path.join(
             self.base_path, f"{self.pdb_id}", f"{self.pdb_id}_pocket.pdb"
@@ -394,6 +394,7 @@ class PDBBindDatum(MoleculeDatum):
 
 register_pytree(PDBBindDatum)
 
+
 class DensityDatum(MoleculeDatum):
     def __init__(self, *args, **kwargs):
         self.density = kwargs.pop("density")
@@ -403,3 +404,65 @@ class DensityDatum(MoleculeDatum):
 
 
 register_pytree(DensityDatum)
+
+
+class MISATODatum(MoleculeDatum):
+    def __init__(self, *args, **kwargs):
+        self.pdb_id = kwargs.pop("pdb_id")
+        self.protein_token = kwargs.pop("protein_token")
+        self.protein_coord = kwargs.pop("protein_coord")
+        self.protein_mask = kwargs.pop("protein_mask")
+
+        super().__init__(*args, **kwargs)
+
+    def at(self, i):
+        return self.__class__(
+            atom_token=self.atom_token,
+            atom_coord=self.atom_coord[..., i, :, :],
+            atom_mask=self.atom_mask,
+            bonds=self.bonds,
+            pdb_id=self.pdb_id,
+            protein_token=self.protein_token,
+            protein_coord=self.protein_coord[..., i, :, :],
+            protein_mask=self.protein_mask,
+        )
+
+    def neighborhood_idxs(self, r):
+        return np.where(
+            (
+                ((self.atom_coord[0][None] - self.protein_coord[0][:, None]) ** 2).sum(
+                    -1
+                )
+                ** 0.5
+                < r
+            ).sum(1)
+        )[0]
+
+    def keep_neighborhood(self, r):
+        idxs = self.neighborhood_idxs(r)
+        return self.__class__(
+            atom_token=self.atom_token,
+            atom_coord=self.atom_coord,
+            atom_mask=self.atom_mask,
+            bonds=self.bonds,
+            pdb_id=self.pdb_id,
+            protein_token=self.protein_token[idxs],
+            protein_coord=self.protein_coord[..., :, idxs, :],
+            protein_mask=self.protein_mask[idxs],
+        )
+
+    def dehydrate(self):
+        h_atom = np.where(self.atom_token != 1)[0]
+        h_protein = np.where(self.protein_token != 1)[0]
+        return self.__class__(
+            atom_token=self.atom_token[h_atom],
+            atom_coord=self.atom_coord[..., h_atom, :],
+            atom_mask=self.atom_mask[h_atom],
+            bonds=self.bonds,
+            pdb_id=self.pdb_id,
+            protein_token=self.protein_token[h_protein],
+            protein_coord=self.protein_coord[..., h_protein, :],
+            protein_mask=self.protein_mask[h_protein],
+        )
+
+register_pytree(MISATODatum)
