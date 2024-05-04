@@ -215,6 +215,7 @@ class AtlasDataset(Dataset):
         num_steps: int,
         single_protein: bool = False,
         transform: list = [],
+        mode: str = 'next_step',
     ):
         self.base_path = base_path
         self.num_steps = num_steps
@@ -236,8 +237,7 @@ class AtlasDataset(Dataset):
         self.splits = { 'train': self }
         super().__init__(transform=transform)
 
-        # self.mode = 'next_step' 
-        self.mode = 'single'
+        self.mode = mode
             
     def __len__(self):
         return len(self.pdbids)
