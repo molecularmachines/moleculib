@@ -15,6 +15,21 @@ class _TransformWrapper:
         return reduce(lambda x, t: t.transform(x), self.transform, self.ds[idx])
 
 
+class Dataset:
+
+    def __init__(self, transform : List[Callable] = None):
+        self.transform = transform
+
+    def _getindex(self, index):
+        raise NotImplementedError('Subclasses must implement this method')
+
+    def __getitem__(self, idx):
+        data = self._getitem(idx)
+        if self.transform is not None:
+            return reduce(lambda x, t: t.transform(x), self.transform, data)
+        return data
+
+
 class PreProcessedDataset:
 
     def __init__(self, splits, transform: List[Callable] = None, shuffle=True, pre_transform=False):

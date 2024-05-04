@@ -1,39 +1,16 @@
 import os
-import pickle
-import traceback
 from functools import partial
 from pathlib import Path
-from tempfile import gettempdir
-from typing import List, Union
 
-import biotite
 import numpy as np
-import pandas as pd
-from pandas import DataFrame, Series
-from torch.utils.data import Dataset
-from tqdm.contrib.concurrent import process_map
+
+from moleculib.protein.datum import ProteinDatum
+import os 
+import numpy as np
 
 from ..protein.datum import ProteinDatum
-from ..protein.batch import ProteinCollator, PadBatch
 from ..protein.transform import ProteinCrop
-
-
-class MultiPadBatch(ProteinCollator):
-    def __init__(self, pad_mask, **kwargs):
-        super().__init__()
-        self.pad_mask = pad_mask
-        for attr, value in kwargs.items():
-            setattr(self, attr, value)
-
-    @classmethod
-    def collate(cls, stream):
-        sides = list(zip(*stream))
-        try:
-            batches = [PadBatch.collate(side) for side in sides]
-        except:
-            breakpoint()
-
-        return batches
+from ..abstract.dataset import Dataset
 
 
 class MODELDataset(Dataset):
@@ -172,10 +149,6 @@ class AdKEquilibriumDataset(Dataset):
         return [datum]
 
 
-
-
-
-
 class AdKTransitionsDataset(Dataset):
     """
     Holds ProteinDatum dataset across trajectories
@@ -229,3 +202,62 @@ class AdKTransitionsDataset(Dataset):
             datum = ProteinDatum.from_filepath(self.base_path / folder / model, format='pdb')
             data.append(datum)
         return data
+
+
+
+NUM_STEPS = 1_000
+
+class AtlasDataset(Dataset):
+
+    def __init__(
+        self,
+        base_path: str,
+        num_steps: int,
+        single_protein: bool = False,
+        transform: list = [],
+    ):
+        self.base_path = base_path
+        self.num_steps = num_steps
+        self.single_protein = single_protein
+        
+        pdbids = []
+        for pdbid in os.listdir(base_path):
+            if (not os.path.exists(f'{base_path}/{pdbid}/1') or 
+                not os.path.exists(f'{base_path}/{pdbid}/2') or
+                not os.path.exists(f'{base_path}/{pdbid}/3')):
+                continue
+            pdbids.append(pdbid)
+        self.pdbids = pdbids
+        print(f'Detected {len(self.pdbids)} complete trajectories')
+
+        if single_protein:
+            self.pdbids = [self.pdbids[0]] * 2048 
+
+        self.splits = { 'train': self }
+        super().__init__(transform=transform)
+
+        # self.mode = 'next_step' 
+        self.mode = 'single'
+            
+    def __len__(self):
+        return len(self.pdbids)
+    
+    def _getitem(self, i):
+        if self.mode == 'next_step':
+            pdbid = self.pdbids[i]
+            traj_sample = np.random.randint(1, 4)
+            path = '{}/{}/{}'.format(self.base_path, pdbid, traj_sample)
+            t = np.random.randint(0, NUM_STEPS - self.num_steps)
+            path1 = '{}/{}.bcif'.format(path, t)
+            path2 = '{}/{}.bcif'.format(path, t + self.num_steps)
+            protein_datum_i = ProteinDatum.from_filepath(path1)
+            protein_datum_j = ProteinDatum.from_filepath(path2)
+            return [protein_datum_i, protein_datum_j] 
+        elif self.mode == 'single':
+            pdbid = self.pdbids[i]
+            traj_sample = np.random.randint(1, 4)
+            path = '{}/{}/{}'.format(self.base_path, pdbid, traj_sample)
+            t = np.random.randint(0, NUM_STEPS - self.num_steps)
+            path1 = '{}/{}.bcif'.format(path, t)
+            protein_datum_i = ProteinDatum.from_filepath(path1)
+            return protein_datum_i
