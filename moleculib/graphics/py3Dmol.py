@@ -1,5 +1,7 @@
 from moleculib.protein.datum import ProteinDatum
 from moleculib.molecule.datum import MoleculeDatum
+from moleculib.nucleic.datum import NucleicDatum
+
 import py3Dmol
 import os
 from typing import Callable
@@ -18,6 +20,7 @@ def plot_py3dmol_grid(
     )
     for i, row in enumerate(grid):
         for j, datum in enumerate(row):
+            print("D",datum)
             datum.plot(v, viewer=(i, j), **kwargs)
     v.zoomTo()
     v.setBackgroundColor("rgb(0,0,0)", 0)

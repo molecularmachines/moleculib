@@ -29,16 +29,10 @@ base_atoms_per_nuc = OrderedDict(
         DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
 )
 
-backbone_atoms_DNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P", "O3'", "O4'", "O5'"] #NOTE: add "" for carbons and Oxygens as in the file
-backbone_atoms_RNA = ["C1'", "C2'", "C3'", "C4'", "C5'","P", "O1P", "O2P","O3P","O2'", "O3'", "O4'", "O5'"]  
+backbone_atoms_DNA = ["P", "OP1", "OP2","OP3", "C1'", "C2'", "C3'", "C4'", "C5'",  "O3'", "O4'", "O5'"] #NOTE: add "" for carbons and Oxygens as in the file
+backbone_atoms_RNA = ["P", "OP1", "OP2","OP3", "C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"]  
 
-### TODO: Should it be the same as below (from alphabet protein)?
-# backbone_chemistry = dict(
-#     bonds=[["N", "CA"], ["CA", "C"], ["C", "O"]],
-#     angles=[["CA", "C", "O"], ["N", "CA", "C"]],
-#     dihedrals=[["N", "CA", "C", "O"]],
-#     flippable=[],
-# )
+
 special_tokens = ["PAD", "UNK"] #what do whese represent?
 
 atoms_per_nuc = OrderedDict()
@@ -48,26 +42,21 @@ atoms_per_nuc["UNK"] = [] # backbone_atoms
 #for every nuc we add the base and backbone atoms
 for nuc, base_atoms in base_atoms_per_nuc.items():
     if nuc in ['A', 'U', 'RT', 'G', 'C', 'I']: #RNA
-        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_RNA
+        atoms_per_nuc[nuc] = backbone_atoms_RNA+ base_atoms 
     else:
-        atoms_per_nuc[nuc] = base_atoms + backbone_atoms_DNA
+        atoms_per_nuc[nuc] = backbone_atoms_DNA+ base_atoms
 MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])###==24
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
-all_atoms = special_tokens + all_atoms
+all_atoms =  all_atoms + special_tokens
 all_atoms_tokens = np.arange(len(all_atoms))
 
 elements = list(OrderedSet([atom[0] for atom in all_atoms]))
 all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
-# all_atoms_radii = np.array(
-#     [
-#         (van_der_walls_radii[atom[0]] if (atom[0] in van_der_walls_radii) else 0.0)
-#         for atom in all_atoms
-#     ]
-# )
+
 
 all_nucs = list(base_atoms_per_nuc.keys())
-all_nucs = special_tokens + all_nucs
+all_nucs =  all_nucs + special_tokens
 all_nucs_tokens = np.arange(len(all_nucs))
 all_nucs_atom_mask = np.array(
     [
@@ -75,6 +64,13 @@ all_nucs_atom_mask = np.array(
         for (_, atoms) in atoms_per_nuc.items()
     ]
 ).astype(np.bool_)
+
+all_nucs_atom_tokens = np.array(
+    [
+        ([all_atoms.index(atom) for atom in atoms] + [0] * (24 - len(atoms)))
+        for (_, atoms) in atoms_per_nuc.items()
+    ]
+)
 
 def _atom_to_all_nucs_index(atom):
     def _atom_to_nuc_index(nuc):
@@ -106,4 +102,3 @@ atom_to_nucs_index, atom_to_nucs_mask = zip(
 )
 atom_to_nucs_index = np.array(atom_to_nucs_index)
 atom_to_nucs_mask = np.array(atom_to_nucs_mask)
-
