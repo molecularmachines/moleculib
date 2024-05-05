@@ -87,7 +87,7 @@ def norm(vector: np.ndarray) -> np.ndarray:
 
 
 def normalize(vector: np.ndarray) -> np.ndarray:
-    return vector / norm(vector)[..., None]
+    return vector / safe_norm(vector)[..., None]
 
 
 def measure_bonds(coord, idx):
