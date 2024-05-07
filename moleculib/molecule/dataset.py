@@ -622,12 +622,18 @@ import pickle
 
 
 class PDBBindDataset(Dataset):
-    def __init__(self, max_ligand_atoms=29, max_protein_atoms=400, _split="train"):
+    def __init__(
+        self, max_ligand_atoms=29, max_protein_atoms=400, _split="train", refined=True
+    ):
         super().__init__()
         self.max_ligand_atoms = max_ligand_atoms
         self.max_protein_atoms = max_protein_atoms
-        self.base_path = "/mas/projects/molecularmachines/db/PDBBind/refined-set"
-        self.index_path = os.path.join(self.base_path, "index/INDEX_refined_data.2020")
+        if refined:
+            self.base_path = "/mas/projects/molecularmachines/db/PDBBind/refined-set"
+            self.index_path = os.path.join(
+                self.base_path, "index/INDEX_refined_data.2020"
+            )
+
         self.index = self._load_index(_split)
         print(f"Loaded {self.index.shape[0]} {_split} datapoints")
 
@@ -688,6 +694,10 @@ class PDBBindDataset(Dataset):
 
     def __len__(self):
         return self.index.shape[0]
+
+    def get_pdb_id(self, pdb_id):
+        idx = np.where(self.index[:, 0] == pdb_id)[0][0]
+        return self.__getitem__(idx)
 
     def __getitem__(self, idx):
         pdb_id, _, _, pka, _ = self.index[idx]
@@ -993,6 +1003,7 @@ class DensityDataDir(Dataset):
 
 import h5py
 from moleculib.molecule.datum import MISATODatum
+from moleculib.molecule.h5_to_pdb import create_pdb
 
 class MISATO(Dataset):
     def __init__(self, _split="train") -> None:
@@ -1001,10 +1012,10 @@ class MISATO(Dataset):
         self.data = h5py.File("/mas/projects/molecularmachines/db/MISATO/MD.hdf5")
         self.h5_properties = [
             "trajectory_coordinates",
-            # "atoms_type",
+            "atoms_type",
             "atoms_number",
-            # "atoms_residue",
-            # "atoms_element",
+            "atoms_residue",
+            "atoms_element",
             "molecules_begin_atom_index",
             # "frames_rmsd_ligand",
             # "frames_distance",
@@ -1012,12 +1023,22 @@ class MISATO(Dataset):
             # "frames_bSASA",
         ]
         if _split == "train":
-            self.index = open(os.path.join(self.base_path,"train_MD.txt"), 'r').read().split('\n')
+            self.index = (
+                open(os.path.join(self.base_path, "train_MD.txt"), "r")
+                .read()
+                .split("\n")
+            )
         elif _split == "val":
-            self.index = open(os.path.join(self.base_path,"val_MD.txt"), 'r').read().split('\n')
+            self.index = (
+                open(os.path.join(self.base_path, "val_MD.txt"), "r").read().split("\n")
+            )
         elif _split == "test":
-            self.index = open(os.path.join(self.base_path,"test_MD.txt"), 'r').read().split('\n')
-        
+            self.index = (
+                open(os.path.join(self.base_path, "test_MD.txt"), "r")
+                .read()
+                .split("\n")
+            )
+
         print(f"Loaded {_split} {len(self)} datapoints")
 
         if _split == "train":
@@ -1031,7 +1052,7 @@ class MISATO(Dataset):
 
     def __len__(self):
         return len(self.index)
-    
+
     def __getitem__(self, index):
         pdb_id = self.index[index]
         dp = self.get_entries(pdb_id)
@@ -1043,11 +1064,13 @@ class MISATO(Dataset):
         atom_token = token[mol_idx:]
         atom_coord = traj_coord[:, mol_idx:]
         atom_mask = np.ones_like(atom_token)
-        
+
         protein_token = token[:mol_idx]
+        atoms_residue = dp["atoms_residue"][:mol_idx]
+        atoms_type = dp["atoms_type"][:mol_idx]
         protein_coord = traj_coord[:, :mol_idx]
         protein_mask = np.ones_like(protein_token)
-        
+
         datum = MISATODatum(
             pdb_id=pdb_id,
             atom_token=atom_token,
@@ -1057,11 +1080,24 @@ class MISATO(Dataset):
             protein_token=protein_token,
             protein_coord=protein_coord,
             protein_mask=protein_mask,
+            atoms_residue=atoms_residue,
+            atoms_type=atoms_type,
         )
         return datum
-    
+
     def get_entries(self, pdbid):
         h5_entries = {}
         for h5_property in self.h5_properties:
-            h5_entries[h5_property] = self.data.get(pdbid+'/'+h5_property)
+            h5_entries[h5_property] = self.data.get(pdbid + "/" + h5_property)
         return h5_entries
+
+    def pdb_str(self, index, frame):
+        pdb_id = self.index[index]
+        dp = self.get_entries(pdb_id)
+        return "\n".join(create_pdb(
+            dp["trajectory_coordinates"][frame],
+            dp["atoms_type"],
+            dp["atoms_number"],
+            dp["atoms_residue"],
+            dp["molecules_begin_atom_index"],
+        ))

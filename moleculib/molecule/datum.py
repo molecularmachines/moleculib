@@ -405,6 +405,8 @@ class DensityDatum(MoleculeDatum):
 
 register_pytree(DensityDatum)
 
+from moleculib.molecule.h5_to_pdb import create_pdb
+from copy import deepcopy
 
 class MISATODatum(MoleculeDatum):
     def __init__(self, *args, **kwargs):
@@ -412,8 +414,16 @@ class MISATODatum(MoleculeDatum):
         self.protein_token = kwargs.pop("protein_token")
         self.protein_coord = kwargs.pop("protein_coord")
         self.protein_mask = kwargs.pop("protein_mask")
+        self.atoms_residue = kwargs.pop("atoms_residue")
+        self.atoms_type = kwargs.pop("atoms_type")
 
         super().__init__(*args, **kwargs)
+
+
+    def replace(self, **kwargs):
+        _vars = deepcopy(vars(self))
+        _vars.update(**kwargs)
+        return self.__class__(**_vars)
 
     def at(self, i):
         return self.__class__(
@@ -425,6 +435,8 @@ class MISATODatum(MoleculeDatum):
             protein_token=self.protein_token,
             protein_coord=self.protein_coord[..., i, :, :],
             protein_mask=self.protein_mask,
+            atoms_residue=self.atoms_residue,
+            atoms_type=self.atoms_type,
         )
 
     def neighborhood_idxs(self, r):
@@ -449,6 +461,8 @@ class MISATODatum(MoleculeDatum):
             protein_token=self.protein_token[idxs],
             protein_coord=self.protein_coord[..., :, idxs, :],
             protein_mask=self.protein_mask[idxs],
+            atoms_residue=self.atoms_residue[idxs],
+            atoms_type=self.atoms_type[idxs],
         )
 
     def dehydrate(self):
@@ -463,6 +477,20 @@ class MISATODatum(MoleculeDatum):
             protein_token=self.protein_token[h_protein],
             protein_coord=self.protein_coord[..., h_protein, :],
             protein_mask=self.protein_mask[h_protein],
+            atoms_residue=self.atoms_residue[h_protein],
+            atoms_type=self.atoms_type[h_protein],
         )
+
+    def pdb_str(self, frame):
+        return "\n".join(
+            create_pdb(
+                self.protein_coord[frame],
+                self.atoms_type,
+                self.protein_token,
+                self.atoms_residue,
+                [],
+            )
+        )
+
 
 register_pytree(MISATODatum)
