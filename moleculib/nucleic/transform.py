@@ -23,7 +23,7 @@ class NucTransform:
     def transform(self, datum: NucleicDatum) -> NucleicDatum:
         """
         Takes as input an individual data point, processes
-        the values in it and returns a new ProteinDatum
+        the values in it and returns a new NucleicDatum
         """
         raise NotImplementedError("method transform must be implemented")
 
@@ -56,7 +56,7 @@ class NucPad(NucTransform):
         seq_len = len(datum)
         #QUESTION: So we ignore all nucs???
         if seq_len >= self.pad_size:
-            datum.pad_mask = np.ones_like(datum.residue_token)
+            datum.pad_mask = np.ones_like(datum.nuc_token)
             return datum
         
         size_diff = self.pad_size - seq_len
