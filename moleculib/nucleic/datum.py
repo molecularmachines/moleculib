@@ -79,6 +79,7 @@ class NucleicDatum:
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
+        **kwargs, 
     ):
         self.idcode = idcode
         self.resolution = resolution
@@ -90,6 +91,8 @@ class NucleicDatum:
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
+        for key, value in kwargs.items():
+            setattr(self, key, value)
     
 
     def __len__(self):
