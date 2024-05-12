@@ -1075,7 +1075,7 @@ class MISATO(Dataset):
     def __init__(self, _split="train") -> None:
         super().__init__()
         self.base_path = "/mas/projects/molecularmachines/db/MISATO"
-        self.data = h5py.File("/mas/projects/molecularmachines/db/MISATO/MD.hdf5")
+        self.data = h5py.File(os.path.join(self.base_path, "MD.hdf5"))
         self.h5_properties = [
             "trajectory_coordinates",
             "atoms_type",
@@ -1088,29 +1088,19 @@ class MISATO(Dataset):
             # "frames_interaction_energy",
             # "frames_bSASA",
         ]
-        if _split == "train":
-            self.index = (
-                open(os.path.join(self.base_path, "train_MD.txt"), "r")
-                .read()
-                .split("\n")
-            )
-        elif _split == "val":
-            self.index = (
-                open(os.path.join(self.base_path, "val_MD.txt"), "r").read().split("\n")
-            )
-        elif _split == "test":
-            self.index = (
-                open(os.path.join(self.base_path, "test_MD.txt"), "r")
-                .read()
-                .split("\n")
-            )
+
+        self.index = (
+            open(os.path.join(self.base_path, f"{_split}_MD.txt"), "r")
+            .read()
+            .split("\n")
+        )
 
         print(f"Loading {_split} {len(self)} datapoints")
 
         if _split == "train":
             self.splits = {"train": self}
-            self.splits["val"] = self.__class__(
-                _split="val",
+            self.splits["valid"] = self.__class__(
+                _split="valid",
             )
             self.splits["test"] = self.__class__(
                 _split="test",
@@ -1182,43 +1172,19 @@ class MISATODensity(Dataset):
     ) -> None:
         super().__init__()
         self.base_path = "/mas/projects/molecularmachines/db/MISATO"
-        self.data = h5py.File("/mas/projects/molecularmachines/db/MISATO/QM.hdf5")
+        self.data = h5py.File(os.path.join(self.base_path, "QM.hdf5"))
         self.samples = samples
         self.max_atoms = max_atoms
         self.padding = PairPad()
-        if _split == "train":
-            self.index = (
-                open(os.path.join(self.base_path, "train_MD.txt"), "r")
-                .read()
-                .split("\n")[:-1]
-            )
-            # self.index += (
-            #     open(os.path.join(self.base_path, "val_MD.txt"), "r")
-            #     .read()
-            #     .split("\n")[50:-1]
-            # )
-            # self.index += (
-            #     open(os.path.join(self.base_path, "test_MD.txt"), "r")
-            #     .read()
-            #     .split("\n")[500:-1]
-            # )
-        elif _split == "valid":
-            self.index = (
-                open(os.path.join(self.base_path, "val_MD.txt"), "r")
-                .read()
-                .split("\n")[:-1]
-            )
-        elif _split == "test":
-            self.index = (
-                open(os.path.join(self.base_path, "test_MD.txt"), "r")
-                .read()
-                .split("\n")[:-1]
-            )
 
-        sizes = np.load(os.path.join(self.base_path, f"{_split}_sizes.npy"))
-        self.index = np.array(self.index)[
-            np.where((sizes <= max_atoms) & (sizes != -1))
-        ]
+        if _split == "train":
+            self.index = self._get_index("train")
+            self.index = np.concatenate([self.index, self._get_index("valid", s=50)])
+            self.index = np.concatenate([self.index, self._get_index("test", s=200)])
+        elif _split == "valid":
+            self.index = self._get_index("valid", e=50)
+        elif _split == "test":
+            self.index = self._get_index("test", e=200)
 
         print(f"Loading {_split} {len(self)} datapoints")
 
@@ -1236,6 +1202,16 @@ class MISATODensity(Dataset):
                 _split="valid",
             )
             self.splits["valid"] = RotatingPoolData(valid, 30) if _rotated else valid
+
+    def _get_index(self, split, s=0, e=-1):
+        index = (
+            open(os.path.join(self.base_path, f"{split}_MD.txt"), "r")
+            .read()
+            .split("\n")[s:e]
+        )
+        sizes = np.load(os.path.join(self.base_path, f"{split}_sizes.npy"))[s:e]
+        index = np.array(index)[np.where((sizes <= self.max_atoms) & (sizes != -1))]
+        return index
 
     def __len__(self):
         return len(self.index)
@@ -1328,31 +1304,25 @@ class MISATODensity(Dataset):
 
         # fine align
         shift = centers - hcoord
-        shift_mask = (
-            np.log(((shift - shift.mean(0)) ** 2).sum(-1)) < -3
-        )  # filter out outliers
+        deviation = np.log(((shift - shift.mean(0)) ** 2).sum(-1))
+        # filter out outliers
+        shift_mask = deviation < -4
         if shift_mask.sum() == 0:
-            return grid, density, coord
+            shift_mask = deviation < -3
+            if shift_mask.sum() == 0:
+                shift_mask = deviation < -2
+                if shift_mask.sum() == 0:
+                    return grid, density, coord
 
         coord = coord + (shift * shift_mask[:, None]).sum(0) / shift_mask.sum()
         return grid, density, coord
 
 
 class InterleavedDataset(Dataset):
-    def __init__(self, dataset1, dataset2, _split="train"):
+    def __init__(self, dataset1, dataset2):
         self.dataset1 = dataset1
         self.dataset2 = dataset2
         self.total_length = len(dataset1) + len(dataset2)
-        if _split == "train":
-            self.splits = {
-                "train": self,
-                "valid": self.__class__(
-                    dataset1.splits["valid"], dataset2.splits["valid"], "valid"
-                ),
-                "test": self.__class__(
-                    dataset1.splits["test"], dataset2.splits["test"], "test"
-                ),
-            }
 
     def __len__(self):
         return self.total_length
@@ -1369,7 +1339,13 @@ class Density(InterleavedDataset):
         qm9_vasp = DensityDataDir(
             max_atoms=max_atoms, samples=samples, _rotated=_rotated
         )
-        misato = MISATODensity(
-            max_atoms=max_atoms, samples=samples, _rotated=_rotated
-        )
+        misato = MISATODensity(max_atoms=max_atoms, samples=samples, _rotated=_rotated)
         super().__init__(qm9_vasp, misato)
+
+        self.splits = {
+            "train": self,
+            "valid": InterleavedDataset(
+                qm9_vasp.splits["valid"], misato.splits["valid"]
+            ),
+            "test": InterleavedDataset(qm9_vasp.splits["test"], misato.splits["test"]),
+        }
