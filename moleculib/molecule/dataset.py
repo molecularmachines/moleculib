@@ -633,6 +633,13 @@ class PDBBindDataset(Dataset):
             self.index_path = os.path.join(
                 self.base_path, "index/INDEX_refined_data.2020"
             )
+        else:
+            self.base_path = (
+                "/mas/projects/molecularmachines/db/PDBbind_v2020-other-PL/"
+            )
+            self.index_path = os.path.join(
+                self.base_path, "index/INDEX_general_PL_data.2020"
+            )
 
         self.index = self._load_index(_split)
         print(f"Loaded {self.index.shape[0]} {_split} datapoints")
@@ -795,7 +802,62 @@ def _calculate_grid_pos(density, origin, cell):
 
 
 from moleculib.molecule.datum import DensityDatum
-import random
+import multiprocessing
+import threading
+import logging
+
+
+def rotating_pool_worker(dataset, rng, queue):
+    while True:
+        for index in rng.permutation(len(dataset)).tolist():
+            queue.put(dataset[index])
+
+
+def transfer_thread(queue: multiprocessing.Queue, datalist: list):
+    while True:
+        for index in range(len(datalist)):
+            datalist[index] = queue.get()
+
+
+class RotatingPoolData(Dataset):
+    """
+    Wrapper for a dataset that continously loads data into a smaller pool.
+    The data loading is performed in a separate process and is assumed to be IO bound.
+    """
+
+    def __init__(self, dataset, pool_size, **kwargs):
+        super().__init__(**kwargs)
+        self.pool_size = pool_size
+        self.parent_data = dataset
+        self.rng = np.random.default_rng()
+        logging.debug("Filling rotating data pool of size %d" % pool_size)
+        self.data_pool = [
+            self.parent_data[i]
+            for i in self.rng.integers(
+                0, high=len(self.parent_data), size=self.pool_size, endpoint=False
+            ).tolist()
+        ]
+        self.loader_queue = multiprocessing.Queue(2)
+
+        # Start loaders
+        self.loader_process = multiprocessing.Process(
+            target=rotating_pool_worker,
+            args=(self.parent_data, self.rng, self.loader_queue),
+        )
+        self.transfer_thread = threading.Thread(
+            target=transfer_thread, args=(self.loader_queue, self.data_pool)
+        )
+        self.loader_process.start()
+        self.transfer_thread.start()
+
+    def __len__(self):
+        return self.pool_size
+
+    def __getitem__(self, index):
+        return self.data_pool[index]
+
+
+import json
 
 
 class DensityDataDir(Dataset):
@@ -804,8 +866,9 @@ class DensityDataDir(Dataset):
         directory,
         max_atoms=29,
         grid_size=36,
-        to_split=True,
+        samples=1000,
         _split="train",
+        _rotated=True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -814,49 +877,40 @@ class DensityDataDir(Dataset):
         self.padding = PairPad()
         self.max_atoms = max_atoms
         self.grid_size = grid_size
+        self.samples = samples
+        split = json.load(open(os.path.join(directory, "split.json")))[_split]
         self.member_list = []
-        for s in [
-            # "0",
-            # "2",
-            # "3",
-            # "4",
-            # "5",
-            "6",
-            "7",
-            "8",
-            "9",
-        ]:
-            self.member_list.extend(sorted(os.listdir(os.path.join(self.directory, s))))
-            # self.member_list.extend(
-            #     sorted(
-            #         [
-            #             f
-            #             for f in os.listdir(os.path.join(self.directory, s))
-            #             if f.endswith(".npz")
-            #         ]
-            #     )
-            # )
-
-        # random.shuffle(self.member_list)
-
-        dp = len(self.member_list)
-        if to_split:
-            if _split == "train":
-                self.member_list = self.member_list[: round(dp * 0.95)]
-            elif _split == "test":
-                self.member_list = self.member_list[round(dp * 0.95) :]
+        for s in range(134):
+            self.member_list.extend(
+                sorted(
+                    [
+                        f
+                        for f in os.listdir(os.path.join(self.directory, str(s)))
+                        if f.endswith(".lz4") and int(f.split(".")[0]) in split
+                    ]
+                )
+            )
 
         print(f"Loaded {_split} {len(self)} datapoints")
 
         if _split == "train":
-            self.splits = {"train": self}
-            if to_split:
-                self.splits["test"] = self.__class__(
-                    directory=directory,
-                    max_atoms=max_atoms,
-                    grid_size=grid_size,
-                    _split="test",
-                )
+            self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
+            test = self.__class__(
+                directory=directory,
+                max_atoms=max_atoms,
+                grid_size=grid_size,
+                samples=5000,
+                _split="test",
+            )
+            self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
+            valid = self.__class__(
+                directory=directory,
+                max_atoms=max_atoms,
+                grid_size=grid_size,
+                samples=5000,
+                _split="validation",
+            )
+            self.splits["valid"] = RotatingPoolData(valid, 30) if _rotated else valid
 
     def __len__(self):
         return len(self.member_list)
@@ -909,32 +963,9 @@ class DensityDataDir(Dataset):
         density = dp["density"]
         grid = dp["grid"]
 
-        assert (
-            density.shape[0] >= self.grid_size
-        ), f"{density.shape[0]} < {self.grid_size}, idx {index}"
-        assert (
-            density.shape[1] >= self.grid_size
-        ), f"{density.shape[1]} < {self.grid_size}, idx {index}"
-        assert (
-            density.shape[2] >= self.grid_size
-        ), f"{density.shape[2]} < {self.grid_size}, idx {index}"
-
         if self.grid_size:
-            center = self.com(density)
-            center += np.random.randint(-self.grid_size // 2, self.grid_size // 2, 3)
-            x_min, x_max, y_min, y_max, z_min, z_max = self.neighborhood(
-                center, density, self.grid_size
-            )
-            density = density[
-                x_min:x_max,
-                y_min:y_max,
-                z_min:z_max,
-            ].reshape(-1)
-            grid = grid[
-                x_min:x_max,
-                y_min:y_max,
-                z_min:z_max,
-            ].reshape((-1, 3))
+            # density, grid = self.sample_neighborhood(density, grid)
+            density, grid = self.sample(density, grid, self.samples)
 
         datum = DensityDatum(
             density=density,
@@ -1000,10 +1031,48 @@ class DensityDataDir(Dataset):
 
         return x_min, x_max, y_min, y_max, z_min, z_max
 
+    def sample_neighborhood(self, density, grid):
+        assert (
+            density.shape[0] >= self.grid_size
+        ), f"{density.shape[0]} < {self.grid_size}"
+        assert (
+            density.shape[1] >= self.grid_size
+        ), f"{density.shape[1]} < {self.grid_size}"
+        assert (
+            density.shape[2] >= self.grid_size
+        ), f"{density.shape[2]} < {self.grid_size}"
+
+        center = self.com(density)
+        center += np.random.randint(-self.grid_size // 2, self.grid_size // 2, 3)
+        x_min, x_max, y_min, y_max, z_min, z_max = self.neighborhood(
+            center, density, self.grid_size
+        )
+        density = density[
+            x_min:x_max,
+            y_min:y_max,
+            z_min:z_max,
+        ].reshape(-1)
+        grid = grid[
+            x_min:x_max,
+            y_min:y_max,
+            z_min:z_max,
+        ].reshape((-1, 3))
+        return density, grid
+
+    def sample(self, density, grid_pos, num_probes):
+        # Sample probes on the calculated grid
+        probe_choice_max = np.prod(grid_pos.shape[0:3])
+        probe_choice = np.random.randint(probe_choice_max, size=num_probes)
+        probe_choice = np.unravel_index(probe_choice, grid_pos.shape[0:3])
+        probe_pos = grid_pos[probe_choice]
+        probe_target = density[probe_choice]
+        return probe_target, probe_pos
+
 
 import h5py
 from moleculib.molecule.datum import MISATODatum
 from moleculib.molecule.h5_to_pdb import create_pdb
+
 
 class MISATO(Dataset):
     def __init__(self, _split="train") -> None:
@@ -1039,7 +1108,7 @@ class MISATO(Dataset):
                 .split("\n")
             )
 
-        print(f"Loaded {_split} {len(self)} datapoints")
+        print(f"Loading {_split} {len(self)} datapoints")
 
         if _split == "train":
             self.splits = {"train": self}
@@ -1094,10 +1163,169 @@ class MISATO(Dataset):
     def pdb_str(self, index, frame):
         pdb_id = self.index[index]
         dp = self.get_entries(pdb_id)
-        return "\n".join(create_pdb(
-            dp["trajectory_coordinates"][frame],
-            dp["atoms_type"],
-            dp["atoms_number"],
-            dp["atoms_residue"],
-            dp["molecules_begin_atom_index"],
-        ))
+        return "\n".join(
+            create_pdb(
+                dp["trajectory_coordinates"][frame],
+                dp["atoms_type"],
+                dp["atoms_number"],
+                dp["atoms_residue"],
+                dp["molecules_begin_atom_index"],
+            )
+        )
+
+
+import mrcfile
+from sklearn.cluster import KMeans
+
+
+class MISATODensity(Dataset):
+
+    def __init__(
+        self, max_atoms=50, samples=1000, _split="train", _rotated=True
+    ) -> None:
+        super().__init__()
+        self.base_path = "/mas/projects/molecularmachines/db/MISATO"
+        self.data = h5py.File("/mas/projects/molecularmachines/db/MISATO/QM.hdf5")
+        self.samples = samples
+        self.max_atoms = max_atoms
+        self.padding = PairPad()
+        if _split == "train":
+            self.index = (
+                open(os.path.join(self.base_path, "train_MD.txt"), "r")
+                .read()
+                .split("\n")[:-1]
+            )
+        elif _split == "valid":
+            self.index = (
+                open(os.path.join(self.base_path, "val_MD.txt"), "r")
+                .read()
+                .split("\n")[:-1]
+            )
+        elif _split == "test":
+            self.index = (
+                open(os.path.join(self.base_path, "test_MD.txt"), "r")
+                .read()
+                .split("\n")[:-1]
+            )
+
+        sizes = np.load(os.path.join(self.base_path, f"{_split}_sizes.npy"))
+        self.index = np.array(self.index)[
+            np.where((sizes <= max_atoms) & (sizes != -1))
+        ]
+
+        print(f"Loading {_split} {len(self)} datapoints")
+
+        if _split == "train":
+            self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
+            test = self.__class__(
+                max_atoms=max_atoms,
+                samples=5000,
+                _split="test",
+            )
+            self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
+            valid = self.__class__(
+                max_atoms=max_atoms,
+                samples=5000,
+                _split="valid",
+            )
+            self.splits["valid"] = RotatingPoolData(valid, 30) if _rotated else valid
+
+    def __len__(self):
+        return len(self.index)
+
+    def __getitem__(self, index):
+        pdb_id = self.index[index]
+        grid, density, coord, token = self.extract(pdb_id)
+
+        # sample grid and density
+        if self.samples:
+            probes = np.random.randint(0, len(grid), self.samples)
+            grid = grid[probes]
+            density = density[probes]
+
+        datum = DensityDatum(
+            density=density.astype(np.float32) * 1e-2,
+            grid=grid.astype(np.float32),
+            atom_coord=coord.astype(np.float32),
+            atom_token=token.astype(np.int32),
+            atom_mask=np.ones_like(token),
+            bonds=None,
+        )
+
+        datum = self.padding.transform(
+            datum,
+            {
+                "atom_token": self.max_atoms,
+                "atom_coord": self.max_atoms,
+                "atom_mask": self.max_atoms,
+            },
+        )
+
+        return datum
+
+    def extract(self, pdb_id):
+        element = np.array(
+            self.data[pdb_id.upper()]["atom_properties"]["atom_names"]
+        ).astype(np.int32)
+        coord = self.data[pdb_id.upper()]["atom_properties"]["atom_properties_values"][
+            :, [0, 1, 2]
+        ][:, [2, 1, 0]]
+        grid, density = self.read_mrc(
+            os.path.join(
+                self.base_path, "densities_gfn2w_mrc", f"{pdb_id.lower()}.mrc"
+            ),
+            down=1,
+        )
+        grid, density, coord = self.align(grid, density, coord, element)
+
+        return grid, density, coord, element
+
+    def read_mrc(self, mrcfilename, down=1):
+        """
+        Read a mrc file and return the xyz and density values at the given level
+        if given
+        """
+        xyz = []
+        with mrcfile.open(mrcfilename) as emd:
+            nx, ny, nz = emd.header["nx"], emd.header["ny"], emd.header["nz"]
+            dx, dy, dz = emd.voxel_size["x"], emd.voxel_size["y"], emd.voxel_size["z"]
+            xyz = np.meshgrid(
+                np.arange(0, nx * dx, dx),
+                np.arange(0, ny * dy, dy),
+                np.arange(0, nz * dz, dz),
+                indexing="ij",
+            )
+            xyz = np.asarray(xyz)
+            density = emd.data.flatten("F").reshape(nx, ny, nz)
+            return xyz, density
+
+    def align(self, grid, density, coord, element):
+        # rough align
+        cc = grid[:, *density.nonzero()].T.mean(0)
+        ac = coord.mean(0)
+        coord = coord - ac + cc
+
+        hmask = element != 1  # filter hydrogens
+        hcoord = coord[np.where(hmask)]
+
+        grid = grid.reshape((3, -1)).T
+        density = density.flatten()
+
+        kmeans = KMeans(
+            n_clusters=hcoord.shape[0],
+            init=hcoord,
+            n_init=1,
+        )
+        kmeans.fit(grid[np.where(density > 130)])  # keep only high density points
+        centers = kmeans.cluster_centers_
+
+        # fine align
+        shift = centers - hcoord
+        shift_mask = (
+            np.log(((shift - shift.mean(0)) ** 2).sum(-1)) < -3
+        )  # filter out outliers
+        if shift_mask.sum() == 0:
+            return grid, density, coord
+        
+        coord = coord + (shift * shift_mask[:, None]).sum(0) / shift_mask.sum()
+        return grid, density, coord
