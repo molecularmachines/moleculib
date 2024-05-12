@@ -863,7 +863,6 @@ import json
 class DensityDataDir(Dataset):
     def __init__(
         self,
-        directory,
         max_atoms=29,
         grid_size=36,
         samples=1000,
@@ -873,12 +872,12 @@ class DensityDataDir(Dataset):
     ):
         super().__init__(**kwargs)
 
-        self.directory = directory
+        self.directory = "/mas/projects/molecularmachines/db/qm9_vasp"
         self.padding = PairPad()
         self.max_atoms = max_atoms
         self.grid_size = grid_size
         self.samples = samples
-        split = json.load(open(os.path.join(directory, "split.json")))[_split]
+        split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
         self.member_list = []
         for s in range(134):
             self.member_list.extend(
@@ -896,7 +895,6 @@ class DensityDataDir(Dataset):
         if _split == "train":
             self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
             test = self.__class__(
-                directory=directory,
                 max_atoms=max_atoms,
                 grid_size=grid_size,
                 samples=5000,
@@ -904,7 +902,6 @@ class DensityDataDir(Dataset):
             )
             self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
             valid = self.__class__(
-                directory=directory,
                 max_atoms=max_atoms,
                 grid_size=grid_size,
                 samples=5000,
@@ -1195,6 +1192,16 @@ class MISATODensity(Dataset):
                 .read()
                 .split("\n")[:-1]
             )
+            # self.index += (
+            #     open(os.path.join(self.base_path, "val_MD.txt"), "r")
+            #     .read()
+            #     .split("\n")[50:-1]
+            # )
+            # self.index += (
+            #     open(os.path.join(self.base_path, "test_MD.txt"), "r")
+            #     .read()
+            #     .split("\n")[500:-1]
+            # )
         elif _split == "valid":
             self.index = (
                 open(os.path.join(self.base_path, "val_MD.txt"), "r")
@@ -1326,6 +1333,43 @@ class MISATODensity(Dataset):
         )  # filter out outliers
         if shift_mask.sum() == 0:
             return grid, density, coord
-        
+
         coord = coord + (shift * shift_mask[:, None]).sum(0) / shift_mask.sum()
         return grid, density, coord
+
+
+class InterleavedDataset(Dataset):
+    def __init__(self, dataset1, dataset2):
+        self.dataset1 = dataset1
+        self.dataset2 = dataset2
+        self.total_length = len(dataset1) + len(dataset2)
+
+    def __len__(self):
+        return self.total_length
+
+    def __getitem__(self, index):
+        if index < len(self.dataset1):
+            return self.dataset1[index]
+        else:
+            return self.dataset2[index - len(self.dataset1)]
+
+
+class Density(Dataset):
+    def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
+        self.qm9_vasp = DensityDataDir(
+            max_atoms=max_atoms, samples=samples, _rotated=_rotated
+        )
+        self.misato = MISATODensity(
+            max_atoms=max_atoms, samples=samples, _rotated=_rotated
+        )
+        self.splits = {
+            "train": InterleavedDataset(
+                self.qm9_vasp.splits["train"], self.misato.splits["train"]
+            ),
+            "valid": InterleavedDataset(
+                self.qm9_vasp.splits["valid"], self.misato.splits["valid"]
+            ),
+            "test": InterleavedDataset(
+                self.qm9_vasp.splits["test"], self.misato.splits["test"]
+            ),
+        }
