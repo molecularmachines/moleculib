@@ -55,7 +55,7 @@ class ProteinSequence:
             setattr(self, key, value)
 
 
-class ProteinDatum(Pytree, mutable=True):
+class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
@@ -199,7 +199,8 @@ class ProteinDatum(Pytree, mutable=True):
         chain=None,
         model=None,
     ):
-        if format == 'pdb' or filepath.endswith(".pdb"):
+        
+        if str(filepath).endswith(".pdb") or format == 'pdb':
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=1)
             if idcode is None:
@@ -208,7 +209,7 @@ class ProteinDatum(Pytree, mutable=True):
                 idcode=idcode,
                 resolution=None,
             )
-        elif filepath.endswith(".mmtf"): 
+        elif str(filepath).endswith(".mmtf"): 
             mmtf_file = mmtf.MMTFFile.read(filepath)
             atom_array = mmtf.get_structure(mmtf_file, model=1)
             header = dict(
@@ -217,14 +218,24 @@ class ProteinDatum(Pytree, mutable=True):
                 if ("resolution" not in mmtf_file)
                 else mmtf_file["resolution"],
             )
-        elif filepath.endswith(".mmcif"):
+        elif str(filepath).endswith(".bcif"):
+            bcif_file = pdbx.BinaryCIFFile.read(filepath)
+            atom_array = pdbx.get_structure(bcif_file, model=1)
+            header = dict(
+                idcode=None,
+                resolution=None
+            )
+        elif str(filepath).endswith(".mmcif"):
             mmcif_file = pdbx.PDBxFile.read(filepath)
             atom_array = pdbx.get_structure(mmcif_file, model=1)
             header = dict(
                 idcode=None,
                 resolution=None
             )
-
+        else:
+            print(filepath)
+            raise ValueError("File format not supported")
+        
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
     
@@ -506,32 +517,28 @@ class ProteinDatum(Pytree, mutable=True):
 
         return self.set(atom_coord=new_atom_coord)
 
-    def tm_align_to(
-        self,
-        other,
-        window: tuple = None,
-    ):
+    def save_mmcif(self, filepath):
         """
-        Aligns the current protein datum to another protein datum based on TM-align.
+        Saves the protein datum to an mmcif file.
         """
-        from tmtools import tm_align
-
-        mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]        
-        if window is not None:
-            mask = mask &( np.arange(len(mask)) < window[1]) & (np.arange(len(mask)) >= window[0])
-
-        cas_self = self.atom_coord[mask, 1, :]
-        cas_other = other.atom_coord[mask, 1, :]
-        sequence = ''.join(['G' for _ in range(len(cas_self))])
-
-        transform = tm_align(cas_self, cas_other, sequence, sequence)
-        translation, rotation = transform.t, transform.u
-
-        translation_to_center = np.mean(cas_self, axis=0)
-        new_atom_coord = self.atom_coord - translation_to_center
-        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, rotation)
-        # new_atom_coord += translation_to_center
-        # new_atom_coord += translation
-        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
-
-        return self.set(atom_coord=new_atom_coord)
+        def to_all_atom_array(prot):
+            atoms = []
+            for i, coord in enumerate(prot.atom_coord):
+                for j, atom in enumerate(coord):
+                    if prot.atom_mask[i, j]:
+                        atoms.append(
+                            Atom(
+                                atom_name=all_atoms[int(prot.atom_token[i, j])],
+                                coord=atom,
+                                res_id=prot.residue_index[i],
+                                chain_id=prot.chain_token[i],
+                            )
+                        )
+            return AtomArrayConstructor(atoms) 
+        atom_array = to_all_atom_array(self)
+        
+        import biotite.structure.io.pdbx as cif
+        
+        file = cif.CIFFile()
+        cif.set_structure(file, atom_array)
+        file.write(filepath)

@@ -43,11 +43,15 @@ class ProteinCrop(ProteinTransform):
         self.crop_size = crop_size
 
     def transform(self, datum, cut=None):
-        seq_len = len(datum)
+        
+        seq_len = len(datum[0] if type(datum) == list else datum)
         if seq_len <= self.crop_size:
             return datum
         if cut is None:
             cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
+
+        if type(datum) == list:
+            return [self.transform(datum_, cut=cut) for datum_ in datum]
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
@@ -122,6 +126,9 @@ class ProteinPad(ProteinTransform):
         self.random_position = random_position
 
     def transform(self, datum: ProteinDatum) -> ProteinDatum:
+        if type(datum) == list:
+            return [self.transform(datum_) for datum_ in datum]
+        
         seq_len = len(datum)
         
         if seq_len >= self.pad_size:
@@ -132,6 +139,7 @@ class ProteinPad(ProteinTransform):
                 )
             else: 
                 return datum
+
         size_diff = self.pad_size - seq_len
         shift = np.random.randint(0, size_diff)
 
