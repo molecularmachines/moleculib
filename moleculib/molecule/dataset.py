@@ -1339,10 +1339,20 @@ class MISATODensity(Dataset):
 
 
 class InterleavedDataset(Dataset):
-    def __init__(self, dataset1, dataset2):
+    def __init__(self, dataset1, dataset2, _split="train"):
         self.dataset1 = dataset1
         self.dataset2 = dataset2
         self.total_length = len(dataset1) + len(dataset2)
+        if _split == "train":
+            self.splits = {
+                "train": self,
+                "valid": self.__class__(
+                    dataset1.splits["valid"], dataset2.splits["valid"], "valid"
+                ),
+                "test": self.__class__(
+                    dataset1.splits["test"], dataset2.splits["test"], "test"
+                ),
+            }
 
     def __len__(self):
         return self.total_length
@@ -1354,22 +1364,12 @@ class InterleavedDataset(Dataset):
             return self.dataset2[index - len(self.dataset1)]
 
 
-class Density(Dataset):
+class Density(InterleavedDataset):
     def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
-        self.qm9_vasp = DensityDataDir(
+        qm9_vasp = DensityDataDir(
             max_atoms=max_atoms, samples=samples, _rotated=_rotated
         )
-        self.misato = MISATODensity(
+        misato = MISATODensity(
             max_atoms=max_atoms, samples=samples, _rotated=_rotated
         )
-        self.splits = {
-            "train": InterleavedDataset(
-                self.qm9_vasp.splits["train"], self.misato.splits["train"]
-            ),
-            "valid": InterleavedDataset(
-                self.qm9_vasp.splits["valid"], self.misato.splits["valid"]
-            ),
-            "test": InterleavedDataset(
-                self.qm9_vasp.splits["test"], self.misato.splits["test"]
-            ),
-        }
+        super().__init__(qm9_vasp, misato)
