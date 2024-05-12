@@ -1336,16 +1336,13 @@ class InterleavedDataset(Dataset):
 
 class Density(InterleavedDataset):
     def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
-        qm9_vasp = DensityDataDir(
-            max_atoms=max_atoms, samples=samples, _rotated=_rotated
-        )
-        misato = MISATODensity(max_atoms=max_atoms, samples=samples, _rotated=_rotated)
+        qm9_vasp = DensityDataDir(max_atoms=max_atoms, samples=samples, _rotated=False)
+        misato = MISATODensity(max_atoms=max_atoms, samples=samples, _rotated=False)
         super().__init__(qm9_vasp, misato)
-
+        valid = InterleavedDataset(qm9_vasp.splits["valid"], misato.splits["valid"])
+        test = InterleavedDataset(qm9_vasp.splits["test"], misato.splits["test"])
         self.splits = {
-            "train": self,
-            "valid": InterleavedDataset(
-                qm9_vasp.splits["valid"], misato.splits["valid"]
-            ),
-            "test": InterleavedDataset(qm9_vasp.splits["test"], misato.splits["test"]),
+            "train": RotatingPoolData(self, 300) if _rotated else self,
+            "valid": RotatingPoolData(valid, 30) if _rotated else valid,
+            "test": RotatingPoolData(test, 90) if _rotated else test,
         }
