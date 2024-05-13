@@ -223,7 +223,9 @@ class QM9Dataset(Dataset):
         _data=None,
         _max_atoms=29,
         _padding=True,
+        to_split=True
     ):
+        base_path = "/mas/projects/molecularmachines/db/QM9"
         if _data is None:
             data_path = "full_data.pyd" if full_data else "data.pyd"
             with open(os.path.join(base_path, data_path), "rb") as f:
@@ -231,10 +233,11 @@ class QM9Dataset(Dataset):
         if num_train is None or not full_data:
             num_val = len(_data) // 10
             num_train = len(_data) - 2 * num_val
-        num_val = num_val if num_val is not None else len(_data) - num_train - num_test
-        num_test = (
-            num_test if num_test is not None else len(_data) - num_train - num_val
-        )
+        if to_split:
+            num_val = num_val if num_val is not None else len(_data) - num_train - num_test
+            num_test = (
+                num_test if num_test is not None else len(_data) - num_train - num_val
+            )
         if shuffle:
             rng = np.random.default_rng(seed=shuffle)
             rng.shuffle(_data, axis=0)
@@ -256,7 +259,7 @@ class QM9Dataset(Dataset):
         if standardize:
             self.standardize = StandardizeProperties()
         self.use_atom_features = use_atom_features
-        if _split == "train":
+        if _split == "train" and to_split:
             self.splits = {
                 "train": self,
                 "valid": self.__class__(
@@ -868,6 +871,7 @@ class DensityDataDir(Dataset):
         samples=1000,
         _split="train",
         _rotated=True,
+        to_split=True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -885,7 +889,7 @@ class DensityDataDir(Dataset):
                     [
                         f
                         for f in os.listdir(os.path.join(self.directory, str(s)))
-                        if f.endswith(".lz4") and int(f.split(".")[0]) in split
+                        if f.endswith(".lz4") and ((int(f.split(".")[0]) in split) or not to_split)
                     ]
                 )
             )
@@ -960,6 +964,11 @@ class DensityDataDir(Dataset):
         density = dp["density"]
         grid = dp["grid"]
 
+        dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
+        dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
+        dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
+        density = density * (dx * dy * dz) 
+        
         if self.grid_size:
             # density, grid = self.sample_neighborhood(density, grid)
             density, grid = self.sample(density, grid, self.samples)
@@ -1219,7 +1228,7 @@ class MISATODensity(Dataset):
     def __getitem__(self, index):
         pdb_id = self.index[index]
         grid, density, coord, token = self.extract(pdb_id)
-
+        # print(pdb_id)
         # sample grid and density
         if self.samples:
             probes = np.random.randint(0, len(grid), self.samples)
@@ -1227,7 +1236,7 @@ class MISATODensity(Dataset):
             density = density[probes]
 
         datum = DensityDatum(
-            density=density.astype(np.float32) * 1e-2,
+            density=density.astype(np.float32) / 63,
             grid=grid.astype(np.float32),
             atom_coord=coord.astype(np.float32),
             atom_token=token.astype(np.int32),
@@ -1336,11 +1345,11 @@ class InterleavedDataset(Dataset):
 
 class Density(InterleavedDataset):
     def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
-        qm9_vasp = DensityDataDir(max_atoms=max_atoms, samples=samples, _rotated=False)
+        qm9_vasp = DensityDataDir(max_atoms=max_atoms, samples=samples, _rotated=False, to_split=False)
         misato = MISATODensity(max_atoms=max_atoms, samples=samples, _rotated=False)
         super().__init__(qm9_vasp, misato)
-        valid = InterleavedDataset(qm9_vasp.splits["valid"], misato.splits["valid"])
-        test = InterleavedDataset(qm9_vasp.splits["test"], misato.splits["test"])
+        valid = misato.splits["valid"]
+        test = misato.splits["test"]
         self.splits = {
             "train": RotatingPoolData(self, 300) if _rotated else self,
             "valid": RotatingPoolData(valid, 30) if _rotated else valid,
