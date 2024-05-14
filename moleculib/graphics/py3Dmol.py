@@ -7,25 +7,6 @@ import os
 from typing import Callable
 from colour import Color
 
-def plot_py3dmol_grid(
-        grid, 
-        window_size=(250, 250), 
-        **kwargs
-    ):
-    v = py3Dmol.view(
-        viewergrid=(len(grid), len(grid[0])),
-        linked=True,
-        width=len(grid[0]) * window_size[0],
-        height=len(grid) * window_size[1],
-    )
-    for i, row in enumerate(grid):
-        for j, datum in enumerate(row):
-            print("D",datum)
-            datum.plot(v, viewer=(i, j), **kwargs)
-    v.zoomTo()
-    v.setBackgroundColor("rgb(0,0,0)", 0)
-    return v
-
 DEFAULT_COLORS = [
     "cyan",
     "orange",
@@ -53,45 +34,48 @@ def plot_py3dmol(
     return v
 
 
-from tempfile import gettempdir
-import wandb
-import time
-import numpy as np
-
-
-class PlotPy3DmolSamples:
-    def __init__(
-        self, plot_func: Callable, num_samples=7, window_size=(250, 250), pairs=False
+def plot_py3dmol_grid(
+        grid, 
+        window_size=(250, 250), 
+        **kwargs
     ):
-        self.plot_func = plot_func
-        self.num_samples = num_samples
-        self.window_size = window_size
-        self.pairs = pairs
+    v = py3Dmol.view(
+        viewergrid=(len(grid), len(grid[0])),
+        linked=True,
+        width=len(grid[0]) * window_size[0],
+        height=len(grid) * window_size[1],
+    )
+    for i, row in enumerate(grid):
+        for j, datum in enumerate(row):
+            if type(datum) == list:
+                plot_py3dmol_traj(datum, v, viewer=(i, j), **kwargs)
+            else:
+                datum.plot(v, viewer=(i, j), **kwargs)
+    v.zoomTo()
+    v.setBackgroundColor("rgb(0,0,0)", 0)
+    return v
 
-    def __call__(self, run, outputs, batch):
-        # transform 9 outputs in 3x3 grid:
-        outputs = outputs[: self.num_samples]
-        batch = batch[: self.num_samples]
-        if self.pairs:
-            datums = []
-            for output, ground in list(zip(outputs, batch)):
-                datum = MoleculeDatum(
-                    idcode=None,
-                    atom_token=ground.atom_token,
-                    atom_coord=np.array(output.coord),
-                    atom_mask=ground.atom_mask,
-                    bonds=None,
-                )
-                datums.append(datum)
-            v = self.plot_func([datums, batch], window_size=self.window_size)
-        else:
-            v = self.plot_func(outputs, window_size=self.window_size)
-        html = v._make_html()
 
-        html_path = os.path.join(gettempdir(), f"{run.name}.html")
-        with open(html_path, "w") as f:
-            f.write(html)
-        run.log({"samples": wandb.Html(open(html_path))})
+def traj_to_pdb(traj, num_steps=100, head=0, tail=5):
+    models = ""
+    if len(traj) > num_steps:
+        downsample = len(traj) // num_steps
+        traj = traj[::downsample]
+    traj = traj + [traj[-1]] * tail
+    for i, p in enumerate(traj):
+        models += f"MODEL {i + 1}\n"
+        models += p.to_pdb_str()
+        models += "\nENDMDL\n"
+    return models
 
-        time.sleep(1)
-        os.remove(html_path)
+def plot_py3dmol_traj(traj, view, viewer, num_steps=100):
+    models = traj_to_pdb(traj, num_steps=num_steps)
+    view.addModelsAsFrames(models, 'pdb', viewer=viewer)
+    view.setStyle({}, viewer=viewer)
+    view.addStyle({'atom': 'CA'}, {'sphere': {'radius': 0.4, 'color': 'darkgray'}}, viewer=viewer)
+    # view.addStyle({'chain': 'A'}, {'sphere': {'radius': 0.4, 'color': 'darkgray'}}, viewer=viewer)
+    view.addStyle({'chain': 'A'}, {'stick': {}, 'cartoon': {'color': 'spectrum'}}, viewer=viewer)
+    
+    view.setBackgroundColor("rgb(0,0,0)", 0, viewer=viewer)
+    view.animate({'loop': 'forward'}, viewer=viewer)
+    return view

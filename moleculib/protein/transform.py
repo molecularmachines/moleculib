@@ -133,15 +133,12 @@ class ProteinPad(ProteinTransform):
         
         if seq_len >= self.pad_size:
             if type(datum) == ProteinDatum:
-                pad_mask = np.ones(len(datum), dtype=np.bool_)
-                return ProteinDatum(
-                    **vars(datum), pad_mask=pad_mask
-                )
+                pad_mask = np.ones(len(datum), dtype=np.bool_) # allan come back here
+                return ProteinDatum( **vars(datum) )
             else: 
                 return datum
 
         size_diff = self.pad_size - seq_len
-        shift = np.random.randint(0, size_diff)
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
@@ -159,9 +156,10 @@ class ProteinPad(ProteinTransform):
 
         pad_mask = pad_array(np.ones(len(datum)), self.pad_size)
         if self.random_position:
-            pad_mask = np.roll(pad_mask, shift, axis=0)
-        if type(datum) == ProteinDatum:
-            new_datum_["pad_mask"] = pad_mask
+            shift = np.random.randint(0, size_diff)
+            pad_mask = np.roll(pad_mask, shift, axis=0) # allan come back here
+        # if type(datum) == ProteinDatum:
+            # new_datum_["pad_mask"] = pad_mask
 
         new_datum = type(datum)(**new_datum_)
 

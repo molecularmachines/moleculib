@@ -194,23 +194,31 @@ class StandardDihedralDeviation(ChemicalDeviationMetric):
         super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3)
 
 
-if __name__ == "__main__":
-    from moleculib.protein.transform import (
-        DescribeChemistry,
-        AnnotateSecondaryStructure,
-    )
+from moleculib.protein.transform import (
+    DescribeChemistry
+)
 
-    datum = ProteinDatum.fetch_pdb_id("1l2y")
-    transforms = [DescribeChemistry(), AnnotateSecondaryStructure()]
-    for transform in transforms:
-        datum = transform.transform(datum)
-    metrics_pipe = MetricsPipe(
-        [
-            StandardBondDeviation(),
-            StandardAngleDeviation(),
-            StandardDihedralDeviation(),
-            CountClashes(),
-        ]
-    )
 
-    print(metrics_pipe(datum))
+class StandardChemicalDeviation(ProteinMetric):
+    def __init__(self):
+        self.describe_chemistry = DescribeChemistry()
+        self.count_clashes = CountClashes()
+        self.bond_deviation = StandardBondDeviation()
+        self.angle_deviation = StandardAngleDeviation()
+        self.dihedral_deviation = StandardDihedralDeviation()
+
+    def __call__(self, datum: ProteinDatum):
+        if not hasattr(datum, "bonds_list"):
+            datum = self.describe_chemistry.transform(datum)
+
+        bond_deviation = self.bond_deviation(datum)
+        angle_deviation = self.angle_deviation(datum)
+        dihedral_deviation = self.dihedral_deviation(datum)
+        clashes_count = self.count_clashes(datum)
+
+        return {
+            **bond_deviation,
+            **angle_deviation,
+            **dihedral_deviation,
+            **clashes_count,
+        }

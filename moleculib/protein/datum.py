@@ -176,6 +176,13 @@ class ProteinDatum:
             atom_coord=np.zeros((0, 14, 3), dtype=float)
         )
 
+    def replace(self, **kwargs):
+        new_datum = dict()
+        for attr, obj in vars(self).items():
+            new_datum[attr] = obj
+        new_datum.update(kwargs)
+        return ProteinDatum(**new_datum)
+
     def __getitem__(self, idx):
         if type(idx) == int:
             idx = [idx, idx + 1]

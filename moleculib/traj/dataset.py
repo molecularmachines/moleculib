@@ -212,27 +212,36 @@ class AtlasDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        num_steps: int,
-        single_protein: bool = False,
+        num_steps: int = None,
         transform: list = [],
         mode: str = 'next_step',
-    ):
+        single_protein: bool = False,
+        min_sequence_size: int = 12,
+        max_sequence_size: int = 512,
+        expansion_factor: int =  100,
+    ):  
         self.base_path = base_path
         self.num_steps = num_steps
         self.single_protein = single_protein
         
         pdbids = []
-        for pdbid in os.listdir(base_path):
-            if (not os.path.exists(f'{base_path}/{pdbid}/1') or 
-                not os.path.exists(f'{base_path}/{pdbid}/2') or
-                not os.path.exists(f'{base_path}/{pdbid}/3')):
-                continue
-            pdbids.append(pdbid)
+        with open(f'{self.base_path}/sequence_sizes.csv', 'r') as f:
+            for line in f:
+                if 'pdbid' in line:
+                    continue
+                pdbid, sequence_size = line.strip().split(',')
+                if int(sequence_size) < min_sequence_size or int(sequence_size) > max_sequence_size:
+                    continue
+                pdbids.append(pdbid)
+
         self.pdbids = pdbids
         print(f'Detected {len(self.pdbids)} complete trajectories')
 
         if single_protein:
             self.pdbids = [self.pdbids[0]] * 2048 
+        
+        if expansion_factor > 0:  
+            self.pdbids = self.pdbids * expansion_factor
 
         self.splits = { 'train': self }
         super().__init__(transform=transform)
@@ -257,7 +266,7 @@ class AtlasDataset(Dataset):
             pdbid = self.pdbids[i]
             traj_sample = np.random.randint(1, 4)
             path = '{}/{}/{}'.format(self.base_path, pdbid, traj_sample)
-            t = np.random.randint(0, NUM_STEPS - self.num_steps)
+            t = np.random.randint(0, NUM_STEPS - 1)
             path1 = '{}/{}.bcif'.format(path, t)
             protein_datum_i = ProteinDatum.from_filepath(path1)
             return protein_datum_i
