@@ -28,6 +28,12 @@ from .transform import (
 from .utils import pids_file_to_list, extract_rdkit_mol_properties
 from .alphabet import PERIODIC_TABLE, elements
 from rdkit import Chem
+from rdkit.Chem import AllChem
+import random
+from rdkit import RDLogger
+
+# Suppress RDKit prints
+RDLogger.DisableLog("rdApp.*")
 
 
 class PDBMoleculeDataset(Dataset):
@@ -223,7 +229,7 @@ class QM9Dataset(Dataset):
         _data=None,
         _max_atoms=29,
         _padding=True,
-        to_split=True
+        to_split=True,
     ):
         base_path = "/mas/projects/molecularmachines/db/QM9"
         if _data is None:
@@ -234,7 +240,9 @@ class QM9Dataset(Dataset):
             num_val = len(_data) // 10
             num_train = len(_data) - 2 * num_val
         if to_split:
-            num_val = num_val if num_val is not None else len(_data) - num_train - num_test
+            num_val = (
+                num_val if num_val is not None else len(_data) - num_train - num_test
+            )
             num_test = (
                 num_test if num_test is not None else len(_data) - num_train - num_val
             )
@@ -889,13 +897,13 @@ class DensityDataDir(Dataset):
                     [
                         f
                         for f in os.listdir(os.path.join(self.directory, str(s)))
-                        if f.endswith(".lz4") and ((int(f.split(".")[0]) in split) or not to_split)
+                        if f.endswith(".lz4")
+                        and ((int(f.split(".")[0]) in split) or not to_split)
                     ]
                 )
             )
 
         print(f"Loaded {_split} {len(self)} datapoints")
-
         if _split == "train":
             self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
             test = self.__class__(
@@ -964,11 +972,11 @@ class DensityDataDir(Dataset):
         density = dp["density"]
         grid = dp["grid"]
 
-        dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
-        dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
-        dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
-        density = density * (dx * dy * dz) 
-        
+        # dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
+        # dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
+        # dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
+        # density = density * (dx * dy * dz)
+
         if self.grid_size:
             # density, grid = self.sample_neighborhood(density, grid)
             density, grid = self.sample(density, grid, self.samples)
@@ -1081,7 +1089,7 @@ from moleculib.molecule.h5_to_pdb import create_pdb
 
 
 class MISATO(Dataset):
-    def __init__(self, _split="train") -> None:
+    def __init__(self, neighborhood=15.0, _split="train") -> None:
         super().__init__()
         self.base_path = "/mas/projects/molecularmachines/db/MISATO"
         self.data = h5py.File(os.path.join(self.base_path, "MD.hdf5"))
@@ -1097,7 +1105,7 @@ class MISATO(Dataset):
             # "frames_interaction_energy",
             # "frames_bSASA",
         ]
-
+        self.neighborhood = neighborhood
         self.index = (
             open(os.path.join(self.base_path, f"{_split}_MD.txt"), "r")
             .read()
@@ -1148,6 +1156,9 @@ class MISATO(Dataset):
             atoms_residue=atoms_residue,
             atoms_type=atoms_type,
         )
+        if self.neighborhood:
+            return datum.keep_neighborhood(self.neighborhood)
+
         return datum
 
     def get_entries(self, pdbid):
@@ -1345,7 +1356,9 @@ class InterleavedDataset(Dataset):
 
 class Density(InterleavedDataset):
     def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
-        qm9_vasp = DensityDataDir(max_atoms=max_atoms, samples=samples, _rotated=False, to_split=False)
+        qm9_vasp = DensityDataDir(
+            max_atoms=max_atoms, samples=samples, _rotated=False, to_split=False
+        )
         misato = MISATODensity(max_atoms=max_atoms, samples=samples, _rotated=False)
         super().__init__(qm9_vasp, misato)
         valid = misato.splits["valid"]
@@ -1355,3 +1368,72 @@ class Density(InterleavedDataset):
             "valid": RotatingPoolData(valid, 30) if _rotated else valid,
             "test": RotatingPoolData(test, 90) if _rotated else test,
         }
+
+from moleculib.molecule.datum import ReactDatum
+
+class React(Dataset):
+    def __init__(self, max_atoms=70):
+        self.base_path = "/mas/projects/molecularmachines/db/enzymemap/"
+        self.data = json.load(
+            open(os.path.join(self.base_path, "enzymemap_v2_brenda2_blip.json", "rb"))
+        )
+        self.max_atoms = max_atoms
+        self.padding = PairPad()
+        self.index = np.load(os.path.join(self.base_path, "sizes2.npy"))
+
+        self.index = np.where(self.index <= self.max_atoms)[0]
+
+    def __len__(self):
+        return len(self.index)
+
+    def generate_and_select_conformer(self, smiles, num_conformers=10):
+        smiles = [r for r in smiles if r != "[H+]"]
+        smiles = ".".join(smiles)
+        mol = Chem.MolFromSmiles(smiles)
+        AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers, randomSeed=0xF00D)
+        conf_ids = [conf.GetId() for conf in mol.GetConformers()]
+        if len(conf_ids) == 0:
+            return np.zeros(0)
+        selected_conf_id = random.choice(conf_ids)
+        conf = mol.GetConformer(selected_conf_id)
+        positions = conf.GetPositions()
+        mapping_numbers = [atom.GetAtomMapNum() for atom in mol.GetAtoms()]
+        atomic_num = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
+        atom_data = np.array(
+            [
+                (mapping_numbers[i], atomic_num[i], *positions[i])
+                for i in range(len(mapping_numbers))
+            ]
+        )
+        sorted_atom_data = atom_data[atom_data[:, 0].argsort()]
+        return sorted_atom_data[:, 1:]
+
+    def __getitem__(self, index):
+        entry = self.data[self.index[index]]
+        reactants = entry["mapped_reactants"]
+        products = entry["mapped_products"]
+        reactants = self.generate_and_select_conformer(reactants)
+        products = self.generate_and_select_conformer(products)
+        token = reactants[:, 0]
+        coord1 = reactants[:, 1:]
+        coord2 = products[:, 1:]
+        mask = np.ones_like(token)
+
+        datum = ReactDatum(
+            token=token,
+            reactants=coord1,
+            products=coord2,
+            mask=mask,
+        )
+
+        datum = self.padding.transform(
+            datum,
+            {
+                "token": self.max_atoms,
+                "reactants": self.max_atoms,
+                "products": self.max_atoms,
+                "mask": self.max_atoms,
+            },
+        )
+
+        return datum

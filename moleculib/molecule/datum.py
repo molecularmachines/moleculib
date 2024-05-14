@@ -494,3 +494,12 @@ class MISATODatum(MoleculeDatum):
 
 
 register_pytree(MISATODatum)
+
+class ReactDatum(MoleculeDatum):
+    def __init__(self, reactants, products, token, mask):
+        self.reactants = reactants
+        self.products = products
+        self.token = token
+        self.mask = mask
+
+register_pytree(ReactDatum)
