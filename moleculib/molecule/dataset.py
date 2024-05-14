@@ -10,7 +10,6 @@ import numpy as np
 import biotite
 import pandas as pd
 from pandas import Series
-from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
 from .datum import PDBMoleculeDatum, QM9Datum, MoleculeDatum, RSDatum
@@ -36,7 +35,7 @@ from rdkit import RDLogger
 RDLogger.DisableLog("rdApp.*")
 
 
-class PDBMoleculeDataset(Dataset):
+class MoleculeDataset:
     """
     Holds MoleculeDatum dataset with specified PDB IDs
 
