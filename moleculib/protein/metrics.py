@@ -132,10 +132,11 @@ def measure_dihedrals(coords, indices):
 
 
 class ChemicalDeviationMetric(ProteinMetric):
-    def __init__(self, key, measure, var_clip=0.0):
+    def __init__(self, key, measure, var_clip=0.0, num_interactive_atoms=1):
         self.key = key
         self.measure = measure
         self.var_clip = var_clip
+        self.num_interactive_atoms = num_interactive_atoms
 
     def __call__(self, datum: ProteinDatum):
         coords = rearrange(datum.atom_coord, "r a c -> (r a) c")
@@ -159,45 +160,64 @@ class ChemicalDeviationMetric(ProteinMetric):
         values = rearrange(values, "(r a) -> r a", r=datum.residue_token.shape[0])
 
         error = jnp.square(values - standard_values) * mask
-        error = error.sum((-1, -2)) / (mask.sum((-1, -2)) + 1e-6)
+
+        error_internal = error[..., :-self.num_interactive_atoms]
+        mask_internal = mask[..., :-self.num_interactive_atoms]
+
+        error_external = error[..., -self.num_interactive_atoms:]
+        mask_external = mask[..., -self.num_interactive_atoms:]
+
+        error_internal = error_internal.sum((-1, -2)) / (mask_internal.sum((-1, -2)) + 1e-6)
+        error_external = error_external.sum((-1, -2)) / (mask_external.sum((-1, -2)) + 1e-6)
+
         out = dict()
-        out[f"{self.key}_deviation"] = error
+        out[f"peptide_{self.key}_deviation"] = error_external
+        out[f"internal_{self.key}_deviation"] = error_internal
 
         return out
 
 
 class StandardBondDeviation(ChemicalDeviationMetric):
     def __init__(self):
-        super().__init__("bonds", measure_bonds)
+        super().__init__("bonds", measure_bonds, num_interactive_atoms=1)
 
 
 class StandardAngleDeviation(ChemicalDeviationMetric):
     def __init__(self):
-        super().__init__("angles", measure_angles)
+        super().__init__("angles", measure_angles, num_interactive_atoms=2)
+
 
 
 class StandardDihedralDeviation(ChemicalDeviationMetric):
     def __init__(self, var_clip=0.1):
-        super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip)
+        super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3)
 
 
-if __name__ == "__main__":
-    from moleculib.protein.transform import (
-        DescribeChemistry,
-        AnnotateSecondaryStructure,
-    )
+from moleculib.protein.transform import (
+    DescribeChemistry
+)
 
-    datum = ProteinDatum.fetch_pdb_id("1l2y")
-    transforms = [DescribeChemistry(), AnnotateSecondaryStructure()]
-    for transform in transforms:
-        datum = transform.transform(datum)
-    metrics_pipe = MetricsPipe(
-        [
-            StandardBondDeviation(),
-            StandardAngleDeviation(),
-            StandardDihedralDeviation(),
-            CountClashes(),
-        ]
-    )
 
-    print(metrics_pipe(datum))
+class StandardChemicalDeviation(ProteinMetric):
+    def __init__(self):
+        self.describe_chemistry = DescribeChemistry()
+        self.count_clashes = CountClashes()
+        self.bond_deviation = StandardBondDeviation()
+        self.angle_deviation = StandardAngleDeviation()
+        self.dihedral_deviation = StandardDihedralDeviation()
+
+    def __call__(self, datum: ProteinDatum):
+        if not hasattr(datum, "bonds_list"):
+            datum = self.describe_chemistry.transform(datum)
+
+        bond_deviation = self.bond_deviation(datum)
+        angle_deviation = self.angle_deviation(datum)
+        dihedral_deviation = self.dihedral_deviation(datum)
+        clashes_count = self.count_clashes(datum)
+
+        return {
+            **bond_deviation,
+            **angle_deviation,
+            **dihedral_deviation,
+            **clashes_count,
+        }
