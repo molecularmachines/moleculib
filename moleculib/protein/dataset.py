@@ -10,14 +10,14 @@ import biotite
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 
 from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
 from .transform import ProteinTransform
 from .utils import pids_file_to_list
-from tqdm import tqdm
+
+from ..abstract.dataset import PreProcessedDataset
 
 MAX_COMPLEX_SIZE = 32
 PDB_HEADER_FIELDS = [
@@ -32,7 +32,7 @@ PDB_METADATA_FIELDS = PDB_HEADER_FIELDS + CHAIN_COUNTER_FIELDS
 SAMPLE_PDBS = ["1C5E", "1C9O", "1CKU", "1CSE", "7ZKR", "7ZYS", "8AJQ", "8AQL", "8DCH"]
 
 
-class PDBDataset(Dataset):
+class PDBDataset:
     """
     Holds ProteinDatum dataset with specified PDB IDs
 
@@ -281,45 +281,7 @@ class MonomerDataset(PDBDataset):
         values = list(map(_cut_chain, values))
         return ProteinDatum(*values)
 
-
-from functools import reduce
-import os
-import pickle
-from typing import Callable, List
-
-from tqdm.contrib.concurrent import process_map
-
-class _TransformWrapper:
-    def __init__(self, ds, transform):
-        self.ds = ds
-        self.transform = transform
-    def __len__(self):
-        return len(self.ds)
-    def __getitem__(self, idx):
-        return reduce(lambda x, t: t.transform(x), self.transform, self.ds[idx])
-
-
-class PreProcessedDataset:
-
-    def __init__(self, splits, transform: List[Callable] = None, shuffle=True, pre_transform=False):
-        self.splits = splits
-
-        if shuffle:
-            for split, data in list(self.splits.items()):
-                print(f'Shuffling {split}...')
-                self.splits[split] = np.random.permutation(data)
-                
-        self.transform = transform 
-        if pre_transform:
-            if self.transform is None:
-                raise ValueError('Cannot pre-transform without a transform')
-            for split, data in list(self.splits.items()):
-                self.splits[split] = [ reduce(lambda x, t: t.transform(x), self.transform, datum) for datum in tqdm(data) ]
-        else:
-            if self.transform is not None:
-                for split, data in list(self.splits.items()):
-                    self.splits[split] = _TransformWrapper(data, self.transform)
-
+from typing import Callable
 
 class TinyPDBDataset(PreProcessedDataset):
 

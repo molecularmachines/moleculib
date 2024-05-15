@@ -20,6 +20,21 @@ class ProteinMetric:
         raise NotImplementedError("ProteinMetric is abstract")
 
 
+class AlignedRootMeanSquareDeviation(ProteinMetric):
+
+    def __call__(self, datum, other_datum):
+        datum = datum.align_to(other_datum)
+        other_datum = other_datum.align_to(datum)
+        other_ca_coord = other_datum.atom_coord[..., 1, :]
+        ca_coord = datum.atom_coord[..., 1, :]
+        mask = other_datum.atom_mask[..., 1] & datum.atom_mask[..., 1]
+        diff = jnp.square(ca_coord - other_ca_coord).sum(-1)
+        diff = diff[mask]
+        diff = diff.sum()
+        diff = diff / (mask.sum() + 1e-6)
+        return {"rmsd": diff ** 0.5}
+
+
 class CountClashes(ProteinMetric):
     def __init__(self, radius_multiplier=0.8, smooth: bool = False):
         self.radius_multiplier = radius_multiplier
@@ -177,25 +192,33 @@ class StandardAngleDeviation(ChemicalDeviationMetric):
 class StandardDihedralDeviation(ChemicalDeviationMetric):
     def __init__(self, var_clip=0.1):
         super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3)
+        
 
-if __name__ == "__main__":
-    from moleculib.protein.transform import (
-        DescribeChemistry,
-        AnnotateSecondaryStructure,
-    )
-    from moleculib.metrics import MetricsPipe
+from moleculib.protein.transform import (
+    DescribeChemistry
+)
 
-    datum = ProteinDatum.fetch_pdb_id("1l2y")
-    transforms = [DescribeChemistry(), AnnotateSecondaryStructure()]
-    for transform in transforms:
-        datum = transform.transform(datum)
-    metrics_pipe = MetricsPipe(
-        [
-            StandardBondDeviation(),
-            StandardAngleDeviation(),
-            StandardDihedralDeviation(),
-            CountClashes(),
-        ]
-    )
 
-    print(metrics_pipe(datum))
+class StandardChemicalDeviation(ProteinMetric):
+    def __init__(self):
+        self.describe_chemistry = DescribeChemistry()
+        self.count_clashes = CountClashes()
+        self.bond_deviation = StandardBondDeviation()
+        self.angle_deviation = StandardAngleDeviation()
+        self.dihedral_deviation = StandardDihedralDeviation()
+
+    def __call__(self, datum: ProteinDatum):
+        if not hasattr(datum, "bonds_list"):
+            datum = self.describe_chemistry.transform(datum)
+
+        bond_deviation = self.bond_deviation(datum)
+        angle_deviation = self.angle_deviation(datum)
+        dihedral_deviation = self.dihedral_deviation(datum)
+        clashes_count = self.count_clashes(datum)
+
+        return {
+            **bond_deviation,
+            **angle_deviation,
+            **dihedral_deviation,
+            **clashes_count,
+        }

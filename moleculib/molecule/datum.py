@@ -1,5 +1,6 @@
 import numpy as np
 from .alphabet import elements
+from .alphabet import PERIODIC_TABLE
 
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
@@ -11,7 +12,7 @@ from biotite.structure import get_molecule_masks
 from moleculib.molecule.h5_to_pdb import create_pdb
 from copy import deepcopy
 import os
-
+import os
 
 class MoleculeDatum:
     def __init__(
@@ -66,6 +67,16 @@ class MoleculeDatum:
         file = mol.MOLFile()
         file.set_structure(self.to_atom_array())
         return str(file)
+      
+   def plot(self, view, viewer=None, color=None):
+      if viewer is None:
+          viewer = (0, 0)
+      view.addModel(self.to_sdf_str(), 'sdf', viewer=viewer)
+      if color is not None:
+          view.addStyle({'model': -1}, {'stick': {'color': color}, 'sphere': {'color': color, 'radius': 0.5}}, viewer=viewer)
+      else:
+          view.addStyle({'model': -1}, {'sphere': {'radius': 0.5},  'stick': {}}, viewer=viewer)
+      return view
 
 
 register_pytree(MoleculeDatum)
@@ -135,35 +146,27 @@ class RSDatum(MoleculeDatum):
 
 register_pytree(RSDatum)
 
+import biotite.structure.io.pdb as pdb
+from biotite.structure import connect_via_distances
+from biotite.database import rcsb
 
-class PDBMoleculeDatum(MoleculeDatum):
-    """
-    Incorporates molecular data to MoleculeDatum
-    """
 
+
+class PDBMoleculeDatum:
+    
     def __init__(
         self,
         idcode: str,
-        resolution: float,
-        chain_id: np.ndarray,
-        res_id: np.ndarray,
-        res_name: np.ndarray,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_name: np.ndarray,
-        b_factor: np.ndarray,
         atom_mask: np.ndarray,
         bonds: np.ndarray,
     ):
         self.idcode = idcode
-        self.resolution = resolution
-        self.chain_id = chain_id
-        self.res_id = res_id
-        self.res_name = res_name
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_name = atom_name
-        self.b_factor = b_factor
         self.atom_mask = atom_mask
         self.bonds = bonds
 
@@ -187,7 +190,7 @@ class PDBMoleculeDatum(MoleculeDatum):
         )
 
     @classmethod
-    def from_filepath(cls, filepath, molecule_idx=None):
+    def from_filepath(cls, filepath, ligand=None):
         if filepath.endswith(".mmtf"):
             mmtf_file = mmtf.MMTFFile.read(filepath)
             atom_array = pdb_to_atom_array(mmtf_file)
@@ -197,26 +200,39 @@ class PDBMoleculeDatum(MoleculeDatum):
                     None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
                 ),
             )
+            atom_array = atom_array[atom_array.hetero & (atom_array.res_name != 'HOH')]
+            ligand_arrays = [] 
+            ligand_names = np.unique(atom_array.res_name)
+            for ligand_name in ligand_names:
+                if ligand is not None and ligand_name != ligand:
+                    continue
+                ligand_arrays.append(
+                    atom_array[atom_array.res_name == ligand_name]
+            return [
+              cls.from_atom_array(atom_array, header=header)
+              for atom_array in ligand_arrays
+            ]
         elif filepath.endswith(".sdf"):
             mol_file = mol.MOLFile.read(filepath)
             atom_array = mol_file.get_structure()
             header = dict(idcode="allancomebackhere", resolution=None)
+            return cls.from_atom_array(atom_array, header=header)
         else:
             raise NotImplementedError(
                 f"File type {filepath.split('.')[-1]} is not supported"
-            )
-        return cls.from_atom_array(atom_array, header=header, molecule_idx=molecule_idx)
+        
+          
+      
+    @classmethod
+    def fetch_pdb_id(cls, id, save_path=None, ligand=None):
+        filepath = rcsb.fetch(id, "mmtf", save_path)
+        return cls.from_filepath(filepath, ligand=ligand)
 
     @classmethod
-    def fetch_pdb_id(cls, id, save_path=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path, verbose=False)
-        return cls.from_filepath(filepath)
-
-    @classmethod
-    def from_atom_array(cls, atom_array, header, molecule_idx=None):
+    def from_atom_array(cls, atom_array, header):
         if atom_array.array_length() == 0:
             return cls.empty_molecule()
-
+              
         # (Ilan) to add other attributes from mendeleev for atoms
         # atom_attrs = ["spin", "mass_number",...] #other attributes from mendeleev
         # atom_extract = dict()
@@ -226,48 +242,18 @@ class PDBMoleculeDatum(MoleculeDatum):
         atom_array.element[atom_array.element == "D"] = (
             "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
         )
+        atom_token = np.array(
+            [PERIODIC_TABLE.index(el) for el in atom_array.element]
+        )
 
-        try:
-            orig_indexes = (
-                elements.reset_index()
-                .set_index("symbol")
-                .loc[atom_array.element, "index"]
-            )
-        except KeyError as e:
-            print(atom_array)
-            print(e)
-            raise e
-        atom_token = elements.loc[orig_indexes]["atomic_number"].to_numpy()
+        atom_mask = np.ones(len(atom_token), dtype=bool)
+        bonds = connect_via_distances(atom_array)
 
-        atom_mask = get_molecule_masks(atom_array)[0]
-        bonds = atom_array.bonds._bonds
-
-        if molecule_idx is not None:
-            return cls(
-                idcode=header["idcode"],
-                resolution=header["resolution"],
-                chain_id=atom_array.chain_id[atom_mask[molecule_idx]][0],
-                res_id=atom_array.res_id[atom_mask[molecule_idx]][0],
-                res_name=atom_array.res_name[atom_mask[molecule_idx]][0],
-                atom_token=atom_token[atom_mask[molecule_idx]],
-                atom_coord=atom_array.coord[atom_mask[molecule_idx]],
-                atom_name=atom_array.atom_name[atom_mask[molecule_idx]],
-                b_factor=atom_array.b_factor[atom_mask[molecule_idx]],
-                atom_mask=np.full(np.sum(atom_mask[molecule_idx]), 1),
-                bonds=atom_array.bonds[
-                    atom_mask[molecule_idx]
-                ].bond_type_matrix(),  # BondType
-            )
         return cls(
             idcode=header["idcode"],
-            resolution=header["resolution"],
-            chain_id=atom_array.chain_id,
-            res_id=atom_array.res_id,
-            res_name=atom_array.res_name,
             atom_token=atom_token,
             atom_coord=atom_array.coord,
             atom_name=atom_array.atom_name,
-            b_factor=atom_array.b_factor if hasattr(atom_array, "b_factor") else None,
             atom_mask=atom_mask,
             bonds=bonds,
         )
@@ -277,7 +263,7 @@ class PDBMoleculeDatum(MoleculeDatum):
         coords = self.atom_coord[self.atom_mask]
         atoms = []
         for coord, token in zip(coords, tokens):
-            el = elements.iloc[token]
+            el = PERIODIC_TABLE[token]
             atom = Atom(
                 coord,
                 chain_id="A",
@@ -287,10 +273,11 @@ class PDBMoleculeDatum(MoleculeDatum):
             )
             atoms.append(atom)
         arr = array(atoms)
-        bonds = BondList(len(atoms))
-        if self.bonds is not None:
-            bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
-        arr.bonds = bonds
+        # bonds = BondList(len(atoms))
+        # if self.bonds is not None:
+            # print(self.bonds.shape)
+            # bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
+        arr.bonds = self.bonds
         return arr
 
     def to_sdf_str(self):
