@@ -69,14 +69,14 @@ class MoleculeDatum:
         return str(file)
       
    def plot(self, view, viewer=None, color=None):
-      if viewer is None:
-          viewer = (0, 0)
-      view.addModel(self.to_sdf_str(), 'sdf', viewer=viewer)
-      if color is not None:
-          view.addStyle({'model': -1}, {'stick': {'color': color}, 'sphere': {'color': color, 'radius': 0.5}}, viewer=viewer)
-      else:
-          view.addStyle({'model': -1}, {'sphere': {'radius': 0.5},  'stick': {}}, viewer=viewer)
-      return view
+        if viewer is None:
+            viewer = (0, 0)
+        view.addModel(self.to_sdf_str(), 'sdf', viewer=viewer)
+        if color is not None:
+            view.addStyle({'model': -1}, {'stick': {'color': color}, 'sphere': {'color': color, 'radius': 0.5}}, viewer=viewer)
+        else:
+            view.addStyle({'model': -1}, {'sphere': {'radius': 0.5},  'stick': {}}, viewer=viewer)
+        return view
 
 
 register_pytree(MoleculeDatum)
