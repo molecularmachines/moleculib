@@ -1,5 +1,5 @@
 """MISATO, a database for protein-ligand interactions
-    Copyright (C) 2023  
+    Copyright (C) 2023
                         Till Siebenmorgen  (till.siebenmorgen@helmholtz-munich.de)
                         Sabrina Benassou   (s.benassou@fz-juelich.de)
                         Filipe Menezes     (filipe.menezes@helmholtz-munich.de)
@@ -16,7 +16,7 @@
     Lesser General Public License for more details.
 
     You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software 
+    License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA"""
 
 import pickle

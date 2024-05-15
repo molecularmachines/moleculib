@@ -1,9 +1,9 @@
 from .datum import MoleculeDatum, QM9Datum
 import numpy as np
 from .utils import pad_array
-from functools import partial
 import jax.numpy as jnp
 from scipy.sparse.csgraph import laplacian
+from moleculib.molecule.alphabet import elements
 
 
 class MoleculeTransform:
@@ -93,9 +93,7 @@ class PairPad(MoleculeTransform):
                 pad_size = attrs[attr]
                 if type(obj) == np.ndarray:
                     if attr == "bonds":
-                        obj = pad_array(
-                            obj, int(pad_size * pad_size // 2), value=-1
-                        )
+                        obj = pad_array(obj, int(pad_size * pad_size // 2), value=-1)
                     elif attr in ["adjacency", "laplacian"]:
                         diff = pad_size - obj.shape[0]
                         obj = np.pad(obj, ((0, diff), (0, diff)))
@@ -106,6 +104,7 @@ class PairPad(MoleculeTransform):
         new_datum = datum.__class__(**new_datum_)
         return new_datum
 
+
 class Centralize(MoleculeTransform):
     def transform(self, datum):
         idxs = np.where(datum.atom_mask)
@@ -114,11 +113,15 @@ class Centralize(MoleculeTransform):
         )
         return datum
 
+
 class SingleBonds(MoleculeTransform):
     def transform(self, datum):
         bonds = datum.bonds
-        datum.bonds = np.column_stack([bonds[:,:-1], np.ones((bonds.shape[0],1))]).astype(np.int32)
+        datum.bonds = np.column_stack(
+            [bonds[:, :-1], np.ones((bonds.shape[0], 1))]
+        ).astype(np.int32)
         return datum
+
 
 class CastToBFloat(MoleculeTransform):
     def transform(self, datum):
@@ -153,11 +156,10 @@ class Permuter(MoleculeTransform):
     def transform(self, datum: MoleculeDatum) -> MoleculeDatum:
         # np.random.seed(self.seed)
         permutation = np.random.permutation(len(datum.atom_token))
-        
+
         tokens = datum.atom_token
         coords = datum.atom_coord
         bonds = datum.bonds
-
 
         tokens = tokens[permutation]
         coords = coords[permutation]
@@ -182,7 +184,7 @@ class SortAtoms(MoleculeTransform):
         coords = datum.atom_coord
         bonds = datum.bonds
 
-        sorted_idxs = np.argsort(np.ma.masked_array(tokens, 1-datum.atom_mask))
+        sorted_idxs = np.argsort(np.ma.masked_array(tokens, 1 - datum.atom_mask))
 
         tokens = tokens[sorted_idxs]
         coords = coords[sorted_idxs]
@@ -198,9 +200,6 @@ class SortAtoms(MoleculeTransform):
                 bonds=bonds,
             )
         return datum
-
-
-from moleculib.molecule.alphabet import elements
 
 
 class AtomFeatures(MoleculeTransform):
@@ -391,10 +390,10 @@ class StandardizeProperties(MoleculeTransform):
             ),
         )
 
-        self.mins_dict = {i:v for i,v in enumerate(self.mins)}
-        self.maxs_dict = {i:v for i,v in enumerate(self.maxs)}
-        self.means_dict = {i:v for i,v in enumerate(self.means)}
-        self.stds_dict = {i:v for i,v in enumerate(self.stds)}
+        self.mins_dict = {i: v for i, v in enumerate(self.mins)}
+        self.maxs_dict = {i: v for i, v in enumerate(self.maxs)}
+        self.means_dict = {i: v for i, v in enumerate(self.means)}
+        self.stds_dict = {i: v for i, v in enumerate(self.stds)}
 
     def transform(self, datum: QM9Datum) -> QM9Datum:
         new_datum_ = dict()

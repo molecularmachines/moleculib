@@ -99,7 +99,7 @@ def plot_dock(grid, window_size=(400, 400), spin=False):
             v.addModel(datum.protein_pdb_str(), "pdb", viewer=(i, j))
             v.setStyle(
                 {
-                    "cartoon": {"color": "spectrum"}, 
+                    "cartoon": {"color": "spectrum"},
                     # "stick": {"radius": 0.04}
                 },
                 viewer=(i, j),
@@ -126,6 +126,7 @@ def plot_dock(grid, window_size=(400, 400), spin=False):
         v.spin()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
+
 
 # def plot_density(grid, window_size=(400, 400)):
 
@@ -160,7 +161,7 @@ def register_pytree(Datum):
         went_through = False
         for attr, obj in vars(datum).items():
             # NOTE(Allan): come back here and make it universal
-            if (type(obj) == object) or (
+            if (type(obj) is object) or (
                 (type(obj) in ACCEPTED_FORMATS) and (obj.dtype in ACCEPTED_TYPES)
             ):
                 went_through = True

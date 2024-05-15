@@ -4,7 +4,7 @@ import traceback
 from functools import partial
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List, Union
+from typing import List, Union, Callable
 from scipy.sparse.csgraph import laplacian
 import numpy as np
 import biotite
@@ -13,7 +13,6 @@ from pandas import Series
 from torch.utils.data import Dataset
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
-from .datum import PDBMoleculeDatum, QM9Datum, MoleculeDatum, RSDatum
 from .transform import (
     MoleculeTransform,
     MoleculePad,
@@ -26,11 +25,36 @@ from .transform import (
     PairPad,
 )
 from .utils import pids_file_to_list, extract_rdkit_mol_properties
-from .alphabet import PERIODIC_TABLE, elements
+from .alphabet import elements
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import random
 from rdkit import RDLogger
+from functools import reduce
+import lmdb
+from moleculib.molecule.datum import (
+    CrossdockDatum,
+    PDBBindDatum,
+    PDBMoleculeDatum,
+    QM9Datum,
+    RSDatum,
+    ReactDatum,
+    MISATODatum,
+    DensityDatum,
+)
+import biotite.structure.io.pdb as pdb
+import biotite.structure.io as strucio
+import mrcfile
+from sklearn.cluster import KMeans
+import json
+from ase.calculators.vasp import VaspChargeDensity
+import lz4.frame
+import tempfile
+import h5py
+from moleculib.molecule.h5_to_pdb import create_pdb
+import multiprocessing
+import threading
+import logging
 
 # Suppress RDKit prints
 RDLogger.DisableLog("rdApp.*")
@@ -441,14 +465,6 @@ class RSDataset(Dataset):
         return datum
 
 
-from functools import reduce
-import os
-import pickle
-from typing import Callable, List
-
-from tqdm.contrib.concurrent import process_map
-
-
 class _TransformWrapper:
     def __init__(self, ds, transform):
         self.ds = ds
@@ -498,10 +514,6 @@ class QM9Processed(PreProcessedDataset):
             print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
-
-
-import lmdb
-from moleculib.molecule.datum import CrossdockDatum
 
 
 class CrossdockDataset(Dataset):
@@ -624,12 +636,6 @@ class CrossdockDataset(Dataset):
         key = self.keys[idx]
         data = pickle.loads(self.db.begin().get(eval(f"b'{key}'")))
         return data, key
-
-
-import biotite.structure.io.pdb as pdb
-from moleculib.molecule.datum import PDBBindDatum
-import biotite.structure.io as strucio
-import pickle
 
 
 class PDBBindDataset(Dataset):
@@ -772,11 +778,6 @@ class PDBBindDataset(Dataset):
         )
 
 
-from ase.calculators.vasp import VaspChargeDensity
-import lz4.frame
-import tempfile
-
-
 def _decompress_file(filepath):
     with lz4.frame.open(filepath, mode="rb") as fp:
         filecontent = fp.read()
@@ -810,12 +811,6 @@ def _calculate_grid_pos(density, origin, cell):
     grid_pos = np.dot(grid_pos, cell)
     grid_pos = grid_pos + origin
     return grid_pos
-
-
-from moleculib.molecule.datum import DensityDatum
-import multiprocessing
-import threading
-import logging
 
 
 def rotating_pool_worker(dataset, rng, queue):
@@ -866,9 +861,6 @@ class RotatingPoolData(Dataset):
 
     def __getitem__(self, index):
         return self.data_pool[index]
-
-
-import json
 
 
 class DensityDataDir(Dataset):
@@ -1083,11 +1075,6 @@ class DensityDataDir(Dataset):
         return probe_target, probe_pos
 
 
-import h5py
-from moleculib.molecule.datum import MISATODatum
-from moleculib.molecule.h5_to_pdb import create_pdb
-
-
 class MISATO(Dataset):
     def __init__(self, neighborhood=15.0, _split="train") -> None:
         super().__init__()
@@ -1179,10 +1166,6 @@ class MISATO(Dataset):
                 dp["molecules_begin_atom_index"],
             )
         )
-
-
-import mrcfile
-from sklearn.cluster import KMeans
 
 
 class MISATODensity(Dataset):
@@ -1369,7 +1352,6 @@ class Density(InterleavedDataset):
             "test": RotatingPoolData(test, 90) if _rotated else test,
         }
 
-from moleculib.molecule.datum import ReactDatum
 
 class React(Dataset):
     def __init__(self, max_atoms=70):

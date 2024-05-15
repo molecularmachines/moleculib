@@ -1,14 +1,12 @@
-from moleculib.protein.datum import ProteinDatum
-from moleculib.molecule.datum import MoleculeDatum
-import py3Dmol
 import os
 from typing import Callable
-
 from tempfile import gettempdir
 import wandb
 import time
 import numpy as np
 from copy import deepcopy
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
 
 class PlotPy3DmolSamples:
@@ -97,9 +95,6 @@ class PlotPy3DmolSamples:
 #         time.sleep(1)
 #         os.remove(html_path)
 #         return
-
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
 
 
 class PlotDensity:

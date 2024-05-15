@@ -5,7 +5,12 @@ import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
 from biotite.structure import Atom, array
 from biotite.structure import BondList
-from .utils import register_pytree
+from .utils import register_pytree, pdb_to_atom_array
+from biotite.database import rcsb
+from biotite.structure import get_molecule_masks
+from moleculib.molecule.h5_to_pdb import create_pdb
+from copy import deepcopy
+import os
 
 
 class MoleculeDatum:
@@ -129,11 +134,6 @@ class RSDatum(MoleculeDatum):
 
 
 register_pytree(RSDatum)
-
-
-from biotite.database import rcsb
-from biotite.structure import get_molecule_masks
-from .utils import pdb_to_atom_array
 
 
 class PDBMoleculeDatum(MoleculeDatum):
@@ -299,9 +299,6 @@ class PDBMoleculeDatum(MoleculeDatum):
         return str(file)
 
 
-import os
-
-
 class CrossdockDatum(MoleculeDatum):
     AA_NAME_SYM = {
         "ALA": "A",
@@ -405,8 +402,6 @@ class DensityDatum(MoleculeDatum):
 
 register_pytree(DensityDatum)
 
-from moleculib.molecule.h5_to_pdb import create_pdb
-from copy import deepcopy
 
 class MISATODatum(MoleculeDatum):
     def __init__(self, *args, **kwargs):
@@ -418,7 +413,6 @@ class MISATODatum(MoleculeDatum):
         self.atoms_type = kwargs.pop("atoms_type")
 
         super().__init__(*args, **kwargs)
-
 
     def replace(self, **kwargs):
         _vars = deepcopy(vars(self))
@@ -495,11 +489,13 @@ class MISATODatum(MoleculeDatum):
 
 register_pytree(MISATODatum)
 
+
 class ReactDatum(MoleculeDatum):
     def __init__(self, reactants, products, token, mask):
         self.reactants = reactants
         self.products = products
         self.token = token
         self.mask = mask
+
 
 register_pytree(ReactDatum)
