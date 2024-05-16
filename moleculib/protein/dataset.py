@@ -393,14 +393,25 @@ from biotite.structure import filter_amino_acids
 import biotite.structure.io.pdb as pdb
 
 
-class ChignolinDataset(Dataset):
-    def __init__(self, num_files=-1, tau=1, stride=1, time_sort=False):
-        self.base_path = "/mas/projects/molecularmachines/db/FastFoldingProteins/chignolin_trajectories/filtered/"
+class FastFoldingDataset(Dataset):
+    def __init__(
+        self, protein="chignolin", num_files=-1, tau=1, stride=1, time_sort=False
+    ):
+        base = "/mas/projects/molecularmachines/db/FastFoldingProteins/"
+        if protein == "chignolin":
+            self.base_path = base + "chignolin_trajectories/filtered/"
+        elif "trpcage" in protein: # trpcage0, trpcage1, trpcage2
+            self.base_path = base + f"rpcage_trajectories/batches/{protein[-1]}/filtered"
+        elif protein == "villin":
+            self.base_path = base + "villin_trajectories/filtered/"
+        elif "bba" in protein: # bba0, bba1, bba2
+            self.base_path = base + f"bba_trajectories/batches/{protein[-1]}/filtered"
+
         self.num_files = num_files
         self.tau = tau
         self.stride = stride
         self.time_sort = time_sort
-        self.files = self._list_files()[:self.num_files]
+        self.files = self._list_files()[: self.num_files]
         self.atom_array = pdb.PDBFile.read(
             self.base_path + "filtered.pdb"
         ).get_structure()[0]
@@ -435,17 +446,16 @@ class ChignolinDataset(Dataset):
         self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
 
     def __len__(self):
-        return len(self.files) * (self.coords.shape[0] - self.tau)
+        return len(self.files) * self.coords.shape[0]
 
     def __getitem__(self, idx):
-        f = self.coords.shape[0] - self.tau
-
         if self.counter > 100:
-            self._load_coords(self.files[idx // f])
+            self._load_coords(self.files[idx // self.coords.shape[0]])
             self.counter = 0
         self.counter += 1
+        idxx = idx % (self.coords.shape[0] - self.tau)
 
-        self.atom_array._coord = self.coords[idx % f]
+        self.atom_array._coord = self.coords[idxx]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -453,7 +463,7 @@ class ChignolinDataset(Dataset):
                 resolution=None,
             ),
         )
-        self.atom_array._coord = self.coords[idx % f + self.tau]
+        self.atom_array._coord = self.coords[idxx + self.tau]
         p2 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
