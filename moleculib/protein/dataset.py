@@ -90,7 +90,7 @@ class PDBDataset:
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
         print(f"Loaded metadata with {len(self.metadata)} samples")
-        
+
         # specific protein attributes
         protein_attrs = [
             "idcode",
@@ -166,7 +166,9 @@ class PDBDataset:
         try:
             if os.path.exists(os.path.join(save_path, f"{pdb_id}.{format}")):
                 return None
-            datum = ProteinDatum.fetch_pdb_id(pdb_id, save_path=save_path, format=format)
+            datum = ProteinDatum.fetch_pdb_id(
+                pdb_id, save_path=save_path, format=format
+            )
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
@@ -204,11 +206,11 @@ class PDBDataset:
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
 
-        extractor = partial(cls._maybe_fetch_and_extract, save_path=save_path, format=format)
+        extractor = partial(
+            cls._maybe_fetch_and_extract, save_path=save_path, format=format
+        )
         if max_workers > 1:
-            extraction = process_map(
-                extractor, pdb_ids, max_workers=max_workers
-            )
+            extraction = process_map(extractor, pdb_ids, max_workers=max_workers)
         else:
             extraction = list(map(extractor, pdb_ids))
         extraction = filter(lambda x: x, extraction)
@@ -236,9 +238,9 @@ class MonomerDataset(PDBDataset):
                 metadata = pickle.load(file)
         metadata = metadata.reset_index()
 
-        # NOTE(Allan): small hack to make sure 
+        # NOTE(Allan): small hack to make sure
         # we follow trainer.py convention
-        self.splits = {'train': self}
+        self.splits = {"train": self}
 
         # flatten metadata with regards to num_res
         filtered = metadata.loc[metadata.index.repeat(MAX_COMPLEX_SIZE)]
@@ -254,8 +256,8 @@ class MonomerDataset(PDBDataset):
             [col for (col, _) in PDB_HEADER_FIELDS] + ["chain_indexes", "source"]
         ]
         # if single_chain:
-            # breakpoint()
-            # metadata = metadata[::MAX_COMPLEX_SIZE].reset_index()
+        # breakpoint()
+        # metadata = metadata[::MAX_COMPLEX_SIZE].reset_index()
 
         metadata = metadata[metadata["num_res"] > 0].reset_index()
 
@@ -281,14 +283,16 @@ class MonomerDataset(PDBDataset):
         values = list(map(_cut_chain, values))
         return ProteinDatum(*values)
 
+
 from typing import Callable
+
 
 class TinyPDBDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        base_path = os.path.join(base_path, 'tinypdb.pyd')
-        with open(base_path, 'rb') as fin:
-            print('Loading data...')
+        base_path = os.path.join(base_path, "tinypdb.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -296,18 +300,19 @@ class TinyPDBDataset(PreProcessedDataset):
 class FrameDiffDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        base_path = os.path.join(base_path, 'framediff_train_data.pyd')
-        with open(base_path, 'rb') as fin:
-            print('Loading data...')
+        base_path = os.path.join(base_path, "framediff_train_data.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
+
 
 class TinyPDBDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        base_path = os.path.join(base_path, 'tinypdb.pyd')
-        with open(base_path, 'rb') as fin:
-            print('Loading data...')
+        base_path = os.path.join(base_path, "tinypdb.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -315,9 +320,9 @@ class TinyPDBDataset(PreProcessedDataset):
 class FoldingDiffDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        base_path = os.path.join(base_path, 'folddiff_train_data.pyd')
-        with open(base_path, 'rb') as fin:
-            print('Loading data...')
+        base_path = os.path.join(base_path, "folddiff_train_data.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -325,9 +330,9 @@ class FoldingDiffDataset(PreProcessedDataset):
 class FoldDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        base_path = os.path.join(base_path, 'fold.pyd')
-        with open(base_path, 'rb') as fin:
-            print('Loading data...')
+        base_path = os.path.join(base_path, "fold.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -335,19 +340,21 @@ class FoldDataset(PreProcessedDataset):
 class EnzymeCommissionDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        path = os.path.join(base_path, 'ec.pyd')
-        with open(path, 'rb') as fin:
-            print(f'Loading data from {path}')
+        path = os.path.join(base_path, "ec.pyd")
+        with open(path, "rb") as fin:
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
 
 class GeneOntologyDataset(PreProcessedDataset):
 
-    def __init__(self, base_path, transform: List[Callable] = None, level='mf', shuffle=True):
-        path = os.path.join(base_path, f'go_{level}.pyd')
-        with open(path, 'rb') as fin:
-            print(f'Loading data from {path}')
+    def __init__(
+        self, base_path, transform: List[Callable] = None, level="mf", shuffle=True
+    ):
+        path = os.path.join(base_path, f"go_{level}.pyd")
+        with open(path, "rb") as fin:
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -355,22 +362,23 @@ class GeneOntologyDataset(PreProcessedDataset):
 class FuncDataset(PreProcessedDataset):
 
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
-        path = os.path.join(base_path, 'func.pyd')
-        with open(path, 'rb') as fin:
-            print(f'Loading data from {path}')
+        path = os.path.join(base_path, "func.pyd")
+        with open(path, "rb") as fin:
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
 
-
 class ScaffoldsDataset(PreProcessedDataset):
 
-    def __init__(self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0):
-        with open(os.path.join(base_path, 'scaffolds.pyd'), 'rb') as fin:
-            print('Loading data...')
+    def __init__(
+        self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0
+    ):
+        with open(os.path.join(base_path, "scaffolds.pyd"), "rb") as fin:
+            print("Loading data...")
             dataset = pickle.load(fin)
-        if val_split > 0.0: 
-            print(f'Splitting data into train/val with val_split={val_split}')
+        if val_split > 0.0:
+            print(f"Splitting data into train/val with val_split={val_split}")
             dataset = np.random.permutation(dataset)
             num_val = int(len(dataset) * val_split)
             splits = dict(train=dataset[:-num_val], val=dataset[-num_val:])
@@ -379,3 +387,58 @@ class ScaffoldsDataset(PreProcessedDataset):
         super().__init__(splits, transform, shuffle)
 
 
+import mdtraj
+from torch.utils.data import Dataset
+from biotite.structure import filter_amino_acids
+import biotite.structure.io.pdb as pdb
+
+
+class ChignolinDataset(Dataset):
+    def __init__(self, tau=1, num_files=100):
+        self.base_path = "/mas/projects/molecularmachines/db/FastFoldingProteins/chignolin_trajectories/filtered/"
+        self.num_files = num_files
+        self.data = mdtraj.load(self._list_files(), top=self.base_path + "filtered.pdb")
+        self.atom_array = pdb.PDBFile.read(
+            self.base_path + "filtered.pdb"
+        ).get_structure()[0]
+        aa_filter = filter_amino_acids(self.atom_array)
+        self.atom_array = self.atom_array[aa_filter]
+        self.coords = self.data.xyz[:, aa_filter, :] * 10  # convert to angstroms
+        self.tau = tau
+        print(f"Loaded {len(self)} samples")
+
+    def _list_files(self):
+        def extract_x_y(filename):
+            part = os.path.basename(filename).split("_")[0]
+            x, y = part.strip("e").split("s")
+            return int(x), int(y)
+
+        files_with_extension = set()
+        for filename in os.listdir(self.base_path):
+            if filename.endswith(".xtc") and not filename.startswith("."):
+                files_with_extension.add(self.base_path + filename)
+        return sorted(list(files_with_extension), key=lambda x: extract_x_y(x))[
+            : self.num_files
+        ]
+
+    def __len__(self):
+        return self.coords.shape[0]
+
+    def __getitem__(self, idx):
+        self.atom_array._coord = self.coords[idx]
+        p1 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        self.atom_array._coord = self.coords[idx + self.tau]
+        p2 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        return [p2, p1]
