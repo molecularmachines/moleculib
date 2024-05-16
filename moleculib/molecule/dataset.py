@@ -1417,3 +1417,89 @@ class ReactDataset(Dataset):
             )
 
         return datum
+
+ATOM_TYPES = {
+    'benzene': np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]),
+    'ethanol': np.array([0, 0, 2, 1, 1, 1, 1, 1, 1]),
+    'phenol': np.array([0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1]),
+    'resorcinol': np.array([0, 0, 0, 0, 0, 0, 2, 1, 2, 1, 1, 1, 1, 1]),
+    'ethane': np.array([0, 0, 1, 1, 1, 1, 1, 1]),
+    'malonaldehyde': np.array([2, 0, 0, 0, 2, 1, 1, 1, 1]),
+}
+
+class MDDensityDataset(Dataset):
+    def __init__(self, mol_name, samples=1000, _split="train", _rotated=True):
+        """
+        Density dataset for small molecules in the MD datasets.
+        Note that the validation and test splits are the same.
+        :param root: data root
+        :param mol_name: name of the molecule
+        :param split: data split, can be 'train', 'validation', 'test'
+        """
+        super(MDDensityDataset, self).__init__()
+        assert mol_name in ('benzene', 'ethanol', 'phenol', 'resorcinol', 'ethane', 'malonaldehyde')
+        self.root = "/mas/projects/molecularmachines/db/MDDensity"
+        self.mol_name = mol_name
+        self.split = _split
+        self.n_grid = 50  # number of grid points along each dimension
+        self.grid_size = 20.  # box size in Bohr
+        self.data_path = os.path.join(self.root, mol_name, f'{mol_name}_{self.split}')
+
+        self.atom_type = ATOM_TYPES[mol_name]
+        self.atom_coords = np.load(os.path.join(self.data_path, 'structures.npy'))
+        self.densities = self._convert_fft(np.load(os.path.join(self.data_path, 'dft_densities.npy')))
+        self.grid_coord = self._generate_grid()
+        print("Loaded {} {} datapoints".format(mol_name, self.split))
+        if _split == "train":
+            self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
+            test = self.__class__(
+                samples=5000,
+                _split="test",
+            )
+            self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
+
+    def _convert_fft(self, fft_coeff):
+        # The raw data are stored in Fourier basis, we need to convert them back.
+        print(f'Precomputing {self.split} density from FFT coefficients ...')
+        fft_coeff = np.array(fft_coeff).astype(np.complex64)
+        d = fft_coeff.view(-1, self.n_grid, self.n_grid, self.n_grid)
+        hf = self.n_grid // 2
+        # first dimension
+        d[:, :hf] = (d[:, :hf] - d[:, hf:] * 1j) / 2
+        d[:, hf:] = np.flip(d[:, 1:hf + 1], [1]).conj()
+        d = np.fft.ifft(d, dim=1)
+        # second dimension
+        d[:, :, :hf] = (d[:, :, :hf] - d[:, :, hf:] * 1j) / 2
+        d[:, :, hf:] = np.flip(d[:, :, 1:hf + 1], [2]).conj()
+        d = np.fft.ifft(d, dim=2)
+        # third dimension
+        d[..., :hf] = (d[..., :hf] - d[..., hf:] * 1j) / 2
+        d[..., hf:] = np.flip(d[..., 1:hf + 1], [3]).conj()
+        d = np.fft.ifft(d, dim=3)
+        return np.flip(d.real.reshape(-1, self.n_grid ** 3), [-1])
+
+    def _generate_grid(self):
+        x = np.linspace(self.grid_size / self.n_grid, self.grid_size, self.n_grid)
+        return np.stack(np.meshgrid(x, x, x, indexing='ij'), dim=-1).reshape(-1, 3)
+
+    def __getitem__(self, item):
+        grid = self.grid_coord
+        density = self.densities[item]
+
+        if self.samples:
+            probes = np.random.randint(0, len(grid), self.samples)
+            grid = grid[probes]
+            density = density[probes]
+
+        datum = DensityDatum(
+                density=density.astype(np.float32),
+                grid=grid.astype(np.float32),
+                atom_coord=self.atom_coords[item].astype(np.float32),
+                atom_token=self.atom_type.astype(np.int32),
+                atom_mask=np.ones_like(self.atom_type),
+                bonds=None,
+            )
+        return datum
+
+    def __len__(self):
+        return self.atom_coords.shape[0]
