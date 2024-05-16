@@ -14,6 +14,7 @@ from copy import deepcopy
 import os
 import os
 
+
 class MoleculeDatum:
     def __init__(
         self,
@@ -67,15 +68,21 @@ class MoleculeDatum:
         file = mol.MOLFile()
         file.set_structure(self.to_atom_array())
         return str(file)
-      
-   def plot(self, view, viewer=None, color=None):
+
+    def plot(self, view, viewer=None, color=None):
         if viewer is None:
             viewer = (0, 0)
-        view.addModel(self.to_sdf_str(), 'sdf', viewer=viewer)
+        view.addModel(self.to_sdf_str(), "sdf", viewer=viewer)
         if color is not None:
-            view.addStyle({'model': -1}, {'stick': {'color': color}, 'sphere': {'color': color, 'radius': 0.5}}, viewer=viewer)
+            view.addStyle(
+                {"model": -1},
+                {"stick": {"color": color}, "sphere": {"color": color, "radius": 0.5}},
+                viewer=viewer,
+            )
         else:
-            view.addStyle({'model': -1}, {'sphere': {'radius': 0.5},  'stick': {}}, viewer=viewer)
+            view.addStyle(
+                {"model": -1}, {"sphere": {"radius": 0.5}, "stick": {}}, viewer=viewer
+            )
         return view
 
 
@@ -151,9 +158,8 @@ from biotite.structure import connect_via_distances
 from biotite.database import rcsb
 
 
-
 class PDBMoleculeDatum:
-    
+
     def __init__(
         self,
         idcode: str,
@@ -200,17 +206,16 @@ class PDBMoleculeDatum:
                     None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
                 ),
             )
-            atom_array = atom_array[atom_array.hetero & (atom_array.res_name != 'HOH')]
-            ligand_arrays = [] 
+            atom_array = atom_array[atom_array.hetero & (atom_array.res_name != "HOH")]
+            ligand_arrays = []
             ligand_names = np.unique(atom_array.res_name)
             for ligand_name in ligand_names:
                 if ligand is not None and ligand_name != ligand:
                     continue
-                ligand_arrays.append(
-                    atom_array[atom_array.res_name == ligand_name]
+                ligand_arrays.append(atom_array[atom_array.res_name == ligand_name])
             return [
-              cls.from_atom_array(atom_array, header=header)
-              for atom_array in ligand_arrays
+                cls.from_atom_array(atom_array, header=header)
+                for atom_array in ligand_arrays
             ]
         elif filepath.endswith(".sdf"):
             mol_file = mol.MOLFile.read(filepath)
@@ -220,9 +225,8 @@ class PDBMoleculeDatum:
         else:
             raise NotImplementedError(
                 f"File type {filepath.split('.')[-1]} is not supported"
-        
-          
-      
+            )
+
     @classmethod
     def fetch_pdb_id(cls, id, save_path=None, ligand=None):
         filepath = rcsb.fetch(id, "mmtf", save_path)
@@ -232,7 +236,7 @@ class PDBMoleculeDatum:
     def from_atom_array(cls, atom_array, header):
         if atom_array.array_length() == 0:
             return cls.empty_molecule()
-              
+
         # (Ilan) to add other attributes from mendeleev for atoms
         # atom_attrs = ["spin", "mass_number",...] #other attributes from mendeleev
         # atom_extract = dict()
@@ -242,9 +246,7 @@ class PDBMoleculeDatum:
         atom_array.element[atom_array.element == "D"] = (
             "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
         )
-        atom_token = np.array(
-            [PERIODIC_TABLE.index(el) for el in atom_array.element]
-        )
+        atom_token = np.array([PERIODIC_TABLE.index(el) for el in atom_array.element])
 
         atom_mask = np.ones(len(atom_token), dtype=bool)
         bonds = connect_via_distances(atom_array)
@@ -275,8 +277,8 @@ class PDBMoleculeDatum:
         arr = array(atoms)
         # bonds = BondList(len(atoms))
         # if self.bonds is not None:
-            # print(self.bonds.shape)
-            # bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
+        # print(self.bonds.shape)
+        # bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
         arr.bonds = self.bonds
         return arr
 
@@ -478,11 +480,51 @@ register_pytree(MISATODatum)
 
 
 class ReactDatum(MoleculeDatum):
-    def __init__(self, reactants, products, token, mask):
-        self.reactants = reactants
-        self.products = products
+    def __init__(
+        self,
+        token,
+        reacts,
+        prods,
+        reacts_mask,
+        prods_mask,
+        mask,
+        protein_token,
+        protein_mask,
+    ):
+        self.reacts = reacts
+        self.prods = prods
         self.token = token
         self.mask = mask
+        self.reacts_mask = reacts_mask
+        self.prods_mask = prods_mask
+        self.protein_token = protein_token
+        self.protein_mask = protein_mask
+
+    def centralize(self):
+        # the reacts_mask indicates which atoms are part of which reactant
+        # to centralize the reacts we need to centralize each reactant independently
+        num_reacts = self.reacts_mask.max()
+        reacts_shift = np.zeros_like(self.reacts)
+        for i in range(num_reacts):
+            react_mask = self.reacts_mask == i
+            react_center = self.reacts[np.where(react_mask)].mean(0)
+            reacts_shift += react_mask[:, None] * react_center[None]
+        num_prods = self.prods_mask.max()
+        prods_shift = np.zeros_like(self.prods)
+        for i in range(num_prods):
+            prod_mask = self.prods_mask == i
+            prod_center = self.prods[np.where(prod_mask)].mean(0)
+            prods_shift += prod_mask[:, None] * prod_center[None]
+        return self.__class__(
+            token=self.token,
+            reacts=self.reacts - reacts_shift,
+            prods=self.prods - prods_shift,
+            reacts_mask=self.reacts_mask,
+            prods_mask=self.prods_mask,
+            mask=self.mask,
+            protein_token=self.protein_token,
+            protein_mask=self.protein_mask,
+        )
 
 
 register_pytree(ReactDatum)

@@ -1337,7 +1337,7 @@ class InterleavedDataset(Dataset):
             return self.dataset2[index - len(self.dataset1)]
 
 
-class Density(InterleavedDataset):
+class DensityDataset(InterleavedDataset):
     def __init__(self, max_atoms=50, samples=1000, _rotated=True) -> None:
         qm9_vasp = DensityDataDir(
             max_atoms=max_atoms, samples=samples, _rotated=False, to_split=False
@@ -1353,69 +1353,67 @@ class Density(InterleavedDataset):
         }
 
 
-class React(Dataset):
+class ReactDataset(Dataset):
     def __init__(self, max_atoms=70):
         self.base_path = "/mas/projects/molecularmachines/db/enzymemap/"
-        self.data = json.load(
-            open(os.path.join(self.base_path, "enzymemap_v2_brenda2_blip.json", "rb"))
+        self.data = pickle.load(
+            open(os.path.join(self.base_path, "enzymemap_v2_processed.p"), "rb")
         )
         self.max_atoms = max_atoms
-        self.padding = PairPad()
-        self.index = np.load(os.path.join(self.base_path, "sizes2.npy"))
+        if max_atoms > 0:
+            self.index = [i for i in range(len(self.data)) if self.data[i]["num_atoms"] <= self.max_atoms]
+        else:
+            self.index = np.arange(len(self.data))
 
-        self.index = np.where(self.index <= self.max_atoms)[0]
+        self.padding = PairPad()
+
+        print(f"Loaded {len(self.index)} datapoints")
+        self.splits = {"train": self}
 
     def __len__(self):
         return len(self.index)
 
-    def generate_and_select_conformer(self, smiles, num_conformers=10):
-        smiles = [r for r in smiles if r != "[H+]"]
+    def get_token(self, smiles):
+        smiles = [r for r in smiles if r != '[H+]']
         smiles = ".".join(smiles)
-        mol = Chem.MolFromSmiles(smiles)
-        AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers, randomSeed=0xF00D)
-        conf_ids = [conf.GetId() for conf in mol.GetConformers()]
-        if len(conf_ids) == 0:
-            return np.zeros(0)
-        selected_conf_id = random.choice(conf_ids)
-        conf = mol.GetConformer(selected_conf_id)
-        positions = conf.GetPositions()
-        mapping_numbers = [atom.GetAtomMapNum() for atom in mol.GetAtoms()]
-        atomic_num = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
-        atom_data = np.array(
-            [
-                (mapping_numbers[i], atomic_num[i], *positions[i])
-                for i in range(len(mapping_numbers))
-            ]
-        )
-        sorted_atom_data = atom_data[atom_data[:, 0].argsort()]
-        return sorted_atom_data[:, 1:]
-
+        mol = Chem.MolFromSmiles(smiles) 
+        mapping_numbers = np.array([atom.GetAtomMapNum() for atom in mol.GetAtoms()]).argsort()
+        atomic_num = np.array([atom.GetAtomicNum() for atom in mol.GetAtoms()])[mapping_numbers]
+        return atomic_num
+    
     def __getitem__(self, index):
         entry = self.data[self.index[index]]
-        reactants = entry["mapped_reactants"]
-        products = entry["mapped_products"]
-        reactants = self.generate_and_select_conformer(reactants)
-        products = self.generate_and_select_conformer(products)
-        token = reactants[:, 0]
-        coord1 = reactants[:, 1:]
-        coord2 = products[:, 1:]
+        token = self.get_token(entry["mapped_reactants"])
+        reactants = entry['reacts_coords'][np.random.randint(0, 3)].squeeze()
+        products = entry['prods_coords'][np.random.randint(0, 3)].squeeze()
+        reacts_mask = entry['reacts_mol_mask']
+        prods_mask = entry['prods_mol_mask']
         mask = np.ones_like(token)
 
         datum = ReactDatum(
             token=token,
-            reactants=coord1,
-            products=coord2,
+            reacts=reactants,
+            prods=products,
+            reacts_mask=reacts_mask,
+            prods_mask=prods_mask,
             mask=mask,
+            protein_token=None,
+            protein_mask=None,
         )
 
-        datum = self.padding.transform(
-            datum,
-            {
-                "token": self.max_atoms,
-                "reactants": self.max_atoms,
-                "products": self.max_atoms,
-                "mask": self.max_atoms,
-            },
-        )
+        datum = datum.centralize()
+
+        if self.max_atoms > 0:
+            datum = self.padding.transform(
+                datum,
+                {
+                    "token": self.max_atoms,
+                    "reacts": self.max_atoms,
+                    "prods": self.max_atoms,
+                    "mask": self.max_atoms,
+                    "reacts_mask": self.max_atoms,
+                    "prods_mask": self.max_atoms,
+                },
+            )
 
         return datum
