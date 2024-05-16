@@ -394,18 +394,21 @@ import biotite.structure.io.pdb as pdb
 
 
 class ChignolinDataset(Dataset):
-    def __init__(self, tau=1, num_files=100):
+    def __init__(self, num_files=-1, tau=1, stride=1, time_sort=False):
         self.base_path = "/mas/projects/molecularmachines/db/FastFoldingProteins/chignolin_trajectories/filtered/"
         self.num_files = num_files
-        self.data = mdtraj.load(self._list_files(), top=self.base_path + "filtered.pdb")
+        self.tau = tau
+        self.stride = stride
+        self.time_sort = time_sort
+        self.files = self._list_files()[:self.num_files]
         self.atom_array = pdb.PDBFile.read(
             self.base_path + "filtered.pdb"
         ).get_structure()[0]
-        aa_filter = filter_amino_acids(self.atom_array)
-        self.atom_array = self.atom_array[aa_filter]
-        self.coords = self.data.xyz[:, aa_filter, :] * 10  # convert to angstroms
-        self.tau = tau
-        print(f"Loaded {len(self)} samples")
+        self.aa_filter = filter_amino_acids(self.atom_array)
+        self.atom_array = self.atom_array[self.aa_filter]
+        self.counter = 0
+        self._load_coords(self.files[0])
+        print(f"{len(self)} total samples")
 
     def _list_files(self):
         def extract_x_y(filename):
@@ -417,15 +420,32 @@ class ChignolinDataset(Dataset):
         for filename in os.listdir(self.base_path):
             if filename.endswith(".xtc") and not filename.startswith("."):
                 files_with_extension.add(self.base_path + filename)
-        return sorted(list(files_with_extension), key=lambda x: extract_x_y(x))[
-            : self.num_files
-        ]
+
+        files = list(files_with_extension)
+        if self.time_sort:
+            return sorted(files, key=lambda x: extract_x_y(x))
+        return files
+
+    def _load_coords(self, files):
+        data = mdtraj.load(
+            files,
+            top=self.base_path + "filtered.pdb",
+            stride=self.stride,
+        )
+        self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
 
     def __len__(self):
-        return self.coords.shape[0]
+        return len(self.files) * (self.coords.shape[0] - self.tau)
 
     def __getitem__(self, idx):
-        self.atom_array._coord = self.coords[idx]
+        f = self.coords.shape[0] - self.tau
+
+        if self.counter > 100:
+            self._load_coords(self.files[idx // f])
+            self.counter = 0
+        self.counter += 1
+
+        self.atom_array._coord = self.coords[idx % f]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -433,7 +453,7 @@ class ChignolinDataset(Dataset):
                 resolution=None,
             ),
         )
-        self.atom_array._coord = self.coords[idx + self.tau]
+        self.atom_array._coord = self.coords[idx % f + self.tau]
         p2 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
