@@ -1,6 +1,7 @@
 import os
 from functools import partial
 from pathlib import Path
+import pickle
 
 import numpy as np
 
@@ -10,7 +11,7 @@ import numpy as np
 
 from ..protein.datum import ProteinDatum
 from ..protein.transform import ProteinCrop
-from ..abstract.dataset import Dataset
+from ..abstract.dataset import Dataset, PreProcessedDataset
 
 
 class MODELDataset(Dataset):
@@ -92,7 +93,7 @@ class MODELDataset(Dataset):
         return list(data)
 
 
-class AdKEquilibriumDataset(Dataset):
+class AdKEquilibriumDataset(PreProcessedDataset):
     """
     Holds ProteinDatum dataset across trajectories
     as catalogued in Molecular Dynamics Extended Library (MODEL)
@@ -108,45 +109,15 @@ class AdKEquilibriumDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        frac: float = 1.0,
         transform: list = [],
         num_steps=15,
-        split: str = "train",
     ):
-        super().__init__()
-        self.base_path = Path(base_path)
+        base_path = os.path.join(base_path, 'AdKEquilibrium.pyd')
+        with open(base_path, 'rb') as fin:
+            print('Loading data...')
+            splits = pickle.load(fin)
         self.num_steps = num_steps
-        self.transform = transform
-        self.crop_size = 214
-
-        files = os.listdir(self.base_path)
-        files = [
-            (int(file[file.index("_") + 1 : file.index(".")]), file)
-            for file in files
-            if file.endswith(".pdb")
-        ]
-        files.sort()
-        files = [file[1] for file in files]
-
-        self.models = files
-        if split == "train":
-            self.models = self.models[: int(0.6 * len(self.models))]
-        elif split == "val":
-            self.models = self.models[
-                int(0.6 * len(self.models)) : int(0.8 * len(self.models))
-            ]
-        elif split == "test":
-            self.models = self.models[int(0.8 * len(self.models)) :]
-
-        self.protein_crop = ProteinCrop(crop_size=self.crop_size)
-        self.num_models = len(self.models)
-
-    def __len__(self):
-        return len(self.models)
-
-    def __getitem__(self, idx):
-        datum = ProteinDatum.from_filepath(self.base_path / self.models[idx], format='pdb')
-        return [datum]
+        super().__init__(splits, transform, shuffle=False, pre_transform=False)
 
 
 class AdKTransitionsDataset(Dataset):
@@ -212,7 +183,7 @@ class AtlasDataset(Dataset):
     def __init__(
         self,
         base_path: str,
-        num_steps: int = None,
+        tau: int = None,
         transform: list = [],
         mode: str = 'next_step',
         single_protein: bool = False,
@@ -221,7 +192,7 @@ class AtlasDataset(Dataset):
         expansion_factor: int =  100,
     ):  
         self.base_path = base_path
-        self.num_steps = num_steps
+        self.num_steps = tau
         self.single_protein = single_protein
         
         pdbids = []
@@ -252,7 +223,7 @@ class AtlasDataset(Dataset):
         return len(self.pdbids)
     
     def _getitem(self, i):
-        if self.mode == 'next_step':
+        if self.num_steps != 0:
             pdbid = self.pdbids[i]
             traj_sample = np.random.randint(1, 4)
             path = '{}/{}/{}'.format(self.base_path, pdbid, traj_sample)
@@ -262,7 +233,7 @@ class AtlasDataset(Dataset):
             protein_datum_i = ProteinDatum.from_filepath(path1)
             protein_datum_j = ProteinDatum.from_filepath(path2)
             return [protein_datum_i, protein_datum_j] 
-        elif self.mode == 'single':
+        elif self.num_steps == 0:
             pdbid = self.pdbids[i]
             traj_sample = np.random.randint(1, 4)
             path = '{}/{}/{}'.format(self.base_path, pdbid, traj_sample)

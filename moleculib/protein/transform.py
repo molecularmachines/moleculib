@@ -427,6 +427,8 @@ class MaybeMirror(ProteinTransform):
         self.hand = hand
 
     def transform(self, datum):
+        if type(datum) == list:
+            return [self.transform(datum_) for datum_ in datum]
         try:
             mean_chirality = measure_chirality(datum.atom_coord)
         except:
