@@ -10,6 +10,7 @@ from biotite.structure import (
 import numpy as np
 import biotite.structure.io.mmtf as mmtf
 import py3Dmol
+import rdkit
 import jax.numpy as jnp
 import jaxlib
 from jax.tree_util import register_pytree_node
@@ -71,11 +72,63 @@ def plot_py3dmol_grid(grid, window_size=(250, 250), spin=False):
             v.setStyle(
                 {"sphere": {"radius": 0.4}, "stick": {"radius": 0.2}}, viewer=(i, j)
             )
+            if hasattr(datum, "fixed_atoms"):
+                for atom_index, b in enumerate(datum.fixed_atoms):
+                    if b:
+                        v.addStyle(
+                            {"index": atom_index},
+                            {"sphere": {"color": "yellow", "radius": 0.4}},
+                            viewer=(i, j),
+                        )
     v.zoomTo()
     if spin:
         v.spin()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
+
+
+def plot_dock(grid, window_size=(400, 400), spin=False):
+    v = py3Dmol.view(
+        viewergrid=(len(grid), len(grid[0])),
+        linked=True,
+        width=len(grid[0]) * window_size[0],
+        height=len(grid) * window_size[1],
+    )
+    for i, row in enumerate(grid):
+        for j, datum in enumerate(row):
+            v.addModel(datum.protein_pdb_str(), "pdb", viewer=(i, j))
+            v.setStyle(
+                {
+                    "cartoon": {"color": "spectrum"},
+                    # "stick": {"radius": 0.04}
+                },
+                viewer=(i, j),
+            )
+            # v.addSurface(py3Dmol.VDW, {"opacity": 0.7, "color": "white"}, viewer=(i, j))
+
+            v.addModel(datum.to_sdf_str(), "sdf", viewer=(i, j))
+            v.setStyle(
+                {"model": -1},
+                {"sphere": {"radius": 0.5}, "stick": {"radius": 0.3}},
+                viewer=(i, j),
+            )
+            if hasattr(datum, "fixed_atoms"):
+                for atom_index, b in enumerate(datum.fixed_atoms):
+                    if b:
+                        v.addStyle(
+                            {"index": atom_index},
+                            {"sphere": {"color": "yellow", "radius": 0.4}},
+                            viewer=(i, j),
+                        )
+
+    v.zoomTo()
+    if spin:
+        v.spin()
+    v.setBackgroundColor("rgb(0,0,0)", 0)
+    return v
+
+
+# def plot_density(grid, window_size=(400, 400)):
 
 
 def inner_stack(pytrees):
@@ -108,7 +161,7 @@ def register_pytree(Datum):
         went_through = False
         for attr, obj in vars(datum).items():
             # NOTE(Allan): come back here and make it universal
-            if (type(obj) == object) or (
+            if (type(obj) is object) or (
                 (type(obj) in ACCEPTED_FORMATS) and (obj.dtype in ACCEPTED_TYPES)
             ):
                 went_through = True
@@ -123,3 +176,25 @@ def register_pytree(Datum):
         return Datum(**dict(zip(keys, values)))
 
     register_pytree_node(Datum, encode_datum_pytree, decode_datum_pytree)
+
+
+def extract_rdkit_mol_properties(mol):
+    if isinstance(mol, rdkit.Chem.rdchem.Conformer):
+        mol = mol.GetOwningMol()
+        conformer = mol
+    elif isinstance(mol, rdkit.Chem.rdchem.Mol):
+        conformer = mol.GetConformer()
+
+    atoms = rdkit.Chem.rdchem.Mol.GetAtoms(mol)
+    atom_token = np.array([atom.GetAtomicNum() for atom in atoms])  # Z
+    atom_coord = np.array(
+        [conformer.GetAtomPosition(atom.GetIdx()) for atom in atoms]
+    )  # xyz positions
+    adj = rdkit.Chem.GetAdjacencyMatrix(mol)
+    bonds = np.array(
+        [
+            [bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), bond.GetBondType()]
+            for bond in rdkit.Chem.rdchem.Mol.GetBonds(mol)
+        ]
+    )
+    return atom_token, atom_coord, bonds, adj

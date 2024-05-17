@@ -11,4 +11,8 @@ __all__ = [
     "GeometricBatch",
     "ProteinDatum",
     "ProteinDataset",
+    "MoleculePadBatch",
+    "MoleculeDatum",
+    "MonomerDataset",
+    "PDBDataset"
 ]
