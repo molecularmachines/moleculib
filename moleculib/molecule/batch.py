@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from functools import partial, reduce
-from typing import List, Tuple, Union
-
+from functools import reduce
+from typing import List
 import jax.numpy as jnp
 import numpy as np
-from einops import rearrange, repeat
-
 from .datum import MoleculeDatum
-from .utils import pad_array
 
 
 class MoleculeCollator:
@@ -34,7 +30,7 @@ class MoleculeCollator:
 
     def to(self, device: str) -> MoleculeCollator:
         for attr, obj in vars(self).items():
-            if type(obj) == np.ndarray:
+            if type(obj) is np.ndarray:
                 setattr(self, attr, obj.to(device))
         return self
 
@@ -42,7 +38,7 @@ class MoleculeCollator:
         import torch
 
         for attr, obj in vars(self).items():
-            if type(obj) == np.ndarray:
+            if type(obj) is np.ndarray:
                 setattr(self, attr, torch.from_numpy(obj))
         return self
 
@@ -53,14 +49,17 @@ class MoleculeCollator:
         for attr in attrs:
             obj = getattr(self, attr)
             # strings are not JAX types
-            if type(obj) == np.ndarray:
+            if type(obj) is np.ndarray:
                 if not (
                     np.issubdtype(obj.dtype, np.number) or obj.dtype == jnp.bfloat16
                 ):
                     continue
             if type(obj) in [list, tuple]:
                 if not any(
-                    map(lambda x: isinstance(obj[0], x), [float, int, np.number, jnp.bfloat16])
+                    map(
+                        lambda x: isinstance(obj[0], x),
+                        [float, int, np.number, jnp.bfloat16],
+                    )
                 ):
                     continue
                 obj = jnp.array(obj)
@@ -81,7 +80,7 @@ class MoleculePadBatch(MoleculeCollator):
             data_attr = dict()
             for attr, obj in vars(self).items():
                 obj = obj[batch_index]
-                if type(obj) == np.ndarray:
+                if type(obj) is np.ndarray:
                     obj = obj[mask]
                 data_attr[attr] = obj
             data_list.append(constructor(**data_attr))
@@ -96,7 +95,7 @@ class MoleculePadBatch(MoleculeCollator):
 
         def _maybe_stack(obj_list):
             obj = obj_list[0]
-            if type(obj) != np.ndarray:
+            if type(obj) is not np.ndarray:
                 return obj_list
             return np.stack(list(obj_list), axis=0)
 
@@ -126,7 +125,7 @@ class MoleculeGeometricBatch(MoleculeCollator):
             for attr, obj in vars(self).items():
                 if attr in ["batch_index", "num_nodes"]:
                     continue
-                if type(obj) == np.ndarray:
+                if type(obj) is np.ndarray:
                     obj = obj[batch_mask]
                 else:
                     obj = obj[batch_index]
@@ -159,7 +158,7 @@ class MoleculeGeometricBatch(MoleculeCollator):
 
         def maybe_concatenate(obj_list):
             obj = obj_list[0]
-            if type(obj) != np.ndarray:
+            if type(obj) is not np.ndarray:
                 return obj_list
             return np.concatenate(obj_list, axis=0)
 

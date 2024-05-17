@@ -192,7 +192,7 @@ class StandardAngleDeviation(ChemicalDeviationMetric):
 class StandardDihedralDeviation(ChemicalDeviationMetric):
     def __init__(self, var_clip=0.1):
         super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3)
-
+        
 
 from moleculib.protein.transform import (
     DescribeChemistry
