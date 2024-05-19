@@ -446,7 +446,7 @@ class FastFoldingDataset(torch.utils.data.Dataset):
             top=self.base_path + "filtered.pdb",
             stride=self.stride,
         )
-        self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
+        self.coords = data.xyz[:, self.aa_filter, :] * 10  # Convert to angstroms
 
     def _num_timesteps(self):
         return self.coords.shape[0]
