@@ -490,7 +490,7 @@ class TimewarpDataset(torch.utils.data.Dataset):
         split: str = "train",
         tau: int = 1,
     ):
-        base = "/mas/projects/molecularmachines/db/timewarp/"
+        base = "/mas/projects/molecularmachines/db/timewarp2/"
         self.base_path = os.path.join(base, dataset, split)
         self.counter = 0
         self.tau = tau
