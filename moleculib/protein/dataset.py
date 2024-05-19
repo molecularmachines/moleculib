@@ -1,16 +1,22 @@
+import logging
 import os
 import pickle
 import traceback
 from functools import partial
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Union
+from typing import List, Union, Optional
 
 import biotite
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from tqdm.contrib.concurrent import process_map
+
+# For Chignolin
+import mdtraj
+import torch.utils.data
+import biotite.structure.io.pdb as pdb
 
 from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
@@ -89,7 +95,7 @@ class PDBDataset:
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
-        print(f"Loaded metadata with {len(self.metadata)} samples")
+        logging.info(f"Loaded metadata with {len(self.metadata)} samples")
 
         # specific protein attributes
         protein_attrs = [
@@ -172,11 +178,11 @@ class PDBDataset:
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
-            print(traceback.format_exc())
-            print(error)
+            logging.info(traceback.format_exc())
+            logging.info(error)
             return None
         except biotite.database.RequestError as request_error:
-            print(request_error)
+            logging.info(request_error)
             return None
         if len(datum.sequence) == 0:
             return None
@@ -201,7 +207,7 @@ class PDBDataset:
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
         if save_path is None:
             save_path = mkdtemp()
-        print(f"Fetching {len(pdb_ids)} PDB IDs with {max_workers} workers...")
+        logging.info(f"Fetching {len(pdb_ids)} PDB IDs with {max_workers} workers...")
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
@@ -292,7 +298,7 @@ class TinyPDBDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "tinypdb.pyd")
         with open(base_path, "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -302,7 +308,7 @@ class FrameDiffDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "framediff_train_data.pyd")
         with open(base_path, "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -312,7 +318,7 @@ class TinyPDBDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "tinypdb.pyd")
         with open(base_path, "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -322,7 +328,7 @@ class FoldingDiffDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "folddiff_train_data.pyd")
         with open(base_path, "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -332,7 +338,7 @@ class FoldDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "fold.pyd")
         with open(base_path, "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -342,7 +348,7 @@ class EnzymeCommissionDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         path = os.path.join(base_path, "ec.pyd")
         with open(path, "rb") as fin:
-            print(f"Loading data from {path}")
+            logging.info(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -354,7 +360,7 @@ class GeneOntologyDataset(PreProcessedDataset):
     ):
         path = os.path.join(base_path, f"go_{level}.pyd")
         with open(path, "rb") as fin:
-            print(f"Loading data from {path}")
+            logging.info(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -364,7 +370,7 @@ class FuncDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         path = os.path.join(base_path, "func.pyd")
         with open(path, "rb") as fin:
-            print(f"Loading data from {path}")
+            logging.info(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -375,10 +381,10 @@ class ScaffoldsDataset(PreProcessedDataset):
         self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0
     ):
         with open(os.path.join(base_path, "scaffolds.pyd"), "rb") as fin:
-            print("Loading data...")
+            logging.info("Loading data...")
             dataset = pickle.load(fin)
         if val_split > 0.0:
-            print(f"Splitting data into train/val with val_split={val_split}")
+            logging.info(f"Splitting data into train/val with val_split={val_split}")
             dataset = np.random.permutation(dataset)
             num_val = int(len(dataset) * val_split)
             splits = dict(train=dataset[:-num_val], val=dataset[-num_val:])
@@ -387,13 +393,11 @@ class ScaffoldsDataset(PreProcessedDataset):
         super().__init__(splits, transform, shuffle)
 
 
-import mdtraj
-from torch.utils.data import Dataset
-from biotite.structure import filter_amino_acids
-import biotite.structure.io.pdb as pdb
 
 
-class FastFoldingDataset(Dataset):
+class FastFoldingDataset(torch.utils.data.Dataset):
+    """The FastFoldingProteins dataset from the Two-For-One paper."""
+
     def __init__(
         self, protein="chignolin", num_files=-1, tau=1, stride=1, time_sort=False
     ):
@@ -415,11 +419,11 @@ class FastFoldingDataset(Dataset):
         self.atom_array = pdb.PDBFile.read(
             self.base_path + "filtered.pdb"
         ).get_structure()[0]
-        self.aa_filter = filter_amino_acids(self.atom_array)
+        self.aa_filter = biotite.structure.filter_amino_acids(self.atom_array)
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
         self._load_coords(self.files[0])
-        print(f"{len(self)} total samples")
+        logging.info(f"{len(self)} total samples")
 
     def _list_files(self):
         def extract_x_y(filename):
@@ -443,17 +447,93 @@ class FastFoldingDataset(Dataset):
             top=self.base_path + "filtered.pdb",
             stride=self.stride,
         )
-        self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
+        self.coords = data.xyz[:, self.aa_filter, :] * 10  # Convert to angstroms
+
+    def _num_timesteps(self):
+        return self.coords.shape[0]
+
+    def __len__(self):
+        return len(self.files) * self._num_timesteps()
+
+    def __getitem__(self, idx):
+        if self.counter > 100:
+            self._load_coords(self.files[idx // self._num_timesteps()])
+            self.counter = 0
+        self.counter += 1
+        idxx = idx % (self._num_timesteps() - self.tau)
+
+        self.atom_array._coord = self.coords[idxx]
+        p1 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        self.atom_array._coord = self.coords[idxx + self.tau]
+        p2 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        return [p2, p1]
+
+
+
+class TimewarpDataset(torch.utils.data.Dataset):
+    """Exposes datasets from the Timewarp paper."""
+
+    def __init__(
+        self,
+        dataset: str,
+        split: str,
+        tau: int,
+        max_files: Optional[int] = None,
+    ):
+        base = "/mas/projects/molecularmachines/db/timewarp2/"
+        self.base_path = os.path.join(base, dataset, split)
+        self.counter = 0
+        self.tau = tau
+
+        self.files = self._list_files()
+        if len(self.files) == 0:
+            raise ValueError(f"No files found in {self.base_path}")
+
+        logging.info(f"Found {len(self.files)} files in {self.base_path}")
+        if max_files is not None:
+            self.files = self.files[:max_files]
+            logging.info(f"Using {max_files} files")
+
+        logging.info(f"Loading first file: {self.files[0]}")
+        self._load_coords(self.files[0])
+
+    def _list_files(self):
+        files_with_extension = set()
+        for filename in os.listdir(self.base_path):
+            if filename.endswith(".npz") and not filename.startswith("."):
+                files_with_extension.add(os.path.join(self.base_path, filename))
+        return list(files_with_extension)
+
+    def _load_coords(self, file):
+        data = np.load(file)
+        pdb_file = file.replace("-arrays.npz", "-state0.pdb")
+        self.atom_array = pdb.PDBFile.read(pdb_file).get_structure()[0]
+        self.coords = data['positions'] * 10  # Convert to angstroms
 
     def __len__(self):
         return len(self.files) * self.coords.shape[0]
 
+    def _num_timesteps(self):
+        return self.coords.shape[0]
+
     def __getitem__(self, idx):
-        if self.counter > 100:
-            self._load_coords(self.files[idx // self.coords.shape[0]])
+        if self.counter > 1000:
+            self._load_coords(self.files[idx // self._num_timesteps()])
             self.counter = 0
         self.counter += 1
-        idxx = idx % (self.coords.shape[0] - self.tau)
+        idxx = idx % (self._num_timesteps() - self.tau)
 
         self.atom_array._coord = self.coords[idxx]
         p1 = ProteinDatum.from_atom_array(
