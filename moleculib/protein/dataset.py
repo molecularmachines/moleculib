@@ -12,6 +12,11 @@ import pandas as pd
 from pandas import DataFrame, Series
 from tqdm.contrib.concurrent import process_map
 
+# For Chignolin
+import mdtraj
+import torch.utils.data
+import biotite.structure.io.pdb as pdb
+
 from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
 from .transform import ProteinTransform
@@ -387,13 +392,11 @@ class ScaffoldsDataset(PreProcessedDataset):
         super().__init__(splits, transform, shuffle)
 
 
-import mdtraj
-from torch.utils.data import Dataset
-from biotite.structure import filter_amino_acids
-import biotite.structure.io.pdb as pdb
 
 
-class FastFoldingDataset(Dataset):
+class FastFoldingDataset(torch.utils.data.Dataset):
+    """The FastFoldingProteins dataset from the Two-For-One paper."""
+
     def __init__(
         self, protein="chignolin", num_files=-1, tau=1, stride=1, time_sort=False
     ):
@@ -415,7 +418,7 @@ class FastFoldingDataset(Dataset):
         self.atom_array = pdb.PDBFile.read(
             self.base_path + "filtered.pdb"
         ).get_structure()[0]
-        self.aa_filter = filter_amino_acids(self.atom_array)
+        self.aa_filter = biotite.structure.filter_amino_acids(self.atom_array)
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
         self._load_coords(self.files[0])
@@ -445,15 +448,80 @@ class FastFoldingDataset(Dataset):
         )
         self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
 
+    def _num_timesteps(self):
+        return self.coords.shape[0]
+
     def __len__(self):
-        return len(self.files) * self.coords.shape[0]
+        return len(self.files) * self._num_timesteps()
 
     def __getitem__(self, idx):
         if self.counter > 100:
-            self._load_coords(self.files[idx // self.coords.shape[0]])
+            self._load_coords(self.files[idx // self._num_timesteps()])
             self.counter = 0
         self.counter += 1
-        idxx = idx % (self.coords.shape[0] - self.tau)
+        idxx = idx % (self._num_timesteps() - self.tau)
+
+        self.atom_array._coord = self.coords[idxx]
+        p1 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        self.atom_array._coord = self.coords[idxx + self.tau]
+        p2 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        return [p2, p1]
+
+
+
+class TimewarpDataset(torch.utils.data.Dataset):
+    """Exposes datasets from the Timewarp paper."""
+
+    def __init__(
+        self,
+        dataset: str = "2AA-1-big",
+        split: str = "train",
+        tau: int = 1,
+    ):
+        base = "/Users/ameyad/Documents/timewarp/"
+        self.base_path = os.path.join(base, dataset, split)
+        self.files = self._list_files()
+        self.counter = 0
+        self.tau = tau
+        self._load_coords(self.files[0])
+
+    def _list_files(self):
+        files_with_extension = set()
+        for filename in os.listdir(self.base_path):
+            if filename.endswith(".npz") and not filename.startswith("."):
+                files_with_extension.add(os.path.join(self.base_path, filename))
+        return list(files_with_extension)
+
+    def _load_coords(self, file):
+        data = np.load(file)
+        pdb_file = file.replace("-arrays.npz", "-state0.pdb")
+        self.atom_array = pdb.PDBFile.read(pdb_file).get_structure()[0]
+        self.coords = data['positions'] * 10  # Convert to angstroms
+
+    def __len__(self):
+        return len(self.files) * self.coords.shape[0]
+
+    def _num_timesteps(self):
+        return self.coords.shape[0]
+
+    def __getitem__(self, idx):
+        if self.counter > 100:
+            self._load_coords(self.files[idx // self._num_timesteps()])
+            self.counter = 0
+        self.counter += 1
+        idxx = idx % (self._num_timesteps() - self.tau)
 
         self.atom_array._coord = self.coords[idxx]
         p1 = ProteinDatum.from_atom_array(
