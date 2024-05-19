@@ -486,9 +486,9 @@ class TimewarpDataset(torch.utils.data.Dataset):
 
     def __init__(
         self,
-        dataset: str = "2AA-1-big",
-        split: str = "train",
-        tau: int = 1,
+        dataset: str,
+        split: str,
+        tau: int,
     ):
         base = "/mas/projects/molecularmachines/db/timewarp2/"
         self.base_path = os.path.join(base, dataset, split)
@@ -496,6 +496,9 @@ class TimewarpDataset(torch.utils.data.Dataset):
         self.tau = tau
 
         self.files = self._list_files()
+        if len(self.files) == 0:
+            raise ValueError(f"No files found in {self.base_path}")
+
         print(f"Found {len(self.files)} files in {self.base_path}")
 
         self._load_coords(self.files[0])
