@@ -490,11 +490,14 @@ class TimewarpDataset(torch.utils.data.Dataset):
         split: str = "train",
         tau: int = 1,
     ):
-        base = "/Users/ameyad/Documents/timewarp/"
+        base = "/mas/projects/molecularmachines/db/timewarp/"
         self.base_path = os.path.join(base, dataset, split)
-        self.files = self._list_files()
         self.counter = 0
         self.tau = tau
+
+        self.files = self._list_files()
+        print(f"Found {len(self.files)} files in {self.base_path}")
+
         self._load_coords(self.files[0])
 
     def _list_files(self):
@@ -517,7 +520,7 @@ class TimewarpDataset(torch.utils.data.Dataset):
         return self.coords.shape[0]
 
     def __getitem__(self, idx):
-        if self.counter > 100:
+        if self.counter > 1000:
             self._load_coords(self.files[idx // self._num_timesteps()])
             self.counter = 0
         self.counter += 1
