@@ -450,10 +450,14 @@ class FastFoldingDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.counter > 100:
-            self._load_coords(self.files[idx // self.coords.shape[0]])
+            try:
+                self._load_coords(self.files[int(idx / 500)])
+            except IndexError:
+                print(idx)
+                print((idx / self.coords.shape[0]))
             self.counter = 0
         self.counter += 1
-        idxx = idx % (self.coords.shape[0] - self.tau)
+        idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
 
         self.atom_array._coord = self.coords[idxx]
         p1 = ProteinDatum.from_atom_array(
