@@ -418,7 +418,7 @@ class FastFoldingDataset(Dataset):
         self.aa_filter = filter_amino_acids(self.atom_array)
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
-        self._load_coords(self.files[0])
+        self.cache = {}
         print(f"{len(self)} total samples")
 
     def _list_files(self):
@@ -438,27 +438,24 @@ class FastFoldingDataset(Dataset):
         return files
 
     def _load_coords(self, files):
-        data = mdtraj.load(
-            files,
-            top=self.base_path + "filtered.pdb",
-            stride=self.stride,
-        )
-        self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
+        if files in self.cache:
+            self.coords = self.cache[files]
+        else:
+            data = mdtraj.load(
+                files,
+                top=self.base_path + "filtered.pdb",
+                stride=self.stride,
+            )
+            self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
+            self.cache[files] = self.coords
+
 
     def __len__(self):
-        return len(self.files) * self.coords.shape[0]
+        return len(self.files)# * self.coords.shape[0]
 
     def __getitem__(self, idx):
-        if self.counter > 100:
-            try:
-                self._load_coords(self.files[int(idx / 500)])
-            except IndexError:
-                print(idx)
-                print((idx / self.coords.shape[0]))
-            self.counter = 0
-        self.counter += 1
-        idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
-
+        self._load_coords(self.files[idx])
+        idxx = np.random.randint(0, self.coords.shape[0] - self.tau)
         self.atom_array._coord = self.coords[idxx]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
