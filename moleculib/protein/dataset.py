@@ -95,7 +95,7 @@ class PDBDataset:
 
         # shuffle and sample
         self.metadata = self.metadata.sample(frac=frac).reset_index(drop=True)
-        logging.info(f"Loaded metadata with {len(self.metadata)} samples")
+        print(f"Loaded metadata with {len(self.metadata)} samples")
 
         # specific protein attributes
         protein_attrs = [
@@ -178,11 +178,11 @@ class PDBDataset:
         except KeyboardInterrupt:
             exit()
         except (ValueError, IndexError) as error:
-            logging.info(traceback.format_exc())
-            logging.info(error)
+            print(traceback.format_exc())
+            print(error)
             return None
         except biotite.database.RequestError as request_error:
-            logging.info(request_error)
+            print(request_error)
             return None
         if len(datum.sequence) == 0:
             return None
@@ -207,7 +207,7 @@ class PDBDataset:
             pdb_ids = pids_file_to_list(root + "/data/pids_all.txt")
         if save_path is None:
             save_path = mkdtemp()
-        logging.info(f"Fetching {len(pdb_ids)} PDB IDs with {max_workers} workers...")
+        print(f"Fetching {len(pdb_ids)} PDB IDs with {max_workers} workers...")
 
         series = {c: Series(dtype=t) for (c, t) in PDB_METADATA_FIELDS}
         metadata = DataFrame(series)
@@ -298,7 +298,7 @@ class TinyPDBDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "tinypdb.pyd")
         with open(base_path, "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -308,7 +308,7 @@ class FrameDiffDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "framediff_train_data.pyd")
         with open(base_path, "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -318,7 +318,7 @@ class TinyPDBDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "tinypdb.pyd")
         with open(base_path, "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -328,7 +328,7 @@ class FoldingDiffDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "folddiff_train_data.pyd")
         with open(base_path, "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle, pre_transform=False)
 
@@ -338,7 +338,7 @@ class FoldDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         base_path = os.path.join(base_path, "fold.pyd")
         with open(base_path, "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -348,7 +348,7 @@ class EnzymeCommissionDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         path = os.path.join(base_path, "ec.pyd")
         with open(path, "rb") as fin:
-            logging.info(f"Loading data from {path}")
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -360,7 +360,7 @@ class GeneOntologyDataset(PreProcessedDataset):
     ):
         path = os.path.join(base_path, f"go_{level}.pyd")
         with open(path, "rb") as fin:
-            logging.info(f"Loading data from {path}")
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -370,7 +370,7 @@ class FuncDataset(PreProcessedDataset):
     def __init__(self, base_path, transform: List[Callable] = None, shuffle=True):
         path = os.path.join(base_path, "func.pyd")
         with open(path, "rb") as fin:
-            logging.info(f"Loading data from {path}")
+            print(f"Loading data from {path}")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
@@ -381,10 +381,10 @@ class ScaffoldsDataset(PreProcessedDataset):
         self, base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0
     ):
         with open(os.path.join(base_path, "scaffolds.pyd"), "rb") as fin:
-            logging.info("Loading data...")
+            print("Loading data...")
             dataset = pickle.load(fin)
         if val_split > 0.0:
-            logging.info(f"Splitting data into train/val with val_split={val_split}")
+            print(f"Splitting data into train/val with val_split={val_split}")
             dataset = np.random.permutation(dataset)
             num_val = int(len(dataset) * val_split)
             splits = dict(train=dataset[:-num_val], val=dataset[-num_val:])
@@ -423,7 +423,7 @@ class FastFoldingDataset(torch.utils.data.Dataset):
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
         self._load_coords(self.files[0])
-        logging.info(f"{len(self)} total samples")
+        print(f"{len(self)} total samples")
 
     def _list_files(self):
         def extract_x_y(filename):
@@ -501,17 +501,17 @@ class TimewarpDataset(torch.utils.data.Dataset):
         if len(self.files) == 0:
             raise ValueError(f"No files found in {self.base_path}")
 
-        logging.info(f"Found {len(self.files)} files in {self.base_path}")
+        print(f"Found {len(self.files)} files in {self.base_path}")
         if max_files is not None:
             self.files = self.files[:max_files]
-            logging.info(f"Using {max_files} files")
+            print(f"Using {max_files} files")
 
-        logging.info(f"Loading first file: {self.files[0]}")
+        print(f"Loading first file: {self.files[0]}")
         self._load_coords(self.files[0])
 
     def _list_files(self):
         files_with_extension = set()
-        for filename in os.listdir(self.base_path):
+        for filename in sorted(os.listdir(self.base_path)):
             if filename.endswith(".npz") and not filename.startswith("."):
                 files_with_extension.add(os.path.join(self.base_path, filename))
         return list(files_with_extension)
