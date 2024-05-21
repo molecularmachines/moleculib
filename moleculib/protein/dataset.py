@@ -467,10 +467,10 @@ class FastFoldingDataset(Dataset):
             return sorted(files, key=lambda x: extract_x_y(x))
         return files
 
-<<<<<<< HEAD
     def __len__(self):
         return len(self.coords) - self.tau
     
+    def __getitem__(self, idx):
         # if self.counter > self.buffer:
         #     index = int(idx / self.buffer)
         #     index = min(index, len(self.files) - 1)
@@ -481,10 +481,10 @@ class FastFoldingDataset(Dataset):
         # idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
         idx = self.shuffler[idx]
         self.atom_array._coord = self.coords[idx]
-=======
-    def _load_coords(self, files):
-        if files in self.cache:
-            self.coords = self.cache[files]
+        p1 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
                 resolution=None,
             ),
         )
