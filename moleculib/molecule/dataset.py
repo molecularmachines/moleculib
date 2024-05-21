@@ -356,7 +356,7 @@ class QM9Dataset(Dataset):
         if self.centralize:
             datum = self.centralize.transform(datum)
 
-        datum = self.sorter.transform(datum)
+        # datum = self.sorter.transform(datum)
 
         if self.permute is not None:
             datum = self.permute.transform(datum)
@@ -881,7 +881,10 @@ class DensityDataDir(Dataset):
         self.max_atoms = max_atoms
         self.grid_size = grid_size
         self.samples = samples
-        split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
+        if to_split:
+            split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
+        else:
+            split = []
         self.member_list = []
         for s in range(134):
             self.member_list.extend(
@@ -1361,7 +1364,11 @@ class ReactDataset(Dataset):
         )
         self.max_atoms = max_atoms
         if max_atoms > 0:
-            self.index = [i for i in range(len(self.data)) if self.data[i]["num_atoms"] <= self.max_atoms]
+            self.index = [
+                i
+                for i in range(len(self.data))
+                if self.data[i]["num_atoms"] <= self.max_atoms
+            ]
         else:
             self.index = np.arange(len(self.data))
 
@@ -1374,20 +1381,24 @@ class ReactDataset(Dataset):
         return len(self.index)
 
     def get_token(self, smiles):
-        smiles = [r for r in smiles if r != '[H+]']
+        smiles = [r for r in smiles if r != "[H+]"]
         smiles = ".".join(smiles)
-        mol = Chem.MolFromSmiles(smiles) 
-        mapping_numbers = np.array([atom.GetAtomMapNum() for atom in mol.GetAtoms()]).argsort()
-        atomic_num = np.array([atom.GetAtomicNum() for atom in mol.GetAtoms()])[mapping_numbers]
+        mol = Chem.MolFromSmiles(smiles)
+        mapping_numbers = np.array(
+            [atom.GetAtomMapNum() for atom in mol.GetAtoms()]
+        ).argsort()
+        atomic_num = np.array([atom.GetAtomicNum() for atom in mol.GetAtoms()])[
+            mapping_numbers
+        ]
         return atomic_num
-    
+
     def __getitem__(self, index):
         entry = self.data[self.index[index]]
         token = self.get_token(entry["mapped_reactants"])
-        reactants = entry['reacts_coords'][np.random.randint(0, 3)].squeeze()
-        products = entry['prods_coords'][np.random.randint(0, 3)].squeeze()
-        reacts_mask = entry['reacts_mol_mask']
-        prods_mask = entry['prods_mol_mask']
+        reactants = entry["reacts_coords"][np.random.randint(0, 3)].squeeze()
+        products = entry["prods_coords"][np.random.randint(0, 3)].squeeze()
+        reacts_mask = entry["reacts_mol_mask"]
+        prods_mask = entry["prods_mol_mask"]
         mask = np.ones_like(token)
 
         datum = ReactDatum(
@@ -1418,14 +1429,16 @@ class ReactDataset(Dataset):
 
         return datum
 
+
 ATOM_TYPES = {
-    'benzene': np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]),
-    'ethanol': np.array([0, 0, 2, 1, 1, 1, 1, 1, 1]),
-    'phenol': np.array([0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1]),
-    'resorcinol': np.array([0, 0, 0, 0, 0, 0, 2, 1, 2, 1, 1, 1, 1, 1]),
-    'ethane': np.array([0, 0, 1, 1, 1, 1, 1, 1]),
-    'malonaldehyde': np.array([2, 0, 0, 0, 2, 1, 1, 1, 1]),
+    "benzene": np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]),
+    "ethanol": np.array([0, 0, 2, 1, 1, 1, 1, 1, 1]),
+    "phenol": np.array([0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1]),
+    "resorcinol": np.array([0, 0, 0, 0, 0, 0, 2, 1, 2, 1, 1, 1, 1, 1]),
+    "ethane": np.array([0, 0, 1, 1, 1, 1, 1, 1]),
+    "malonaldehyde": np.array([2, 0, 0, 0, 2, 1, 1, 1, 1]),
 }
+
 
 class MDDensityDataset(Dataset):
     def __init__(self, mol_name, samples=1000, _split="train", _rotated=True):
@@ -1437,51 +1450,60 @@ class MDDensityDataset(Dataset):
         :param split: data split, can be 'train', 'validation', 'test'
         """
         super(MDDensityDataset, self).__init__()
-        assert mol_name in ('benzene', 'ethanol', 'phenol', 'resorcinol', 'ethane', 'malonaldehyde')
+        assert mol_name in (
+            "benzene",
+            "ethanol",
+            "phenol",
+            "resorcinol",
+            "ethane",
+            "malonaldehyde",
+        )
         self.root = "/mas/projects/molecularmachines/db/MDDensity"
         self.mol_name = mol_name
         self.split = _split
         self.n_grid = 50  # number of grid points along each dimension
-        self.grid_size = 20.  # box size in Bohr
-        self.data_path = os.path.join(self.root, mol_name, f'{mol_name}_{self.split}')
+        self.grid_size = 20.0  # box size in Bohr
+        self.data_path = os.path.join(self.root, mol_name, f"{mol_name}_{self.split}")
         self.samples = samples
         self.atom_type = ATOM_TYPES[mol_name]
-        self.atom_coords = np.load(os.path.join(self.data_path, 'structures.npy'))
-        self.densities = self._convert_fft(np.load(os.path.join(self.data_path, 'dft_densities.npy')))
+        self.atom_coords = np.load(os.path.join(self.data_path, "structures.npy"))
+        self.densities = self._convert_fft(
+            np.load(os.path.join(self.data_path, "dft_densities.npy"))
+        )
         self.grid_coord = self._generate_grid()
         print("Loaded {} {} {} datapoints".format(mol_name, self.split, len(self)))
         if _split == "train":
             self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
             test = self.__class__(
                 mol_name,
-                samples=samples*5,
+                samples=samples * 5,
                 _split="test",
             )
             self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
 
     def _convert_fft(self, fft_coeff):
         # The raw data are stored in Fourier basis, we need to convert them back.
-        print(f'Precomputing {self.split} density from FFT coefficients ...')
+        print(f"Precomputing {self.split} density from FFT coefficients ...")
         fft_coeff = np.array(fft_coeff).astype(np.complex64)
         d = fft_coeff.reshape(-1, self.n_grid, self.n_grid, self.n_grid)
         hf = self.n_grid // 2
         # first dimension
         d[:, :hf] = (d[:, :hf] - d[:, hf:] * 1j) / 2
-        d[:, hf:] = np.flip(d[:, 1:hf + 1], [1]).conj()
+        d[:, hf:] = np.flip(d[:, 1 : hf + 1], [1]).conj()
         d = np.fft.ifft(d, axis=1)
         # second dimension
         d[:, :, :hf] = (d[:, :, :hf] - d[:, :, hf:] * 1j) / 2
-        d[:, :, hf:] = np.flip(d[:, :, 1:hf + 1], [2]).conj()
+        d[:, :, hf:] = np.flip(d[:, :, 1 : hf + 1], [2]).conj()
         d = np.fft.ifft(d, axis=2)
         # third dimension
         d[..., :hf] = (d[..., :hf] - d[..., hf:] * 1j) / 2
-        d[..., hf:] = np.flip(d[..., 1:hf + 1], [3]).conj()
+        d[..., hf:] = np.flip(d[..., 1 : hf + 1], [3]).conj()
         d = np.fft.ifft(d, axis=3)
-        return np.flip(d.real.reshape(-1, self.n_grid ** 3), [-1])
+        return np.flip(d.real.reshape(-1, self.n_grid**3), [-1])
 
     def _generate_grid(self):
         x = np.linspace(self.grid_size / self.n_grid, self.grid_size, self.n_grid)
-        return np.stack(np.meshgrid(x, x, x, indexing='ij'), axis=-1).reshape(-1, 3)
+        return np.stack(np.meshgrid(x, x, x, indexing="ij"), axis=-1).reshape(-1, 3)
 
     def __getitem__(self, item):
         grid = self.grid_coord
@@ -1493,14 +1515,189 @@ class MDDensityDataset(Dataset):
             density = density[probes]
 
         datum = DensityDatum(
-                density=density.astype(np.float32),
-                grid=grid.astype(np.float32),
-                atom_coord=self.atom_coords[item].astype(np.float32),
-                atom_token=self.atom_type.astype(np.int32),
-                atom_mask=np.ones_like(self.atom_type),
-                bonds=None,
-            )
+            density=density.astype(np.float32),
+            grid=grid.astype(np.float32),
+            atom_coord=self.atom_coords[item].astype(np.float32),
+            atom_token=self.atom_type.astype(np.int32),
+            atom_mask=np.ones_like(self.atom_type),
+            bonds=None,
+        )
         return datum
 
     def __len__(self):
         return self.atom_coords.shape[0]
+
+
+import lzma
+
+
+class CubeDataset(Dataset):
+    def __init__(self, max_atoms=10, samples=1000, _split="train", _rotated=True):
+        """
+        The density dataset contains volumetric data of molecules.
+        :param root: data root
+        :param split: data split, can be 'train', 'validation', 'test'
+        :param split_file: the data split file containing file names of the split
+        """
+        super(CubeDataset).__init__()
+        self.root = "/mas/projects/molecularmachines/db/CubeDenisty"
+        self.split = _split
+        self.extension = "json"
+        self.compression = "xz"
+
+        self.file_pattern = f".{self.extension}"
+        self.file_pattern += f".{self.compression}"
+
+        # with open(os.path.join(self.root, split_file)) as f:
+        # reverse the order so that larger molecules are tested first
+        # self.file_list = list(reversed(json.load(f)[split]))
+
+        self.file_list = list(reversed(os.listdir(self.root)))
+        try:
+            self.file_list.remove("crystal.json")
+            self.file_list.remove("num_atoms.npy")
+        except ValueError:
+            pass
+
+        self.num_atoms = np.load(os.path.join(self.root, "num_atoms.npy"))
+        self.max_atoms = max_atoms
+        if self.max_atoms:
+            self.file_list = np.array(self.file_list)[
+                np.where(self.num_atoms <= max_atoms)
+            ]
+
+        np.random.seed(0)
+        if _split == "train":
+            self.file_list = np.random.permutation(self.file_list)[:-2000]
+        elif _split == "test":
+            self.file_list = np.random.permutation(self.file_list)[-2000:-1000]
+        elif _split == "valid":
+            self.file_list = np.random.permutation(self.file_list)[-1000:]
+
+        with open(os.path.join(self.root, "crystal.json")) as f:
+            atom_info = json.load(f)
+        atom_list = [info["name"] for info in atom_info]
+        self.atom_name2idx = {name: idx for idx, name in enumerate(atom_list)}
+        self.atom_name2idx.update(
+            {name.encode(): idx for idx, name in enumerate(atom_list)}
+        )
+        self.atom_num2idx = {
+            info["atom_num"]: idx for idx, info in enumerate(atom_info)
+        }
+        self.idx2atom_num = {
+            idx: info["atom_num"] for idx, info in enumerate(atom_info)
+        }
+        self.padding = PairPad()
+
+        self.open = lzma.open
+        self.samples = samples
+        self.elements = elements.assign(
+            symbol=lambda df: df.symbol.str.lower()
+        ).symbol.tolist()
+
+        print("Loaded {} {} datapoints".format(self.split, len(self)))
+        if _split == "train":
+            self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
+            test = self.__class__(
+                samples=samples,
+                max_atoms=max_atoms,
+                _split="test",
+            )
+            self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
+            valid = self.__class__(
+                samples=samples,
+                max_atoms=max_atoms,
+                _split="valid",
+            )
+            self.splits["valid"] = RotatingPoolData(test, 30) if _rotated else valid
+
+    def __getitem__(self, item):
+        atom_type, atom_coord, density, grid_coord, info = self.read_json(item)
+
+        if self.samples:
+            probes = np.random.randint(0, len(grid_coord), self.samples)
+            grid_coord = grid_coord[probes]
+            density = density[probes]
+
+        datum = DensityDatum(
+            density=density.astype(np.float32),
+            grid=grid_coord.astype(np.float32),
+            atom_coord=atom_coord.astype(np.float32),
+            atom_token=atom_type.astype(np.int32),
+            atom_mask=np.ones_like(atom_type),
+            bonds=None,
+        )
+
+        if self.max_atoms:
+            datum = self.padding.transform(
+                datum,
+                {
+                    "atom_token": self.max_atoms,
+                    "atom_coord": self.max_atoms,
+                    "atom_mask": self.max_atoms,
+                },
+            )
+
+        return datum
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def read_json(self, item):
+        """Read atoms and data from JSON file."""
+
+        def read_2d_tensor(s):
+            return np.array([[float(x) for x in line] for line in s])
+
+        with self.open(os.path.join(self.root, self.file_list[item])) as fileobj:
+            data = json.load(fileobj)
+
+        scale = float(data["vector"][0][0])
+        cell = read_2d_tensor(data["lattice"][0]) * scale
+        elements = data["elements"][0]
+        n_atoms = [int(s) for s in data["elements_number"][0]]
+
+        tot_atoms = sum(n_atoms)
+        atom_coord = read_2d_tensor(data["coordinates"][0])
+        atom_type = np.zeros(tot_atoms, dtype=np.int32)
+        idx = 0
+        for elem, n in zip(elements, n_atoms):
+            atom_type[idx : idx + n] = self.elements.index(elem.lower()) + 1
+            # atom_type[idx : idx + n] = self.idx2atom_num[self.atom_name2idx[elem]]
+            idx += n
+
+        atom_coord = atom_coord @ cell
+
+        shape = [int(s) for s in data["FFTgrid"][0]]
+        x_coord = np.linspace(0, shape[0] - 1, shape[0])[..., None] / shape[0] * cell[0]
+        y_coord = np.linspace(0, shape[1] - 1, shape[1])[..., None] / shape[1] * cell[1]
+        z_coord = np.linspace(0, shape[2] - 1, shape[2])[..., None] / shape[2] * cell[2]
+        grid_coord = (
+            x_coord.reshape(-1, 1, 1, 3)
+            + y_coord.reshape(1, -1, 1, 3)
+            + z_coord.reshape(1, 1, -1, 3)
+        )
+        grid_coord = grid_coord.reshape(-1, 3)
+
+        n_grid = shape[0] * shape[1] * shape[2]
+        n_line = (n_grid + 9) // 10
+        density = np.array(
+            [
+                float(s) if not s[0] == "*" else 0.0
+                for line in data["chargedensity"][0][:n_line]
+                for s in line
+            ]
+        ).reshape(-1)[:n_grid]
+        volume = np.abs(np.linalg.det(cell))
+        density = density / volume
+        density = (
+            density.reshape(shape[2], shape[1], shape[0]).transpose(2, 1, 0).reshape(-1)
+        )
+
+        return (
+            atom_type,
+            atom_coord,
+            density,
+            grid_coord,
+            {"shape": shape, "cell": cell},
+        )
