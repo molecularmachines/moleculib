@@ -429,7 +429,8 @@ class FastFoldingDataset(Dataset):
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
         self.buffer = buffer
-
+        
+        self.files = self.files[:1000]
         self.coords = np.concatenate(
             process_map(self._load_subtrajs, range(len(self.files)), max_workers=32)
         )
@@ -479,8 +480,8 @@ class FastFoldingDataset(Dataset):
         
         # self.counter += 1
         # idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
-        idx = self.shuffler[idx]
-        self.atom_array._coord = self.coords[idx]
+        idx1 = self.shuffler[idx]
+        self.atom_array._coord = self.coords[idx1]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -489,9 +490,10 @@ class FastFoldingDataset(Dataset):
             ),
         )
         if self.tau == 0:
-            return p1
-        
-        self.atom_array._coord = self.coords[idx + self.tau]
+            return batch_dict([p1.to_dict()])
+
+        idx2 = self.shuffler[idx + self.tau]        
+        self.atom_array._coord = self.coords[idx2]
         p2 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -499,4 +501,9 @@ class FastFoldingDataset(Dataset):
                 resolution=None,
             ),
         )
-        return [p2, p1]
+        return batch_dict([p2.to_dict(), p1.to_dict()])
+    
+
+def batch_dict(list_):
+    keys = list_[0].keys()
+    return {k: np.stack([d[k] for d in list_]) for k in keys if list_[0][k] is not None}
