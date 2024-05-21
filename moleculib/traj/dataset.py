@@ -241,3 +241,96 @@ class AtlasDataset(Dataset):
             path1 = '{}/{}.bcif'.format(path, t)
             protein_datum_i = ProteinDatum.from_filepath(path1)
             return protein_datum_i
+
+
+
+class AtlasEIF4EDataset(PreProcessedDataset):
+
+    def __init__(self, base_path, transform=[]):
+        base_path = os.path.join(base_path, "ATLAS4E1.pyd")
+        with open(base_path, "rb") as fin:
+            print("Loading data...")
+            splits = pickle.load(fin)
+        super().__init__(splits, transform, shuffle=False)
+
+
+import logging
+from typing import Optional
+import biotite.structure.io.pdb as pdb
+
+
+class TimewarpDataset:
+    """Exposes datasets from the Timewarp paper."""
+
+    def __init__(
+        self,
+        dataset: str,
+        split: str,
+        tau: int,
+        max_files: Optional[int] = None,
+    ):
+        base = "/mas/projects/molecularmachines/db/timewarp2/"
+        self.base_path = os.path.join(base, dataset, split)
+        self.counter = 0
+        self.tau = tau
+
+        self.files = self._list_files()
+        if len(self.files) == 0:
+            raise ValueError(f"No files found in {self.base_path}")
+
+        logging.info(f"Found {len(self.files)} files in {self.base_path}")
+        if max_files is not None:
+            self.files = self.files[:max_files]
+            logging.info(f"Using {max_files} files")
+
+        logging.info(f"Loading first file: {self.files[0]}")
+        self._load_coords(self.files[0])
+
+    def _list_files(self):
+        files_with_extension = set()
+        for filename in os.listdir(self.base_path):
+            if filename.endswith(".npz") and not filename.startswith("."):
+                files_with_extension.add(os.path.join(self.base_path, filename))
+        return list(files_with_extension)
+
+    def _load_coords(self, file):
+        data = np.load(file)
+        pdb_file = file.replace("-arrays.npz", "-state0.pdb")
+        self.atom_array = pdb.PDBFile.read(pdb_file).get_structure()[0]
+        self.coords = data['positions'] * 10  # Convert to angstroms
+
+    def __len__(self):
+        return len(self.files) * self.coords.shape[0]
+
+    def _num_timesteps(self):
+        return self.coords.shape[0]
+
+    def __getitem__(self, idx):
+        if self.counter > 1000:
+            self._load_coords(self.files[idx // self._num_timesteps()])
+            self.counter = 0
+        self.counter += 1
+        idxx = idx % (self._num_timesteps() - self.tau)
+
+        self.atom_array._coord = self.coords[idxx]
+        p1 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+        
+        if self.tau == 0:
+            return p1
+        
+        self.atom_array._coord = self.coords[idxx + self.tau]
+        p2 = ProteinDatum.from_atom_array(
+            self.atom_array,
+            header=dict(
+                idcode=None,
+                resolution=None,
+            ),
+        )
+
+        return [p2, p1]

@@ -393,9 +393,19 @@ from biotite.structure import filter_amino_acids
 import biotite.structure.io.pdb as pdb
 
 
+from tqdm.contrib.concurrent import process_map
+
 class FastFoldingDataset(Dataset):
     def __init__(
-        self, protein="chignolin", num_files=-1, tau=1, stride=1, time_sort=False
+        self, 
+        protein="chignolin", 
+        num_files=-1, 
+        tau=1, 
+        stride=1, 
+        time_sort=False, 
+        buffer=100, 
+        preload=True,
+        shuffle=False,
     ):
         base = "/mas/projects/molecularmachines/db/FastFoldingProteins/"
         if protein == "chignolin":
@@ -418,8 +428,28 @@ class FastFoldingDataset(Dataset):
         self.aa_filter = filter_amino_acids(self.atom_array)
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
-        self._load_coords(self.files[0])
+        self.buffer = buffer
+
+        self.coords = np.concatenate(
+            process_map(self._load_subtrajs, range(len(self.files)), max_workers=32)
+        )
+        
+        if shuffle:
+            self.shuffler = np.random.permutation(len(self))
+        else:
+            self.shuffler = np.arange(len(self))
+
+        self.splits = { 'train': self }
+
         print(f"{len(self)} total samples")
+
+    def _load_subtrajs(self, idx):
+        data = mdtraj.load(
+            self.files[idx],
+            top=self.base_path + "filtered.pdb",
+            stride=self.stride,
+        )
+        return data.xyz[:, self.aa_filter, :] * 10 
 
     def _list_files(self):
         def extract_x_y(filename):
@@ -437,25 +467,20 @@ class FastFoldingDataset(Dataset):
             return sorted(files, key=lambda x: extract_x_y(x))
         return files
 
-    def _load_coords(self, files):
-        data = mdtraj.load(
-            files,
-            top=self.base_path + "filtered.pdb",
-            stride=self.stride,
-        )
-        self.coords = data.xyz[:, self.aa_filter, :] * 10  # convert to angstroms
-
     def __len__(self):
-        return len(self.files) * self.coords.shape[0]
-
+        return len(self.coords) - self.tau
+    
     def __getitem__(self, idx):
-        if self.counter > 100:
-            self._load_coords(self.files[idx // self.coords.shape[0]])
-            self.counter = 0
-        self.counter += 1
-        idxx = idx % (self.coords.shape[0] - self.tau)
-
-        self.atom_array._coord = self.coords[idxx]
+        # if self.counter > self.buffer:
+        #     index = int(idx / self.buffer)
+        #     index = min(index, len(self.files) - 1)
+        #     self._load_coords(self.files[index])
+        #     self.counter = 0
+        
+        # self.counter += 1
+        # idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
+        idx = self.shuffler[idx]
+        self.atom_array._coord = self.coords[idx]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -463,7 +488,10 @@ class FastFoldingDataset(Dataset):
                 resolution=None,
             ),
         )
-        self.atom_array._coord = self.coords[idxx + self.tau]
+        if self.tau == 0:
+            return p1
+        
+        self.atom_array._coord = self.coords[idx + self.tau]
         p2 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(

@@ -204,12 +204,12 @@ class ProteinDatum:
         idcode=None,
         chain_id=None,
         chain=None,
-        model=None,
+        model=1,
     ):
         
         if str(filepath).endswith(".pdb") or format == 'pdb':
             pdb_file = pdb.PDBFile.read(filepath)
-            atom_array = pdb.get_structure(pdb_file, model=1)
+            atom_array = pdb.get_structure(pdb_file, model=model)
             if idcode is None:
                 idcode = str(filepath).split("/")[-1].split(".")[0]
             header = dict(
@@ -218,7 +218,7 @@ class ProteinDatum:
             )
         elif str(filepath).endswith(".mmtf"): 
             mmtf_file = mmtf.MMTFFile.read(filepath)
-            atom_array = mmtf.get_structure(mmtf_file, model=1)
+            atom_array = mmtf.get_structure(mmtf_file, model=model)
             header = dict(
                 idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
                 resolution=None
@@ -227,14 +227,14 @@ class ProteinDatum:
             )
         elif str(filepath).endswith(".bcif"):
             bcif_file = pdbx.BinaryCIFFile.read(filepath)
-            atom_array = pdbx.get_structure(bcif_file, model=1)
+            atom_array = pdbx.get_structure(bcif_file, model=model)
             header = dict(
                 idcode=None,
                 resolution=None
             )
         elif str(filepath).endswith(".mmcif"):
             mmcif_file = pdbx.PDBxFile.read(filepath)
-            atom_array = pdbx.get_structure(mmcif_file, model=1)
+            atom_array = pdbx.get_structure(mmcif_file, model=model)
             header = dict(
                 idcode=None,
                 resolution=None
@@ -424,7 +424,9 @@ class ProteinDatum:
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
-        all_atom_res_indices = repeat(np.arange(len(self.residue_token)), "r -> r a", a=14)[atom_mask]
+
+        all_atom_res_indices = self.residue_token[..., None] * np.ones((len(self.residue_token), 14))
+        all_atom_res_indices = all_atom_res_indices[atom_mask]
 
         # just in case, move to cpu
         atom_mask = np.array(atom_mask)
@@ -469,6 +471,7 @@ class ProteinDatum:
         ribbon=True,
         sidechain=True,
         color='spectrum',
+        colors=None,
     ):
         if viewer is None:
             viewer = (0, 0)
@@ -485,6 +488,10 @@ class ProteinDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
             else:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+
+        if colors is not None:
+            colors = {i+1: c for i, c in enumerate(colors)}
+            view.setStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
 
@@ -549,3 +556,13 @@ class ProteinDatum:
         file = cif.CIFFile()
         cif.set_structure(file, atom_array)
         file.write(filepath)
+
+    def to_dict(self):
+        return vars(self)
+    
+    # def to_pytree(self):
+        # return Pytree(self.to_dict())
+
+    @classmethod
+    def from_dict(cls, dict_):
+        return cls(**dict_)
