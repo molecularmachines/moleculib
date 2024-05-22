@@ -368,6 +368,7 @@ class FuncDataset(PreProcessedDataset):
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
+from tqdm import tqdm
 
 class ScaffoldsDataset(PreProcessedDataset):
 
@@ -400,7 +401,7 @@ class FastFoldingDataset(Dataset):
         self, 
         protein="chignolin", 
         num_files=-1, 
-        tau=1, 
+        tau=0, 
         stride=1, 
         time_sort=False, 
         buffer=100, 
@@ -431,8 +432,13 @@ class FastFoldingDataset(Dataset):
         self.buffer = buffer
         
         self.files = self.files[:1000]
+
+        # self.coords = np.concatenate(
+        #     [self._load_subtrajs(i) for i in tqdm(range(len(self.files)))]
+        # )
+
         self.coords = np.concatenate(
-            process_map(self._load_subtrajs, range(len(self.files)), max_workers=32)
+            process_map(self._load_subtrajs, range(len(self.files)), max_workers=24)
         )
         
         if shuffle:
@@ -490,7 +496,7 @@ class FastFoldingDataset(Dataset):
             ),
         )
         if self.tau == 0:
-            return batch_dict([p1.to_dict()])
+            return [p1]
 
         idx2 = self.shuffler[idx + self.tau]        
         self.atom_array._coord = self.coords[idx2]
@@ -501,9 +507,4 @@ class FastFoldingDataset(Dataset):
                 resolution=None,
             ),
         )
-        return batch_dict([p2.to_dict(), p1.to_dict()])
-    
-
-def batch_dict(list_):
-    keys = list_[0].keys()
-    return {k: np.stack([d[k] for d in list_]) for k in keys if list_[0][k] is not None}
+        return [p2, p1]
