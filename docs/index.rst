@@ -9,9 +9,13 @@
 * **Machine Learning-First**: designed to readily integrate with Jax and pytrees in machine learning pipelines.
 * **Reproducibility**: modular classes and workflows for better organization and reproducibility.
 
-.. automodule:: moleculib
-    :members:
 
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :recursive:
+
+   moleculib
 
 
 

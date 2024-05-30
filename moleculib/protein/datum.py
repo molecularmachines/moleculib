@@ -424,9 +424,7 @@ class ProteinDatum:
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
-
-        all_atom_res_indices = self.residue_token[..., None] * np.ones((len(self.residue_token), 14))
-        all_atom_res_indices = all_atom_res_indices[atom_mask]
+        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
 
         # just in case, move to cpu
         atom_mask = np.array(atom_mask)

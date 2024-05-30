@@ -21,8 +21,11 @@ release = '-'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosummary', 
 ]
+
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 
 templates_path = ['_templates']
