@@ -9,10 +9,10 @@
 * **Machine Learning-First**: designed to readily integrate with Jax and pytrees in machine learning pipelines.
 * **Reproducibility**: modular classes and workflows for better organization and reproducibility.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+.. automodule:: moleculib
+    :members:
 
-   modules
+
+
 
 * :ref:`genindex`
