@@ -1,6 +1,7 @@
 # 🧬 `moleculib` – Tools for Biomolecular Data 
 
-![](https://img.shields.io/badge/documentation-black?link=https://molecularmachines.github.io/moleculib/index.html&logo=Sphinx)
+
+[![](https://img.shields.io/badge/documentation-black?logo=Sphinx)](https://molecularmachines.github.io/moleculib/index.html)
 
 
 
