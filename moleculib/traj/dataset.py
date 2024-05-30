@@ -240,7 +240,7 @@ class AtlasDataset(Dataset):
             t = np.random.randint(0, NUM_STEPS - 1)
             path1 = '{}/{}.bcif'.format(path, t)
             protein_datum_i = ProteinDatum.from_filepath(path1)
-            return protein_datum_i
+            return [protein_datum_i]
 
 
 
