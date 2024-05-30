@@ -1,4 +1,4 @@
-moleculib
+Getting Started
 =============
 
 **moleculib** is a comprehensive Python package designed to streamline the processing and management of biomolecular data within machine learning workflows. It empowers researchers and developers with a robust set of functionalities, simplifying complex data pipelines and accelerating the journey from raw biomolecular data to valuable insights.
