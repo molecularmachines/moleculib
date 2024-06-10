@@ -798,6 +798,31 @@ def _read_vasp(filecontent):
     return density, atoms, np.zeros(3)  # TODO: Can we always assume origin at 0,0,0?
 
 
+import torch.nn.functional as F
+from e3nn import o3
+
+
+def rotate_voxel(shape, cell, density, rotated_grid):
+    """
+    Rotate the volumetric data using trilinear interpolation.
+    :param shape: voxel shape, tensor of shape (3,)
+    :param cell: cell vectors, tensor of shape (3, 3)
+    :param density: original density, tensor of shape (n_grid,)
+    :param rotated_grid: rotated grid coordinates, tensor of shape (n_grid, 3)
+    :return: rotated density, tensor of shape (n_grid,)
+    """
+    density = density.view(1, 1, *shape)
+    rotated_grid = rotated_grid.view(1, *shape, 3)
+    shape = torch.FloatTensor(shape)
+    grid_cell = cell / shape.view(3, 1)
+    normalized_grid = (2 * rotated_grid @ torch.linalg.inv(grid_cell) - shape + 1) / (
+        shape - 1
+    )
+    return F.grid_sample(
+        density, torch.flip(normalized_grid, [-1]), mode="bilinear", align_corners=False
+    )
+
+
 def _calculate_grid_pos(density, origin, cell):
     # Calculate grid positions
     ngridpts = np.array(density.shape)  # grid matrix
@@ -863,6 +888,9 @@ class RotatingPoolData(Dataset):
         return self.data_pool[index]
 
 
+import torch
+
+
 class DensityDataDir(Dataset):
     def __init__(
         self,
@@ -872,6 +900,7 @@ class DensityDataDir(Dataset):
         _split="train",
         _rotated=True,
         to_split=True,
+        rotate_voxel=False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -881,6 +910,7 @@ class DensityDataDir(Dataset):
         self.max_atoms = max_atoms
         self.grid_size = grid_size
         self.samples = samples
+        self.rotate_voxel = rotate_voxel
         if to_split:
             split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
         else:
@@ -936,8 +966,8 @@ class DensityDataDir(Dataset):
 
         filecontent = _decompress_file(path)
         density, atoms, origin = _read_vasp(filecontent)
-
-        grid_pos = _calculate_grid_pos(density, origin, atoms.get_cell())
+        cell = atoms.get_cell()
+        grid_pos = _calculate_grid_pos(density, origin, cell)
 
         return {
             "density": density,
@@ -945,6 +975,7 @@ class DensityDataDir(Dataset):
             "token": atoms.numbers,
             "grid": grid_pos,
             "filename": filename,
+            "cell": cell,
         }
 
     def _process(self, index):
@@ -966,12 +997,29 @@ class DensityDataDir(Dataset):
 
         density = dp["density"]
         grid = dp["grid"]
+        cell = dp["cell"]
+        coord = dp["coord"]
+        # print(density.shape)
+        if self.rotate_voxel:
+            rot = o3.rand_matrix()
+            center = torch.Tensor(cell).sum(dim=0) / 2
+            rotated_coord = (torch.Tensor(coord) - center) @ rot.t() + center
+            rotated_grid = (torch.Tensor(grid) - center) @ rot + center
+            rotated_density = rotate_voxel(
+                density.shape, torch.Tensor(cell), torch.Tensor(density), rotated_grid
+            )
+
+            # density = rotated_density.numpy().squeeze()
+            grid = rotated_grid.numpy()
+            coord = rotated_coord.numpy()
 
         # dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
         # dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
         # dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
         # density = density * (dx * dy * dz)
-
+        # print(density.shape)
+        # print(grid.shape)
+        # print(coord.shape)
         if self.grid_size:
             # density, grid = self.sample_neighborhood(density, grid)
             density, grid = self.sample(density, grid, self.samples)
@@ -979,7 +1027,7 @@ class DensityDataDir(Dataset):
         datum = DensityDatum(
             density=density,
             grid=grid,
-            atom_coord=dp["coord"],
+            atom_coord=coord,
             atom_token=dp["token"],
             atom_mask=np.ones_like(dp["token"]),
             bonds=None,

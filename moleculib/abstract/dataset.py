@@ -50,3 +50,6 @@ class PreProcessedDataset:
             if self.transform is not None:
                 for split, data in list(self.splits.items()):
                     self.splits[split] = _TransformWrapper(data, self.transform)
+
+    def __len__(self):
+        return sum([len(data) for data in self.splits.values()])

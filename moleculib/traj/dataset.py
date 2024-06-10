@@ -241,6 +241,22 @@ class AtlasDataset(Dataset):
             path1 = '{}/{}.bcif'.format(path, t)
             protein_datum_i = ProteinDatum.from_filepath(path1)
             return protein_datum_i
+    
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_
 
 
 
@@ -252,6 +268,22 @@ class AtlasEIF4EDataset(PreProcessedDataset):
             print("Loading data...")
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle=False)
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_
 
 
 import logging

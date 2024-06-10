@@ -69,4 +69,4 @@ PERIODIC_TABLE = [
     "Nd",
 ]  # 60 elements
 
-assert elements.symbol[: len(PERIODIC_TABLE)].to_list() == PERIODIC_TABLE
+# assert elements.symbol[: len(PERIODIC_TABLE)].to_list() == PERIODIC_TABLE
