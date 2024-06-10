@@ -368,6 +368,7 @@ class FuncDataset(PreProcessedDataset):
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
+from tqdm import tqdm
 
 class ScaffoldsDataset(PreProcessedDataset):
 
@@ -400,7 +401,7 @@ class FastFoldingDataset(Dataset):
         self, 
         protein="chignolin", 
         num_files=-1, 
-        tau=1, 
+        tau=0, 
         stride=1, 
         time_sort=False, 
         buffer=100, 
@@ -429,9 +430,15 @@ class FastFoldingDataset(Dataset):
         self.atom_array = self.atom_array[self.aa_filter]
         self.counter = 0
         self.buffer = buffer
+        
+        self.files = self.files[:1000]
+
+        # self.coords = np.concatenate(
+        #     [self._load_subtrajs(i) for i in tqdm(range(len(self.files)))]
+        # )
 
         self.coords = np.concatenate(
-            process_map(self._load_subtrajs, range(len(self.files)), max_workers=32)
+            process_map(self._load_subtrajs, range(len(self.files)), max_workers=24)
         )
         
         if shuffle:
@@ -479,8 +486,8 @@ class FastFoldingDataset(Dataset):
         
         # self.counter += 1
         # idxx = np.maximum(idx % (self.coords.shape[0] - self.tau),0)
-        idx = self.shuffler[idx]
-        self.atom_array._coord = self.coords[idx]
+        idx1 = self.shuffler[idx]
+        self.atom_array._coord = self.coords[idx1]
         p1 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(
@@ -489,9 +496,10 @@ class FastFoldingDataset(Dataset):
             ),
         )
         if self.tau == 0:
-            return p1
-        
-        self.atom_array._coord = self.coords[idx + self.tau]
+            return [p1]
+
+        idx2 = self.shuffler[idx + self.tau]        
+        self.atom_array._coord = self.coords[idx2]
         p2 = ProteinDatum.from_atom_array(
             self.atom_array,
             header=dict(

@@ -1,5 +1,6 @@
 import os
 from functools import partial
+from typing import Optional, Dict, Any
 from pathlib import Path
 import pickle
 
@@ -8,6 +9,8 @@ import numpy as np
 from moleculib.protein.datum import ProteinDatum
 import os 
 import numpy as np
+import biotite.structure.io.pdb as pdb
+
 
 from ..protein.datum import ProteinDatum
 from ..protein.transform import ProteinCrop
@@ -240,7 +243,7 @@ class AtlasDataset(Dataset):
             t = np.random.randint(0, NUM_STEPS - 1)
             path1 = '{}/{}.bcif'.format(path, t)
             protein_datum_i = ProteinDatum.from_filepath(path1)
-            return protein_datum_i
+            return [protein_datum_i]
     
     def to_dict(self, attrs=None):
         if attrs is None:
@@ -310,12 +313,12 @@ class TimewarpDataset:
         if len(self.files) == 0:
             raise ValueError(f"No files found in {self.base_path}")
 
-        logging.info(f"Found {len(self.files)} files in {self.base_path}")
+        print(f"Found {len(self.files)} files in {self.base_path}")
         if max_files is not None:
             self.files = self.files[:max_files]
-            logging.info(f"Using {max_files} files")
+            print(f"Using {max_files} file(s)...")
 
-        logging.info(f"Loading first file: {self.files[0]}")
+        print(f"Loading first file: {self.files[0]}")
         self._load_coords(self.files[0])
 
     def _list_files(self):
@@ -323,7 +326,7 @@ class TimewarpDataset:
         for filename in os.listdir(self.base_path):
             if filename.endswith(".npz") and not filename.startswith("."):
                 files_with_extension.add(os.path.join(self.base_path, filename))
-        return list(files_with_extension)
+        return sorted(list(files_with_extension))
 
     def _load_coords(self, file):
         data = np.load(file)
@@ -366,3 +369,15 @@ class TimewarpDataset:
         )
 
         return [p2, p1]
+    
+
+class TimewarpDatasetPreprocessed(PreProcessedDataset):
+
+    def __init__(self, split_info: Dict[str, Any]):
+        self.splits = {}
+        for split in split_info:
+            self.splits[split] = TimewarpDataset(
+                **split_info[split]
+            )
+        
+

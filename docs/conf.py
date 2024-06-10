@@ -19,12 +19,26 @@ release = '-'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    # 'sphinx.ext.autodoc',
+    # 'sphinx.ext.viewcode',
+    # 'sphinx.ext.napoleon',
+    # 'autoapi.extension',
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "autoapi.extension",
 ]
 
-
+autoapi_type = 'python'
+autoapi_dirs = ['../moleculib']
+# autoapi_template_dir = "_templates/autoapi"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+]
+autoapi_python_use_implicit_namespaces = True
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
@@ -34,4 +48,4 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'insegel'
 html_static_path = ['_static']
-html_logo = '_static/logo.svg'
+html_logo = '_static/logo.png'
