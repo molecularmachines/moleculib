@@ -31,6 +31,12 @@ class MoleculeDatum:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+
+    def replace(self, **kwargs):
+        _vars = deepcopy(vars(self))
+        _vars.update(**kwargs)
+        return self.__class__(**_vars)
+    
     def empty(self):
         new_datum_ = dict()
         for attr, obj in vars(self).items():

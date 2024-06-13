@@ -1,5 +1,5 @@
 from moleculib.protein.datum import ProteinDatum
-from moleculib.molecule.datum import MoleculeDatum
+# from moleculib.molecule.datum import MoleculeDatum
 from moleculib.nucleic.datum import NucleicDatum
 
 import py3Dmol

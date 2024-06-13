@@ -778,39 +778,63 @@ class PreProcessedDataset:
 #         )
 
 
-# def _decompress_file(filepath):
-#     with lz4.frame.open(filepath, mode="rb") as fp:
-#         filecontent = fp.read()
-#     return filecontent
+def _decompress_file(filepath):
+    with lz4.frame.open(filepath, mode="rb") as fp:
+        filecontent = fp.read()
+    return filecontent
 
 
-# def _read_vasp(filecontent):
-#     # Write to tmp file and read using ASE
-#     tmpfd, tmppath = tempfile.mkstemp(prefix="tmpdeepdft")
-#     tmpfile = os.fdopen(tmpfd, "wb")
-#     tmpfile.write(filecontent)
-#     tmpfile.close()
-#     vasp_charge = VaspChargeDensity(filename=tmppath)
-#     os.remove(tmppath)
-#     density = vasp_charge.chg[-1]  # separate density
-#     atoms = vasp_charge.atoms[-1]  # separate atom positions
+def _read_vasp(filecontent):
+    # Write to tmp file and read using ASE
+    tmpfd, tmppath = tempfile.mkstemp(prefix="tmpdeepdft")
+    tmpfile = os.fdopen(tmpfd, "wb")
+    tmpfile.write(filecontent)
+    tmpfile.close()
+    vasp_charge = VaspChargeDensity(filename=tmppath)
+    os.remove(tmppath)
+    density = vasp_charge.chg[-1]  # separate density
+    atoms = vasp_charge.atoms[-1]  # separate atom positions
+    return density, atoms, np.zeros(3)  # TODO: Can we always assume origin at 0,0,0?
 
-#     return density, atoms, np.zeros(3)  # TODO: Can we always assume origin at 0,0,0?
+
+import torch.nn.functional as F
+from e3nn import o3
 
 
-# def _calculate_grid_pos(density, origin, cell):
-#     # Calculate grid positions
-#     ngridpts = np.array(density.shape)  # grid matrix
-#     grid_pos = np.meshgrid(
-#         np.arange(ngridpts[0]) / density.shape[0],
-#         np.arange(ngridpts[1]) / density.shape[1],
-#         np.arange(ngridpts[2]) / density.shape[2],
-#         indexing="ij",
-#     )
-#     grid_pos = np.stack(grid_pos, 3)
-#     grid_pos = np.dot(grid_pos, cell)
-#     grid_pos = grid_pos + origin
-#     return grid_pos
+def rotate_voxel(shape, cell, density, rotated_grid):
+    """
+    Rotate the volumetric data using trilinear interpolation.
+    :param shape: voxel shape, tensor of shape (3,)
+    :param cell: cell vectors, tensor of shape (3, 3)
+    :param density: original density, tensor of shape (n_grid,)
+    :param rotated_grid: rotated grid coordinates, tensor of shape (n_grid, 3)
+    :return: rotated density, tensor of shape (n_grid,)
+    """
+    density = density.view(1, 1, *shape)
+    rotated_grid = rotated_grid.view(1, *shape, 3)
+    shape = torch.FloatTensor(shape)
+    grid_cell = cell / shape.view(3, 1)
+    normalized_grid = (2 * rotated_grid @ torch.linalg.inv(grid_cell) - shape + 1) / (
+        shape - 1
+    )
+    return F.grid_sample(
+        density, torch.flip(normalized_grid, [-1]), mode="bilinear", align_corners=False
+    )
+
+
+def _calculate_grid_pos(density, origin, cell):
+    # Calculate grid positions
+    ngridpts = np.array(density.shape)  # grid matrix
+    grid_pos = np.meshgrid(
+        np.arange(ngridpts[0]) / density.shape[0],
+        np.arange(ngridpts[1]) / density.shape[1],
+        np.arange(ngridpts[2]) / density.shape[2],
+        indexing="ij",
+    )
+    grid_pos = np.stack(grid_pos, 3)
+    grid_pos = np.dot(grid_pos, cell)
+    grid_pos = grid_pos + origin
+    return grid_pos
 
 
 # def rotating_pool_worker(dataset, rng, queue):
@@ -863,40 +887,45 @@ class PreProcessedDataset:
 #         return self.data_pool[index]
 
 
-# class DensityDataDir(Dataset):
-#     def __init__(
-#         self,
-#         max_atoms=29,
-#         grid_size=36,
-#         samples=1000,
-#         _split="train",
-#         _rotated=True,
-#         to_split=True,
-#         **kwargs,
-#     ):
-#         super().__init__(**kwargs)
+import torch
 
-#         self.directory = "/mas/projects/molecularmachines/db/qm9_vasp"
-#         self.padding = PairPad()
-#         self.max_atoms = max_atoms
-#         self.grid_size = grid_size
-#         self.samples = samples
-#         if to_split:
-#             split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
-#         else:
-#             split = []
-#         self.member_list = []
-#         for s in range(134):
-#             self.member_list.extend(
-#                 sorted(
-#                     [
-#                         f
-#                         for f in os.listdir(os.path.join(self.directory, str(s)))
-#                         if f.endswith(".lz4")
-#                         and ((int(f.split(".")[0]) in split) or not to_split)
-#                     ]
-#                 )
-#             )
+
+class DensityDataDir(Dataset):
+    def __init__(
+        self,
+        max_atoms=29,
+        grid_size=36,
+        samples=1000,
+        _split="train",
+        _rotated=True,
+        to_split=True,
+        rotate_voxel=False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+        self.directory = "/mas/projects/molecularmachines/db/qm9_vasp"
+        self.padding = PairPad()
+        self.max_atoms = max_atoms
+        self.grid_size = grid_size
+        self.samples = samples
+        self.rotate_voxel = rotate_voxel
+        if to_split:
+            split = json.load(open(os.path.join(self.directory, "split.json")))[_split]
+        else:
+            split = []
+        self.member_list = []
+        for s in range(134):
+            self.member_list.extend(
+                sorted(
+                    [
+                        f
+                        for f in os.listdir(os.path.join(self.directory, str(s)))
+                        if f.endswith(".lz4")
+                        and ((int(f.split(".")[0]) in split) or not to_split)
+                    ]
+                )
+            )
 
 #         print(f"Loaded {_split} {len(self)} datapoints")
 #         if _split == "train":
@@ -934,18 +963,19 @@ class PreProcessedDataset:
 #                     "filename": filename,
 #                 }
 
-#         filecontent = _decompress_file(path)
-#         density, atoms, origin = _read_vasp(filecontent)
+        filecontent = _decompress_file(path)
+        density, atoms, origin = _read_vasp(filecontent)
+        cell = atoms.get_cell()
+        grid_pos = _calculate_grid_pos(density, origin, cell)
 
-#         grid_pos = _calculate_grid_pos(density, origin, atoms.get_cell())
-
-#         return {
-#             "density": density,
-#             "coord": atoms.positions,
-#             "token": atoms.numbers,
-#             "grid": grid_pos,
-#             "filename": filename,
-#         }
+        return {
+            "density": density,
+            "coord": atoms.positions,
+            "token": atoms.numbers,
+            "grid": grid_pos,
+            "filename": filename,
+            "cell": cell,
+        }
 
 #     def _process(self, index):
 #         dp = self.extractfile(index)
@@ -964,26 +994,43 @@ class PreProcessedDataset:
 #     def __getitem__(self, index):
 #         dp = self.extractfile(index)
 
-#         density = dp["density"]
-#         grid = dp["grid"]
+        density = dp["density"]
+        grid = dp["grid"]
+        cell = dp["cell"]
+        coord = dp["coord"]
+        # print(density.shape)
+        if self.rotate_voxel:
+            rot = o3.rand_matrix()
+            center = torch.Tensor(cell).sum(dim=0) / 2
+            rotated_coord = (torch.Tensor(coord) - center) @ rot.t() + center
+            rotated_grid = (torch.Tensor(grid) - center) @ rot + center
+            rotated_density = rotate_voxel(
+                density.shape, torch.Tensor(cell), torch.Tensor(density), rotated_grid
+            )
 
-#         # dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
-#         # dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
-#         # dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
-#         # density = density * (dx * dy * dz)
+            # density = rotated_density.numpy().squeeze()
+            grid = rotated_grid.numpy()
+            coord = rotated_coord.numpy()
 
-#         if self.grid_size:
-#             # density, grid = self.sample_neighborhood(density, grid)
-#             density, grid = self.sample(density, grid, self.samples)
+        # dx = np.diff(grid[:, :, :, 0], axis=0).mean() / 0.1
+        # dy = np.diff(grid[:, :, :, 1], axis=1).mean() / 0.1
+        # dz = np.diff(grid[:, :, :, 2], axis=2).mean() / 0.1
+        # density = density * (dx * dy * dz)
+        # print(density.shape)
+        # print(grid.shape)
+        # print(coord.shape)
+        if self.grid_size:
+            # density, grid = self.sample_neighborhood(density, grid)
+            density, grid = self.sample(density, grid, self.samples)
 
-#         datum = DensityDatum(
-#             density=density,
-#             grid=grid,
-#             atom_coord=dp["coord"],
-#             atom_token=dp["token"],
-#             atom_mask=np.ones_like(dp["token"]),
-#             bonds=None,
-#         )
+        datum = DensityDatum(
+            density=density,
+            grid=grid,
+            atom_coord=coord,
+            atom_token=dp["token"],
+            atom_mask=np.ones_like(dp["token"]),
+            bonds=None,
+        )
 
 #         datum = self.padding.transform(
 #             datum,

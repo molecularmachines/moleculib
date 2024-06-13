@@ -417,8 +417,8 @@ class ProteinDatum:
                 setattr(self, key, value.numpy())
 
     def to_pdb_str(self):
-        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
-        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+    # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
+    # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.residue_token.shape) == 1
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]

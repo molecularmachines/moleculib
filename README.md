@@ -1,6 +1,10 @@
 # 🧬 `moleculib` – Tools for Biomolecular Data 
 
 
+[![](https://img.shields.io/badge/documentation-black?logo=Sphinx)](https://molecularmachines.github.io/moleculib/index.html)
+
+
+
 ## Usage
 
 One needs to install moleculib locally with 
