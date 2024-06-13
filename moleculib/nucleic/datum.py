@@ -353,6 +353,11 @@ class NucleicDatum:
         return lines
 
 
+    def to_dict(self):
+        self.idcode=None
+        self.sequence=None
+        return vars(self)
+
     def plot(
         self, 
         view, 
