@@ -410,13 +410,19 @@ class FastFoldingDataset(Dataset):
     ):
         base = "/mas/projects/molecularmachines/db/FastFoldingProteins/"
         if protein == "chignolin":
-            self.base_path = base + "chignolin_trajectories/filtered/"
+            self.base_path = base + "chignolin_trajectories/batches/0/filtered/"
         elif "trpcage" in protein: # trpcage0, trpcage1, trpcage2
             self.base_path = base + f"rpcage_trajectories/batches/{protein[-1]}/filtered"
         elif protein == "villin":
             self.base_path = base + "villin_trajectories/filtered/"
         elif "bba" in protein: # bba0, bba1, bba2
             self.base_path = base + f"bba_trajectories/batches/{protein[-1]}/filtered"
+        elif "homeodomain" == protein:
+            self.base_path = base + "homeodomain_trajectories/filtered"
+        elif "proteinb" == protein:
+            self.base_path = base + "proteinb_trajectories/filtered"
+        elif "proteing1" == protein:
+            self.base_path = base + "proteing_1_trajectories/testfilter"
 
         self.num_files = num_files
         self.tau = tau
