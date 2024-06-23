@@ -437,12 +437,7 @@ class FastFoldingDataset(Dataset):
         self.counter = 0
         self.buffer = buffer
         
-        self.files = self.files[:1000]
-
-        # self.coords = np.concatenate(
-        #     [self._load_subtrajs(i) for i in tqdm(range(len(self.files)))]
-        # )
-
+        # self.files = self.files[:1000]
         self.coords = np.concatenate(
             process_map(self._load_subtrajs, range(len(self.files)), max_workers=24)
         )
@@ -502,7 +497,7 @@ class FastFoldingDataset(Dataset):
             ),
         )
         if self.tau == 0:
-            return [p1]
+            return p1
 
         idx2 = self.shuffler[idx + self.tau]        
         self.atom_array._coord = self.coords[idx2]

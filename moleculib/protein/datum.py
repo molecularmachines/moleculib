@@ -488,8 +488,9 @@ class ProteinDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
 
         if colors is not None:
+            print('here')
             colors = {i+1: c for i, c in enumerate(colors)}
-            view.setStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+            view.setStyle({'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
 
@@ -555,12 +556,12 @@ class ProteinDatum:
         cif.set_structure(file, atom_array)
         file.write(filepath)
 
-    def to_dict(self):
+    def to_pytree(self):
         return vars(self)
     
-    # def to_pytree(self):
-        # return Pytree(self.to_dict())
-
+    def from_pytree(self, tree):
+        return ProteinDatum(**tree)
+    
     @classmethod
     def from_dict(cls, dict_):
         return cls(**dict_)

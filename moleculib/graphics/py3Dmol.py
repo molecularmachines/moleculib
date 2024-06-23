@@ -36,8 +36,8 @@ def plot_py3dmol(
         colors = [c.get_hex_l() for c in colors]
 
     for i, datum in enumerate(data):
-        datum.plot(v, color=colors[i], **kwargs)
-    v.zoomTo()
+        datum.plot(v, colors=[colors[i]] * len(datum),  **kwargs)
+    # v.zoomTo()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
 
@@ -221,7 +221,7 @@ def plot_py3dmol_grid(
                 plot_py3dmol_traj(datum, v, viewer=(i, j), **kwargs)
             else:
                 datum.plot(v, viewer=(i, j), **kwargs)
-    v.zoomTo()
+    # v.zoomTo()
     v.setBackgroundColor("rgb(0,0,0)", 0)
     return v
 
