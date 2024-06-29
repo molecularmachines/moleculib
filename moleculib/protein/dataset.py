@@ -423,7 +423,19 @@ class FastFoldingDataset(Dataset):
             self.base_path = base + "proteinb_trajectories/filtered"
         elif "proteing1" == protein:
             self.base_path = base + "proteing_1_trajectories/testfilter"
-
+        elif "proteing2" == protein:
+            self.base_path = base + "proteing_2_trajectories/workspace3/Folding/folding-proteing/crystal/ss_contacts/50ns/proteinG/batches/0/filtered"
+        elif "wwdomain1" == protein:
+            self.base_path = base + "wwdomain_1_trajectories/WWdomain/batches/0/filtered"
+        elif "wwdomain2" == protein:
+            self.base_path = base + "wwdomain_2_trajectories/WWdomain/batches/0/filtered"
+        elif "bbl1" == protein:
+            self.base_path = base + "bbl_1_trajectories/folding-bbl/crystal/ss_contacts/50ns/bbl/batches/0/filtered"
+        elif "bbl2" == protein:
+            self.base_path = base + "bbl_2_trajectories/folding-bbl-2/crystal/ss_contacts/50ns/bbl/batches/0/filtered"
+        elif "ntl9" == protein:
+            self.base_path = base + "ntl9_trajectories/workspace3/Folding/folding/crystal/ss_contacts/20ns/ntl9/batches/0/filtered"        
+        
         self.num_files = num_files
         self.tau = tau
         self.stride = stride
