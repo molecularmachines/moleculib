@@ -435,8 +435,7 @@ class FastFoldingDataset:
         epoch_size=10000,
         padded=True,
     ):
-        if proteins is None:
-            proteins = list(FAST_FOLDING_PROTEINS.keys())
+        proteins = list(FAST_FOLDING_PROTEINS.keys())
 
         self.base_path = base 
         self.proteins = proteins 
