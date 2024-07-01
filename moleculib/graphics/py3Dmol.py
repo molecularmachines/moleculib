@@ -211,7 +211,8 @@ def plot_py3dmol_grid(
     ):
     v = py3Dmol.view(
         viewergrid=(len(grid), len(grid[0])),
-        linked=True,
+        # linked=True,
+        linked=False,
         width=len(grid[0]) * window_size[0],
         height=len(grid) * window_size[1],
     )
