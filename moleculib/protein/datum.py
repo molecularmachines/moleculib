@@ -488,9 +488,8 @@ class ProteinDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
 
         if colors is not None:
-            print('here')
             colors = {i+1: c for i, c in enumerate(colors)}
-            view.setStyle({'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
 
