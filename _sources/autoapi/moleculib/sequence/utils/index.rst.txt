@@ -1,0 +1,46 @@
+moleculib.sequence.utils
+========================
+
+.. py:module:: moleculib.sequence.utils
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.sequence.utils.alphabet
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.sequence.utils.onehot_encode_datum
+   moleculib.sequence.utils.decode_one_hot
+   moleculib.sequence.utils.residue_tokens_to_sequence
+   moleculib.sequence.utils.load_fasta_file
+   moleculib.sequence.utils.save_fasta_file
+   moleculib.sequence.utils.one_hot_encode_seq
+
+
+Module Contents
+---------------
+
+.. py:data:: alphabet
+   :value: ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X']
+
+
+.. py:function:: onehot_encode_datum(sequencedatum: SeqDatum)
+
+.. py:function:: decode_one_hot(x)
+
+.. py:function:: residue_tokens_to_sequence(sequencedatum: SeqDatum)
+
+.. py:function:: load_fasta_file(input: str) -> List[Tuple[str]]
+
+.. py:function:: save_fasta_file(sequences, names, save_path)
+
+.. py:function:: one_hot_encode_seq(protein_seq, max_length=14)
+

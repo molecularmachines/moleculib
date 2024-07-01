@@ -1,0 +1,282 @@
+moleculib.protein.transform
+===========================
+
+.. py:module:: moleculib.protein.transform
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.SSE_TOKENS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.ProteinTransform
+   moleculib.protein.transform.ProteinCrop
+   moleculib.protein.transform.ProteinRescale
+   moleculib.protein.transform.BackboneOnly
+   moleculib.protein.transform.CaOnly
+   moleculib.protein.transform.ProteinPad
+   moleculib.protein.transform.ListBonds
+   moleculib.protein.transform.ListAngles
+   moleculib.protein.transform.ListDihedrals
+   moleculib.protein.transform.ListMirrorFlips
+   moleculib.protein.transform.DescribeChemistry
+   moleculib.protein.transform.TokenizeSequenceBoundaries
+   moleculib.protein.transform.MaybeMirror
+   moleculib.protein.transform.AnnotateSecondaryStructure
+   moleculib.protein.transform.MaskResidues
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.normalize
+   moleculib.protein.transform.measure_chirality
+
+
+Module Contents
+---------------
+
+.. py:class:: ProteinTransform
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.protein.datum.ProteinDatum) -> moleculib.protein.datum.ProteinDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ProteinCrop(crop_size)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum, cut=None)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ProteinRescale(factor)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: BackboneOnly(filter: bool = True, keep_seq: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: CaOnly(filter: bool = True, keep_seq: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ProteinPad(pad_size: int, random_position: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.protein.datum.ProteinDatum) -> moleculib.protein.datum.ProteinDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ListBonds(peptide_bonds: bool = True)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ListAngles
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ListDihedrals
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ListMirrorFlips
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: DescribeChemistry
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Augments ProteinDatum with bonds_list and angles_list a list of atomic indexes connected by bonds and angles
+   that should have invariant behavior according to chemistry
+   Note that indexing is performed at atom level, that is, as residue_dim atom_dim -> (residue_dim atom_dim)
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: TokenizeSequenceBoundaries
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Augments ProteinDatum with boundary_token and boundary_mask
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:function:: normalize(vector)
+
+.. py:function:: measure_chirality(coords)
+
+.. py:class:: MaybeMirror(hand='left')
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:data:: SSE_TOKENS
+   :value: ['', 'c', 'a', 'b']
+
+
+.. py:class:: AnnotateSecondaryStructure
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.protein.datum.ProteinDatum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: MaskResidues(mask_ratio: float = 0.0, contiguous: float = 0.0)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.protein.datum.ProteinDatum, mask=None)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+

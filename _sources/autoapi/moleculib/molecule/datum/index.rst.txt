@@ -1,0 +1,150 @@
+moleculib.molecule.datum
+========================
+
+.. py:module:: moleculib.molecule.datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.MoleculeDatum
+   moleculib.molecule.datum.QM9Datum
+   moleculib.molecule.datum.RSDatum
+   moleculib.molecule.datum.PDBMoleculeDatum
+   moleculib.molecule.datum.CrossdockDatum
+   moleculib.molecule.datum.PDBBindDatum
+   moleculib.molecule.datum.DensityDatum
+   moleculib.molecule.datum.MISATODatum
+   moleculib.molecule.datum.ReactDatum
+
+
+Module Contents
+---------------
+
+.. py:class:: MoleculeDatum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, **kwargs)
+
+   .. py:method:: replace(**kwargs)
+
+
+   .. py:method:: empty()
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: to_sdf_str()
+
+
+   .. py:method:: plot(view, viewer=None, color=None)
+
+
+.. py:class:: QM9Datum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, properties: numpy.ndarray, stds: numpy.ndarray, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+.. py:class:: RSDatum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, properties: numpy.ndarray, adjacency: numpy.ndarray, laplacian: numpy.ndarray, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+.. py:class:: PDBMoleculeDatum(idcode: str, atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_name: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray)
+
+   .. py:method:: empty_molecule()
+      :classmethod:
+
+
+
+   .. py:method:: from_filepath(filepath, ligand=None)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(id, save_path=None, ligand=None)
+      :classmethod:
+
+
+
+   .. py:method:: from_atom_array(atom_array, header)
+      :classmethod:
+
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: to_sdf_str()
+
+
+.. py:class:: CrossdockDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: AA_NAME_SYM
+
+
+   .. py:attribute:: AA_NAME_NUMBER
+
+
+   .. py:attribute:: AA_NUMBER_NAME
+
+
+   .. py:method:: coord_center()
+
+
+   .. py:method:: protein_pdb_str()
+
+
+.. py:class:: PDBBindDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:method:: coord_center()
+
+
+   .. py:method:: protein_pdb_str()
+
+
+   .. py:method:: pocket_pdb_str()
+
+
+.. py:class:: DensityDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+.. py:class:: MISATODatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:method:: replace(**kwargs)
+
+
+   .. py:method:: at(i)
+
+
+   .. py:method:: neighborhood_idxs(r)
+
+
+   .. py:method:: keep_neighborhood(r)
+
+
+   .. py:method:: dehydrate()
+
+
+   .. py:method:: pdb_str(frame)
+
+
+.. py:class:: ReactDatum(token, reacts, prods, reacts_mask, prods_mask, mask, protein_token, protein_mask)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:method:: centralize()
+
+

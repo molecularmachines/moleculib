@@ -1,0 +1,104 @@
+moleculib.protein.batch
+=======================
+
+.. py:module:: moleculib.protein.batch
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.batch.ProteinCollator
+   moleculib.protein.batch.PadBatch
+   moleculib.protein.batch.GeometricBatch
+
+
+Module Contents
+---------------
+
+.. py:class:: ProteinCollator
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: collate(data_list: List[moleculib.protein.datum.ProteinDatum])
+      :classmethod:
+
+      :abstractmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+   .. py:method:: revert() -> List[moleculib.protein.datum.ProteinDatum]
+      :abstractmethod:
+
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: to(device: str) -> ProteinCollator
+
+
+   .. py:method:: torch() -> ProteinCollator
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+.. py:class:: PadBatch(**kwargs)
+
+   Bases: :py:obj:`ProteinCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: revert(constructor=ProteinDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+.. py:class:: GeometricBatch(batch_index, num_nodes, **kwargs)
+
+   Bases: :py:obj:`ProteinCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: revert(constructor=ProteinDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+

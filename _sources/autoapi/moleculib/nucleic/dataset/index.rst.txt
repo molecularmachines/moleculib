@@ -1,0 +1,22 @@
+moleculib.nucleic.dataset
+=========================
+
+.. py:module:: moleculib.nucleic.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.nucleic.dataset.RNADataset
+
+
+Module Contents
+---------------
+
+.. py:class:: RNADataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+

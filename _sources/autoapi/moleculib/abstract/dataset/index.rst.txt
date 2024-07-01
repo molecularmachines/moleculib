@@ -1,0 +1,22 @@
+moleculib.abstract.dataset
+==========================
+
+.. py:module:: moleculib.abstract.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.abstract.dataset.Dataset
+   moleculib.abstract.dataset.PreProcessedDataset
+
+
+Module Contents
+---------------
+
+.. py:class:: Dataset(transform: List[Callable] = None)
+
+.. py:class:: PreProcessedDataset(splits, transform: List[Callable] = None, shuffle=True, pre_transform=False)
+
