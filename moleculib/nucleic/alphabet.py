@@ -48,7 +48,8 @@ for nuc, base_atoms in base_atoms_per_nuc.items():
 MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])###==24 ###NOTE MAYBE MORE? 31
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
-all_atoms =  special_tokens + all_atoms  ###NOTE SWITCHEDDD
+all_atoms = special_tokens + all_atoms   ###NOTE SWITCHEDDD
+# print("all atoms", all_atoms)
 all_atoms_tokens = np.arange(len(all_atoms))
 
 elements = list(OrderedSet([atom[0] for atom in all_atoms]))
@@ -57,6 +58,7 @@ all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 
 all_nucs = list(base_atoms_per_nuc.keys())
 all_nucs =  all_nucs + special_tokens
+
 all_nucs_tokens = np.arange(len(all_nucs))
 all_nucs_atom_mask = np.array(
     [
@@ -109,4 +111,6 @@ atom_to_nucs_index = np.array(atom_to_nucs_index)
 atom_to_nucs_mask = np.array(atom_to_nucs_mask)
 
 
-print(get_nucleotide_index("PAD"))
+# # print(get_nucleotide_index("PAD"))
+# for i in backbone_atoms_RNA:
+#     print(i, atom_index(i))

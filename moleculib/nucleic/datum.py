@@ -11,11 +11,18 @@ from biotite.structure import (
     get_chains,
     spread_chain_wise,
     spread_residue_wise,
+    Atom,
+    superimpose,
+    AffineTransformation,
+    rmsd
 )
 from biotite.structure import filter_nucleotides
 import os
 import biotite.structure.io.mmtf as mmtf
 from einops import rearrange, repeat
+# from biotite.structure import Atom
+from biotite.structure import array as AtomArrayConstructor
+# from biotite.structure import superimpose
 
 
 import plotly.graph_objects as go
@@ -183,14 +190,14 @@ class NucleicDatum:
         # print(len(atom_array.res_name))
 
         def _atom_slice(atom_name, atom_array, atom_token):
-            print("atom_name: ", atom_name, "atom_array: ",atom_array[:10],"atom_token: ", atom_token)
+            # print("atom_name: ", atom_name, "atom_array: ",atom_array[:10],"atom_token: ", atom_token)
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
             # kill pads and kill unks that are not backbone
-            print("atom.res: ",atom_array_.residue_token )
-            atom_array_ = atom_array_[(atom_array_.residue_token != 13)] #UNK is 13 #NOTE: WE BASICALLY CANCEL UNK?
+            # print("atom.res: ",atom_array_.residue_token )
+            atom_array_ = atom_array_[(atom_array_.residue_token != 12)] #UNK is 13 #NOTE: WE BASICALLY CANCEL UNK?
 
             if atom_name not in backbone_atoms_RNA:
-                atom_array_ = atom_array_[(atom_array_.residue_token <12 )] #>1 #PAD IS 12
+                atom_array_ = atom_array_[(atom_array_.residue_token !=13 )] #>1 #PAD IS 12 ##flag as masks
 
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
             atom_indices = atom_to_indices[atom_token][res_tokens]
@@ -233,6 +240,14 @@ class NucleicDatum:
     def fetch_pdb_id(cls, id, save_path=None):
         filepath = rcsb.fetch(id, "pdb", save_path)
         return cls.from_filepath(filepath)
+    
+    def set(
+        self,
+        **kwargs,
+    ):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
 
     @classmethod
     def from_atom_array(
@@ -398,7 +413,7 @@ class NucleicDatum:
             view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
 
         if ribbon:
-            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer)
+            view.addStyle({'model': -1}, {'stick': {'color': color}}, viewer=viewer)
 
         if sidechain:
             if color != 'spectrum':
@@ -407,6 +422,58 @@ class NucleicDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
 
         return view
+    
+    def align_to(
+        self,
+        other,
+        window=None
+        ):
+        """
+        Aligns the current protein datum to another protein datum based on CA atoms.
+        """
+        def to_atom_array(prot, mask):
+            c5s = prot.atom_coord[..., 8, :] #center is C3'
+            print("Atom token:" , prot.atom_token[..., 8])
+            print("C5:" , c5s)
+            print(Atom(
+                    atom_name="C3'",
+                    element="C",
+                    coord=c5s[0],
+                    res_id=prot.nuc_index[0],
+                    chain_id=prot.chain_token[0],
+                ))
+            atoms = [
+                Atom(
+                    atom_name="C3'",
+                    element="C",
+                    coord=c,
+                    res_id=prot.nuc_index[i],
+                    chain_id=str(prot.chain_token[i]),
+                )
+                for i, c in enumerate(c5s) if mask[i]
+            ]
+            # print("ATOMS: " ,atoms)
+            return AtomArrayConstructor(atoms)
+
+
+        common_mask = self.atom_mask[..., 8] & other.atom_mask[..., 8]
+        # print("commom mask: " ,common_mask)
+        if window is not None:
+            common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
+
+        # self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
+        self_array = self.atom_coord.reshape(-1, 3)
+        other_array = other.atom_coord.reshape(-1, 3)
+        _, transform = superimpose(other_array, self_array) 
+        # print("T",type(transform))
+        new_atom_coord = self.atom_coord + transform.center_translation
+        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
+        new_atom_coord += transform.target_translation
+        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
+        # if new_atom_coord == _:
+        #     print("new_atom_coord == _")
+        return self.set(atom_coord=new_atom_coord)
+
 
 
 
@@ -452,8 +519,8 @@ rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
 
 
 if __name__ == '__main__':
-    dna_datum = NucleicDatum.fetch_pdb_id('2N96') 
-    print(dna_datum)   
+    dna_datum = NucleicDatum.fetch_pdb_id('1ZEW')  #2n96
+    # print(dna_datum)   
     # breakpoint()
     ##DNADATUM: str,
         # resolution: float,
@@ -466,12 +533,21 @@ if __name__ == '__main__':
         # atom_coord: np.ndarray, #shape of (len nucs, max_DNA, 3)
         # atom_mask
 ##PLOTTING:
-    coords = dna_datum.atom_coord
+    coords = dna_datum.atom_coord[dna_datum.atom_mask]
+    # zerocheck = (coords==0).any(axis=-1) &dna_datum.atom_mask
+    # if zerocheck.any():
+    #     print("there are 0 coords")
+    # else:
+    #     print("NO")
+    
+    
+    
     import plotly.graph_objects as go
     atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(-1) #all_atoms[dna_datum.atom_token]
-    print(dna_datum.nuc_token.shape)
+    # atomcoords = 
+    # print(dna_datum.nuc_token.shape)
     x, y, z = coords.reshape(-1, 3).T
-    print(dna_datum.chain_token)
+    # print(dna_datum.chain_token)
     color_mapping = {
         0: 'rgb(31, 119, 180)',    # blue
         1: 'rgb(255, 127, 14)',    # orange
@@ -488,12 +564,14 @@ if __name__ == '__main__':
         12: 'rgb(197, 176, 213)',  # light purple
         13: 'rgb(196, 156, 148)',  # light brown
     }
+    cord = coords.reshape(-1).reshape(322,-1)
     colors = [color_mapping[token] for token in dna_datum.nuc_token for _ in range(24)]
     fig = go.Figure(data=[go.Scatter3d(mode='markers',
             x=x,
             y=y,
             z=z,
-            text=atom_names,
+            # text=atom_names,
+            text = cord,
             hovertemplate='<b>%{text}</b>',
             marker=dict(size=3),
             # color = dna_datum.nuc_token,
@@ -534,8 +612,8 @@ if __name__ == '__main__':
 
     rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
     dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
-    print(rna_res_tokens_dict)
-    print(dna_res_tokens_dict)
+    # print(rna_res_tokens_dict)
+    # print(dna_res_tokens_dict)
     
     # num_chains = dna_datum.chain_token[-1]
     # chains_len = get_repetition_lengths(dna_datum.chain_token)
