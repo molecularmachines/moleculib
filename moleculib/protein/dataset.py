@@ -402,7 +402,7 @@ FAST_FOLDING_PROTEINS = {
     'homeodomain': 54,
     'proteing': 56,
     'a3D': 73,
-    # 'lambda': 80
+    'lambda': 80
 }
 
 
@@ -492,13 +492,15 @@ class FastFoldingDataset:
         protein = self.proteins[idx % len(self.proteins)]
         
         # sample traj and sample file
-        traj_idx = np.random.randint(0, self.num_trajectories[protein])
-        subtraj_idx = np.random.randint(0, self.num_frames_per_traj[protein][traj_idx])
-        
-        mmap_path = self.files[protein][traj_idx][subtraj_idx]
-        coord = open_memmap(mmap_path, mode='r', dtype=np.float32)       
-        template = self.atom_arrays[protein]
- 
+        while True:
+            traj_idx = np.random.randint(0, self.num_trajectories[protein])
+            subtraj_idx = np.random.randint(0, self.num_frames_per_traj[protein][traj_idx])
+            
+            mmap_path = self.files[protein][traj_idx][subtraj_idx]
+            coord = open_memmap(mmap_path, mode='r', dtype=np.float32)       
+            template = self.atom_arrays[protein]
+            if len(coord) > self.tau + 1: break
+    
         idx1 = np.random.randint(0, len(coord) - self.tau - 1)
 
         aa1 = deepcopy(template)    
@@ -530,3 +532,81 @@ class FastFoldingDataset:
         return [p1, p2]
     
 
+
+
+
+
+from biotite.structure.io import pdb
+from moleculib.protein.transform import ProteinPad
+
+
+TAUS = [0, 1, 2, 4, 8, 16]
+import webdataset as wds 
+
+from copy import deepcopy
+from moleculib.protein.datum import ProteinDatum
+
+
+class ShardedFastFoldingDataset:
+    
+    def __init__(
+        self, 
+        base = "/mas/projects/molecularmachines/db/FastFoldingProteins/web/",
+        num_shards=240,
+        proteins=None, 
+        tau=0,
+        padded=True,
+        batch_size=1,
+    ):
+        assert tau in TAUS, f"tau must be one of {TAUS}"
+
+        proteins = list(FAST_FOLDING_PROTEINS.keys())
+
+        self.base_path = base 
+        self.proteins = proteins 
+        self.tau = tau
+        self.time_sort = True
+        self.num_shards = num_shards
+        self.batch_size = batch_size   
+
+        self.atom_arrays = {
+            protein: pdb.PDBFile.read(
+                self.base_path + protein + ".pdb"
+            ).get_structure()[0] for protein in proteins
+        }
+
+        if padded: self.pad = ProteinPad(pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
+        else: self.pad = lambda x: x
+
+        def build_datum(sample):
+            key, coords = sample
+            protein = key.split('_')[-1]
+            template = self.atom_arrays[protein]
+            new_aa = deepcopy(template)
+            new_aa.coord = coords
+            return self.pad.transform(ProteinDatum.from_atom_array(
+                new_aa,
+                header={'idcode': None, 'resolution': None}
+            ))
+
+        self.web_ds = iter(
+            wds.WebDataset(base + 'shards-' + '{00000..%05d}.tar' % (num_shards - 1))
+            .decode()
+            .to_tuple('__key__', "coord.npy")
+            .map(build_datum)
+            .batched(batch_size, collation_fn=lambda x: x)
+        )
+
+        self.splits = { 'train': self }
+
+    def __len__(self):
+        return self.num_shards * 1000 // self.batch_size
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        return next(self.web_ds)
+    
+    def __getitem__(self, index):
+        return next(self)
