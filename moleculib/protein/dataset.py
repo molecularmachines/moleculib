@@ -559,8 +559,12 @@ class ShardedFastFoldingDataset:
         batch_size=1,
     ):
         assert tau in TAUS, f"tau must be one of {TAUS}"
-
-        proteins = list(FAST_FOLDING_PROTEINS.keys())
+        
+        if proteins == None:
+            proteins = list(FAST_FOLDING_PROTEINS.keys())
+        else:
+            for protein in proteins:
+                assert protein in FAST_FOLDING_PROTEINS.keys(), f'{protein} is not a valid option'
 
         self.base_path = base 
         self.proteins = proteins 
@@ -571,29 +575,47 @@ class ShardedFastFoldingDataset:
 
         self.atom_arrays = {
             protein: pdb.PDBFile.read(
-                self.base_path + protein + ".pdb"
+               os.path.join(base, protein + ".pdb")
             ).get_structure()[0] for protein in proteins
         }
 
         if padded: self.pad = ProteinPad(pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
         else: self.pad = lambda x: x
 
-        def build_datum(sample):
-            key, coords = sample
+
+
+        def build_webdataset(sample):
+            if self.tau == 0:
+                key, coord1 = sample
+                coords = [ coord1 ]
+            else:
+                key, coord1, coord2 = sample
+                coords = [ coord1, coord2 ]
             protein = key.split('_')[-1]
             template = self.atom_arrays[protein]
-            new_aa = deepcopy(template)
-            new_aa.coord = coords
-            return self.pad.transform(ProteinDatum.from_atom_array(
-                new_aa,
-                header={'idcode': None, 'resolution': None}
-            ))
+            data = []
+            for coord in coords:
+                new_aa = deepcopy(template)
+                new_aa.coord = coord
+                data.append(
+                    self.pad.transform(
+                        ProteinDatum.from_atom_array(
+                            new_aa,
+                            header={'idcode': protein, 'resolution': None}
+                        )
+                    )
+                )
+            return data
+
+        keys = ('__key__', 'coord.npy')
+        if self.tau > 0:
+            keys = keys + (f'coord_{self.tau}.npy', )
 
         self.web_ds = iter(
             wds.WebDataset(base + 'shards-' + '{00000..%05d}.tar' % (num_shards - 1))
             .decode()
-            .to_tuple('__key__', "coord.npy")
-            .map(build_datum)
+            .to_tuple(*keys)
+            .map(build_webdataset)
             .batched(batch_size, collation_fn=lambda x: x)
         )
 
