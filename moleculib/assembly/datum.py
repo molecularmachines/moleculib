@@ -2,13 +2,12 @@
 from moleculib.molecule.datum import MoleculeDatum
 from moleculib.protein.datum import ProteinDatum
 from typing import List
-from simple_pytree import Pytree
 from biotite.database import rcsb
 import biotite.structure.io.pdb as pdb
 from biotite.structure import filter_amino_acids
 
 
-class AssemblyDatum(Pytree):
+class AssemblyDatum:
 
     def __init__(
             self, 

@@ -31,7 +31,7 @@ from .alphabet import (
 )
 
 from einops import rearrange, repeat
-from simple_pytree import Pytree
+
 
 class ProteinSequence:
 
@@ -489,9 +489,47 @@ class ProteinDatum:
 
         if colors is not None:
             colors = {i+1: c for i, c in enumerate(colors)}
-            view.setStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
+
+    def to_atom_array(self):
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.residue_token, "r -> r a", a=14)[atom_mask]
+        all_atom_res_indices = repeat(self.residue_index, "r -> r a", a=14)[atom_mask]
+
+        # just in case, move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens)
+        all_atom_res_indices = np.array(all_atom_res_indices)
+
+        atoms = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_residues[int(res_token)]
+            atoms.append(
+                Atom(
+                    atom_name=name,
+                    element=name[0],
+                    coord=coord,
+                    res_id=res_index,
+                    res_name=res_name,
+                    chain_id='A',
+                )
+            )
+
+        return AtomArrayConstructor(atoms)
 
 
     def align_to(
@@ -502,7 +540,7 @@ class ProteinDatum:
         """
         Aligns the current protein datum to another protein datum based on CA atoms.
         """
-        def to_atom_array(prot, mask):
+        def to_ca_atom_array(prot, mask):
             cas = prot.atom_coord[..., 1, :]
             atoms = [
                 Atom(
@@ -520,7 +558,7 @@ class ProteinDatum:
         if window is not None:
             common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
 
-        self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
+        self_array, other_array = to_ca_atom_array(self, common_mask), to_ca_atom_array(other, common_mask)
         _, transform = superimpose(other_array, self_array) 
         new_atom_coord = self.atom_coord + transform.center_translation
         new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
@@ -555,12 +593,12 @@ class ProteinDatum:
         cif.set_structure(file, atom_array)
         file.write(filepath)
 
-    def to_dict(self):
+    def to_pytree(self):
         return vars(self)
     
-    # def to_pytree(self):
-        # return Pytree(self.to_dict())
-
+    def from_pytree(self, tree):
+        return ProteinDatum(**tree)
+    
     @classmethod
     def from_dict(cls, dict_):
         return cls(**dict_)
