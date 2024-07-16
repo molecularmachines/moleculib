@@ -354,7 +354,7 @@ class NucleicDatum:
 
     def to_pdb_str(self):
         # https://colab.research.google.com/github/pb3lab/ibm3202/blob/master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
-        assert len(self.nuc_token.shape) == 1
+        assert len(self.nuc_token.shape) == 1 ##?????
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
@@ -473,6 +473,12 @@ class NucleicDatum:
         # if new_atom_coord == _:
         #     print("new_atom_coord == _")
         return self.set(atom_coord=new_atom_coord)
+    
+    def to_pytree(self):
+        return vars(self)
+    
+    def from_pytree(self, tree):
+        return NucleicDatum(**tree)
 
 
 
