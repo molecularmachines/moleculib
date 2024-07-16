@@ -579,8 +579,11 @@ class ShardedFastFoldingDataset:
             ).get_structure()[0] for protein in proteins
         }
 
-        if padded: self.pad = ProteinPad(pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
-        else: self.pad = lambda x: x
+        if padded: 
+            self.pad = ProteinPad(
+                pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
+        else: 
+            self.pad = lambda x: x
 
 
 
