@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.molecule.transform</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.molecule.transform">
+<span id="moleculib-molecule-transform"></span><h1>moleculib.molecule.transform<a class="headerlink" href="#module-moleculib.molecule.transform" title="Link to this heading">¶</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.MoleculeCrop" title="moleculib.molecule.transform.MoleculeCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeCrop</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.MoleculePad" title="moleculib.molecule.transform.MoleculePad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculePad</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.PairPad" title="moleculib.molecule.transform.PairPad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PairPad</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.Centralize" title="moleculib.molecule.transform.Centralize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centralize</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.SingleBonds" title="moleculib.molecule.transform.SingleBonds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SingleBonds</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.CastToBFloat" title="moleculib.molecule.transform.CastToBFloat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CastToBFloat</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.DescribeGraph" title="moleculib.molecule.transform.DescribeGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DescribeGraph</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.Permuter" title="moleculib.molecule.transform.Permuter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Permuter</span></code></a></p></td>
+<td><p>Permute the atoms of a molecule and the bonds</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.SortAtoms" title="moleculib.molecule.transform.SortAtoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortAtoms</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.transform.AtomFeatures" title="moleculib.molecule.transform.AtomFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomFeatures</span></code></a></p></td>
+<td><p>Compute atomistic features from the atom tokens</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.transform.StandardizeProperties" title="moleculib.molecule.transform.StandardizeProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StandardizeProperties</span></code></a></p></td>
+<td><p>Abstract class for transformation of MoleculeDatum datapoints</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculeTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">MoleculeTransform</span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculeTransform" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculeTransform.transform">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculeTransform.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculeCrop">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">MoleculeCrop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.MoleculeCrop" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculeCrop.crop_size">
+<span class="sig-name descname"><span class="pre">crop_size</span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculeCrop.crop_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculeCrop.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculeCrop.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculePad">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">MoleculePad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pad_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.MoleculePad" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculePad.pad_size">
+<span class="sig-name descname"><span class="pre">pad_size</span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculePad.pad_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.MoleculePad.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.MoleculePad.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.PairPad">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">PairPad</span></span><a class="headerlink" href="#moleculib.molecule.transform.PairPad" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.PairPad.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.PairPad.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.Centralize">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">Centralize</span></span><a class="headerlink" href="#moleculib.molecule.transform.Centralize" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.Centralize.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.Centralize.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.SingleBonds">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">SingleBonds</span></span><a class="headerlink" href="#moleculib.molecule.transform.SingleBonds" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.SingleBonds.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.SingleBonds.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.CastToBFloat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">CastToBFloat</span></span><a class="headerlink" href="#moleculib.molecule.transform.CastToBFloat" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.CastToBFloat.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.CastToBFloat.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.DescribeGraph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">DescribeGraph</span></span><a class="headerlink" href="#moleculib.molecule.transform.DescribeGraph" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.DescribeGraph.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.DescribeGraph.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.Permuter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">Permuter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.Permuter" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Permute the atoms of a molecule and the bonds</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.Permuter.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><a class="headerlink" href="#moleculib.molecule.transform.Permuter.seed" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.Permuter.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.Permuter.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.SortAtoms">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">SortAtoms</span></span><a class="headerlink" href="#moleculib.molecule.transform.SortAtoms" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.SortAtoms.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.MoleculeDatum" title="moleculib.molecule.datum.MoleculeDatum"><span class="pre">moleculib.molecule.datum.MoleculeDatum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.SortAtoms.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.AtomFeatures">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">AtomFeatures</span></span><a class="headerlink" href="#moleculib.molecule.transform.AtomFeatures" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Compute atomistic features from the atom tokens</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.AtomFeatures.relevant_features">
+<span class="sig-name descname"><span class="pre">relevant_features</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['atomic_radius',</span> <span class="pre">'atomic_volume',</span> <span class="pre">'density',</span> <span class="pre">'dipole_polarizability',</span> <span class="pre">'electron_affinity',...</span></em><a class="headerlink" href="#moleculib.molecule.transform.AtomFeatures.relevant_features" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.AtomFeatures.params">
+<span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#moleculib.molecule.transform.AtomFeatures.params" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.AtomFeatures.shift">
+<span class="sig-name descname"><span class="pre">shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.transform.AtomFeatures.shift" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.AtomFeatures.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.AtomFeatures.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.transform.</span></span><span class="sig-name descname"><span class="pre">StandardizeProperties</span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.molecule.transform.MoleculeTransform" title="moleculib.molecule.transform.MoleculeTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MoleculeTransform</span></code></a></p>
+<p>Abstract class for transformation of MoleculeDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties.mins_dict">
+<span class="sig-name descname"><span class="pre">mins_dict</span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties.mins_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties.maxs_dict">
+<span class="sig-name descname"><span class="pre">maxs_dict</span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties.maxs_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties.means_dict">
+<span class="sig-name descname"><span class="pre">means_dict</span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties.means_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties.stds_dict">
+<span class="sig-name descname"><span class="pre">stds_dict</span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties.stds_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.transform.StandardizeProperties.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../datum/index.html#moleculib.molecule.datum.QM9Datum" title="moleculib.molecule.datum.QM9Datum"><span class="pre">moleculib.molecule.datum.QM9Datum</span></a></span></span><a class="headerlink" href="#moleculib.molecule.transform.StandardizeProperties.transform" title="Link to this definition">¶</a></dt>
+<dd><p>Takes as input an individual data point, processes
+the values in it and returns a new MoleculeDatum</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/molecule/transform/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

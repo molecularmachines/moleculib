@@ -1,0 +1,69 @@
+moleculib.nucleic.transform
+===========================
+
+.. py:module:: moleculib.nucleic.transform
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.nucleic.transform.NucTransform
+   moleculib.nucleic.transform.NucCrop
+   moleculib.nucleic.transform.NucPad
+
+
+Module Contents
+---------------
+
+.. py:class:: NucTransform
+
+   Abstract class for nucleic transform
+
+
+   .. py:method:: transform(datum: moleculib.nucleic.datum.NucleicDatum) -> moleculib.nucleic.datum.NucleicDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+
+.. py:class:: NucCrop(crop_len)
+
+   Bases: :py:obj:`NucTransform`
+
+
+   Abstract class for nucleic transform
+
+
+   .. py:attribute:: crop_len
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+
+.. py:class:: NucPad(pad_size)
+
+   Bases: :py:obj:`NucTransform`
+
+
+   Abstract class for nucleic transform
+
+
+   .. py:attribute:: pad_size
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+

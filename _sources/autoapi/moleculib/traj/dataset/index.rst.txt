@@ -1,0 +1,224 @@
+moleculib.traj.dataset
+======================
+
+.. py:module:: moleculib.traj.dataset
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.traj.dataset.NUM_STEPS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.traj.dataset.MODELDataset
+   moleculib.traj.dataset.AdKEquilibriumDataset
+   moleculib.traj.dataset.AdKTransitionsDataset
+   moleculib.traj.dataset.AtlasDataset
+   moleculib.traj.dataset.AtlasEIF4EDataset
+   moleculib.traj.dataset.TimewarpDataset
+   moleculib.traj.dataset.TimewarpDatasetPreprocessed
+
+
+Module Contents
+---------------
+
+.. py:class:: MODELDataset(base_path: str, frac: float = 1.0, transform: list = [], num_steps=5, crop_size: int = 64)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.Dataset`
+
+
+   Holds ProteinDatum dataset across trajectories
+   as catalogued in Molecular Dynamics Extended Library (MODEL)
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: num_steps
+
+
+   .. py:attribute:: transform
+
+
+   .. py:attribute:: traj
+
+
+   .. py:attribute:: traj
+
+
+   .. py:attribute:: models_per_traj
+
+
+   .. py:attribute:: models_per_traj
+
+
+   .. py:attribute:: num_models_per_traj
+
+
+   .. py:attribute:: models_per_traj
+
+
+   .. py:attribute:: num_models_per_traj
+
+
+   .. py:attribute:: protein_crop
+
+
+   .. py:attribute:: crop_size
+
+
+.. py:class:: AdKEquilibriumDataset(base_path: str, transform: list = [], num_steps=15)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+   Holds ProteinDatum dataset across trajectories
+   as catalogued in Molecular Dynamics Extended Library (MODEL)
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: num_steps
+
+
+.. py:class:: AdKTransitionsDataset(base_path: str, frac: float = 1.0, transform: list = [], num_steps=15, split: str = 'train')
+
+   Bases: :py:obj:`moleculib.abstract.dataset.Dataset`
+
+
+   Holds ProteinDatum dataset across trajectories
+   as catalogued in Molecular Dynamics Extended Library (MODEL)
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: num_steps
+
+
+   .. py:attribute:: transform
+
+
+   .. py:attribute:: crop_size
+      :value: 214
+
+
+
+   .. py:attribute:: trajectory_folder
+
+
+   .. py:attribute:: trajectories
+      :value: []
+
+
+
+   .. py:attribute:: trajectories
+
+
+.. py:data:: NUM_STEPS
+   :value: 1000
+
+
+.. py:class:: AtlasDataset(base_path: str, tau: int = None, transform: list = [], mode: str = 'next_step', single_protein: bool = False, min_sequence_size: int = 12, max_sequence_size: int = 512, expansion_factor: int = 100)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.Dataset`
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: num_steps
+
+
+   .. py:attribute:: single_protein
+
+
+   .. py:attribute:: pdbids
+      :value: []
+
+
+
+   .. py:attribute:: pdbids
+
+
+   .. py:attribute:: splits
+
+
+   .. py:attribute:: mode
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+.. py:class:: AtlasEIF4EDataset(base_path, transform=[])
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+.. py:class:: TimewarpDataset(dataset: str, split: str, tau: int, max_files: Optional[int] = None)
+
+   Exposes datasets from the Timewarp paper.
+
+
+   .. py:attribute:: base
+      :value: '/mas/projects/molecularmachines/db/timewarp2/'
+
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: counter
+      :value: 0
+
+
+
+   .. py:attribute:: tau
+
+
+   .. py:attribute:: files
+
+
+.. py:class:: TimewarpDatasetPreprocessed(split_info: Dict[str, Any])
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+   .. py:attribute:: splits
+
+
