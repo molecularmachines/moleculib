@@ -12,6 +12,9 @@ from moleculib.nucleic.utils import pad_array,pids_file_to_list
 
 import jax.numpy as jnp
 from tqdm import tqdm
+import e3nn_jax as e3nn
+import jaxlib
+
 
 
 #followed Allan but not sure exactly why we need all these abstraction:
@@ -28,20 +31,29 @@ class NucTransform:
         raise NotImplementedError("method transform must be implemented")
 
 class NucCrop(NucTransform):
-    def __init__(self, crop_len):
+    def __init__(self, crop_size):
         #also unsure why we need to init
-        self.crop_len = crop_len
+        self.crop_size = crop_size
     
-    def transform(self, datum):
+    def transform(self, datum, cut=None):
         seq_len = len(datum)
-        if seq_len<=self.crop_len:
+        if seq_len<=self.crop_size:
             return datum
+        if cut is None:
+            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
         
-        start_index =  np.random.randint(low=0, high=(seq_len - self.crop_len))
+        if type(datum) == list:
+            return [self.transform(datum_, cut=cut) for datum_ in datum]
+        
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == seq_len:
-                new_datum_[attr] = obj[start_index : start_index + self.crop_len]
+            if attr == 'contact_map' and obj is not None:
+                #Crop the contact map
+                new_datum_[attr] = obj[cut : cut + self.crop_size, cut : cut + self.crop_size]
+
+            elif type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
+                new_datum_[attr] = obj[cut : cut + self.crop_size]
+                
             else:
                 new_datum_[attr] = obj
 
@@ -53,20 +65,30 @@ class NucPad(NucTransform):
         self.pad_size = pad_size
     
     def transform(self, datum):
+        if type(datum) == list:
+            return [self.transform(datum_) for datum_ in datum]
+        
         seq_len = len(datum)
-        #QUESTION: So we ignore all nucs???
+
         if seq_len >= self.pad_size:
+            # print("here because pad size is {self.pad_size}")
             datum.pad_mask = np.ones_like(datum.nuc_token)
             return datum
         
         size_diff = self.pad_size - seq_len
-        shift = np.random.randint(0, size_diff)
+        # shift = np.random.randint(0, size_diff)
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
+            if attr == 'contact_map' and obj is not None:
+                #Pad the contact map
+                padded_contact_map = np.zeros((self.pad_size, self.pad_size), dtype=int)
+                padded_contact_map[:seq_len, :seq_len] = obj[:, :]
+                new_datum_[attr] = padded_contact_map
+                
+            elif type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size) #func from utils
-                obj = np.roll(obj, shift, axis=0)
+                # obj = np.roll(obj, shift, axis=0)
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj

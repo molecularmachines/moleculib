@@ -16,6 +16,7 @@ from biotite.structure import (
     AffineTransformation,
     rmsd
 )
+import RNA #ViennaRNA
 from biotite.structure import filter_nucleotides
 import os
 import biotite.structure.io.mmtf as mmtf
@@ -95,6 +96,7 @@ class NucleicDatum:
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
+        contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
         **kwargs, 
     ):
         self.idcode = idcode
@@ -107,6 +109,7 @@ class NucleicDatum:
         self.atom_token = atom_token
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
+        self.contact_map = contact_map
         for key, value in kwargs.items():
             setattr(self, key, value)
     
@@ -339,6 +342,63 @@ class NucleicDatum:
         residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
 
         chain_token = _reshape_residue_attr(chain_token)
+
+        def secondary_dot_bracket_to_contact_map(dot_bracket):
+            length = len(dot_bracket)
+            contact_map = np.zeros((length, length), dtype=int)
+            stack = []
+
+            for i, char in enumerate(dot_bracket):
+                if char == '(':
+                    stack.append(i)
+                elif char == ')':
+                    j = stack.pop()
+                    contact_map[i, j] = 1
+                    contact_map[j, i] = 1
+            
+            return contact_map
+        
+        # Create a fold compound for the sequence
+        seq = str(sequence)
+        if len(seq) != len(residue_token):
+            print(f'len(seq) != len(residue_token), seq is {seq} residue_token is {residue_token}')
+            #get seq from residue_token:
+            # rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I', 'UNK']
+            # dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI', 'UNK', 'PAD']
+            # dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+            # rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
+
+            # rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
+            # dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
+            token_to_rna_letter = {'0': 'A',
+                                    '1': 'U',
+                                    '2': 'T',
+                                    '3': 'G',
+                                    '4': 'C',
+                                    '5': 'I',
+                                    '13': 'N',
+                                    '6': 'A', #DNA
+                                    '11': 'U',#DNA
+                                    '10': 'T',#DNA
+                                    '8': 'G',#DNA
+                                    '7': 'C',#DNA
+                                    '9': 'I',#DNA
+                                    '12': 'N'} #PAD
+            seq =''
+            for r in residue_token:
+                seq += token_to_rna_letter[str(r)]
+            
+            
+        fc = RNA.fold_compound(seq)
+        mfe_structure, mfe = fc.mfe() #Example of mfe structure "....(...((.())))"
+        contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
+        if contact_pairs is None:
+            print("None, seq is ", seq)
+        if contact_pairs.shape[0] != len(residue_token):
+            print("contact_pairs.shape[0] != len(residue_token)")
+        # print("Done")
+        
+        
         return cls(
             idcode=header["idcode"],
             sequence=sequence,
@@ -349,6 +409,7 @@ class NucleicDatum:
             chain_token=chain_token,
             **atom_extract,
             atom_mask=atom_mask,
+            contact_map = contact_pairs,   
         )
 
 
@@ -409,6 +470,7 @@ class NucleicDatum:
         ribbon=True,
         sidechain=True,
         color='spectrum',
+        colors = None
     ):
         if viewer is None:
             viewer = (0, 0)
@@ -418,14 +480,16 @@ class NucleicDatum:
             view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
 
         if ribbon:
-            view.addStyle({'model': -1}, {'stick': {'color': color}}, viewer=viewer)
+            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer) #may need to change to stick if doesnt work
 
         if sidechain:
             if color != 'spectrum':
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
             else:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
-
+        if colors is not None:
+            colors = {i+1: c for i, c in enumerate(colors)}
+            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
         return view
     
     def align_to(
