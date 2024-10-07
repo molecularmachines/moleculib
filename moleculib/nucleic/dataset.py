@@ -10,15 +10,36 @@ import RNA
 import pickle
 
 
-        
-class RNADataset(Dataset):
-    def __init__(self, datums, transform=None):
-        self.datums = datums
-        self.transform = transform if transform is not None else []
-        self.splits = { 'train': self }
 
-    def __len__(self):
-        return len(self.datums)
+        
+class RNADataset(PreProcessedDataset):
+    def __init__(self, datums, transform: List[Callable] = None, shuffle = True, train_split=0.9):
+        num_train = int(len(datums) * train_split)
+        num_val = len(datums) - num_train
+        
+        if num_val == 0 :
+            print("Error, number of validation datums is 0")
+        
+        if shuffle:
+            np.random.shuffle(datums)
+        
+        train_data = datums[:num_train]
+        val_data = datums[num_val:]
+        
+        splits = {
+            'train': train_data,
+            'val': val_data
+        }
+
+        super().__init__(splits, transform=transform, shuffle=shuffle)
+
+        # self.datums = datums
+        # self.transform = transform if transform is not None else []
+        ## ADD splits
+        # self.splits = { 'train': [], 'val': [] } ##Call super, the parent instead, and then you give super the splits that I made randomly, and then we dont need the getitem or the len cuz its in the super
+
+    # def __len__(self):
+    #     return len(self.datums)
 
     def __getitem__(self, idx):
         datum = self.datums[idx]
@@ -92,7 +113,8 @@ def split_datum_by_chain(datum):
                 atom_token=datum.atom_token[idx_array],
                 atom_coord=datum.atom_coord[idx_array],
                 atom_mask=datum.atom_mask[idx_array],
-                contact_map = contact_pairs
+                contact_map = contact_pairs,
+                # id = datum.id
             )
         )
     return new_datums  
