@@ -1,0 +1,15 @@
+moleculib.traj
+==============
+
+.. py:module:: moleculib.traj
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/traj/dataset/index
+
+

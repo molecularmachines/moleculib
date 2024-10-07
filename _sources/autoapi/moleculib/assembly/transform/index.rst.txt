@@ -1,0 +1,120 @@
+moleculib.assembly.transform
+============================
+
+.. py:module:: moleculib.assembly.transform
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.assembly.transform.AssemblyTransform
+   moleculib.assembly.transform.ApplyToProteins
+   moleculib.assembly.transform.ComplexPad
+   moleculib.assembly.transform.FilterProteinChains
+   moleculib.assembly.transform.StackProteins
+   moleculib.assembly.transform.UnstackProteins
+
+
+Module Contents
+---------------
+
+.. py:class:: AssemblyTransform
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.assembly.datum.AssemblyDatum) -> moleculib.assembly.datum.AssemblyDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ApplyToProteins(protein_transform: List[moleculib.protein.transform.ProteinTransform])
+
+   Bases: :py:obj:`AssemblyTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: protein_transform
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ComplexPad(num_chains)
+
+   Bases: :py:obj:`AssemblyTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: num_chains
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: FilterProteinChains(num_chains)
+
+   Bases: :py:obj:`AssemblyTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: num_chains
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: StackProteins
+
+   Bases: :py:obj:`AssemblyTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: UnstackProteins
+
+   Bases: :py:obj:`AssemblyTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+

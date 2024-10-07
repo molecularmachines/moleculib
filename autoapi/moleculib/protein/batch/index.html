@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.protein.batch</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.protein.batch">
+<span id="moleculib-protein-batch"></span><h1>moleculib.protein.batch<a class="headerlink" href="#module-moleculib.protein.batch" title="Link to this heading">¶</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.batch.ProteinCollator" title="moleculib.protein.batch.ProteinCollator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinCollator</span></code></a></p></td>
+<td><p>Abstract class for collation of multiple ProteinDatum instances</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.batch.PadBatch" title="moleculib.protein.batch.PadBatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PadBatch</span></code></a></p></td>
+<td><p>Abstract class for collation of multiple ProteinDatum instances</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.batch.GeometricBatch" title="moleculib.protein.batch.GeometricBatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeometricBatch</span></code></a></p></td>
+<td><p>Abstract class for collation of multiple ProteinDatum instances</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.batch.</span></span><span class="sig-name descname"><span class="pre">ProteinCollator</span></span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract class for collation of multiple ProteinDatum instances
+into a single batch instance</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator.collate">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../datum/index.html#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum"><span class="pre">moleculib.protein.datum.ProteinDatum</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator.collate" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Abstractmethod<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>Takes a list of ProteinDatum instances and produces
+a ProteinCollate instance with all the instances collated
+according to the appropriate collate function</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator.revert">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">revert</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../datum/index.html#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum"><span class="pre">moleculib.protein.datum.ProteinDatum</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator.revert" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts a batch to its original list form</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#moleculib.protein.batch.ProteinCollator" title="moleculib.protein.batch.ProteinCollator"><span class="pre">ProteinCollator</span></a></span></span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator.to" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator.torch">
+<span class="sig-name descname"><span class="pre">torch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#moleculib.protein.batch.ProteinCollator" title="moleculib.protein.batch.ProteinCollator"><span class="pre">ProteinCollator</span></a></span></span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator.torch" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.ProteinCollator.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.ProteinCollator.to_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.batch.PadBatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.batch.</span></span><span class="sig-name descname"><span class="pre">PadBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.PadBatch" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.batch.ProteinCollator" title="moleculib.protein.batch.ProteinCollator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinCollator</span></code></a></p>
+<p>Abstract class for collation of multiple ProteinDatum instances
+into a single batch instance</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.PadBatch.revert">
+<span class="sig-name descname"><span class="pre">revert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constructor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ProteinDatum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.PadBatch.revert" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts a batch to its original list form</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.PadBatch.collate">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.PadBatch.collate" title="Link to this definition">¶</a></dt>
+<dd><p>Takes a list of ProteinDatum instances and produces
+a ProteinCollate instance with all the instances collated
+according to the appropriate collate function</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.batch.GeometricBatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.batch.</span></span><span class="sig-name descname"><span class="pre">GeometricBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_nodes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.GeometricBatch" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.batch.ProteinCollator" title="moleculib.protein.batch.ProteinCollator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinCollator</span></code></a></p>
+<p>Abstract class for collation of multiple ProteinDatum instances
+into a single batch instance</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.batch.GeometricBatch.batch_index">
+<span class="sig-name descname"><span class="pre">batch_index</span></span><a class="headerlink" href="#moleculib.protein.batch.GeometricBatch.batch_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.batch.GeometricBatch.num_nodes">
+<span class="sig-name descname"><span class="pre">num_nodes</span></span><a class="headerlink" href="#moleculib.protein.batch.GeometricBatch.num_nodes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.GeometricBatch.revert">
+<span class="sig-name descname"><span class="pre">revert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constructor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ProteinDatum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.GeometricBatch.revert" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts a batch to its original list form</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.batch.GeometricBatch.collate">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">collate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.batch.GeometricBatch.collate" title="Link to this definition">¶</a></dt>
+<dd><p>Takes a list of ProteinDatum instances and produces
+a ProteinCollate instance with all the instances collated
+according to the appropriate collate function</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/protein/batch/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

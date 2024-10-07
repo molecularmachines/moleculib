@@ -1,0 +1,289 @@
+moleculib.molecule.datum
+========================
+
+.. py:module:: moleculib.molecule.datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.MoleculeDatum
+   moleculib.molecule.datum.QM9Datum
+   moleculib.molecule.datum.RSDatum
+   moleculib.molecule.datum.PDBMoleculeDatum
+   moleculib.molecule.datum.CrossdockDatum
+   moleculib.molecule.datum.PDBBindDatum
+   moleculib.molecule.datum.DensityDatum
+   moleculib.molecule.datum.MISATODatum
+   moleculib.molecule.datum.ReactDatum
+
+
+Module Contents
+---------------
+
+.. py:class:: MoleculeDatum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, **kwargs)
+
+   .. py:attribute:: atom_token
+
+
+   .. py:attribute:: atom_coord
+
+
+   .. py:attribute:: atom_mask
+
+
+   .. py:attribute:: bonds
+
+
+   .. py:method:: replace(**kwargs)
+
+
+   .. py:method:: empty()
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: to_sdf_str()
+
+
+   .. py:method:: plot(view, viewer=None, color=None)
+
+
+.. py:class:: QM9Datum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, properties: numpy.ndarray, stds: numpy.ndarray, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: relevant_properties
+
+
+   .. py:attribute:: properties
+
+
+   .. py:attribute:: stds
+
+
+.. py:class:: RSDatum(atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray, properties: numpy.ndarray, adjacency: numpy.ndarray, laplacian: numpy.ndarray, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: properties
+
+
+   .. py:attribute:: adjacency
+
+
+   .. py:attribute:: laplacian
+
+
+.. py:class:: PDBMoleculeDatum(idcode: str, atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_name: numpy.ndarray, atom_mask: numpy.ndarray, bonds: numpy.ndarray)
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: atom_token
+
+
+   .. py:attribute:: atom_coord
+
+
+   .. py:attribute:: atom_name
+
+
+   .. py:attribute:: atom_mask
+
+
+   .. py:attribute:: bonds
+
+
+   .. py:method:: empty_molecule()
+      :classmethod:
+
+
+
+   .. py:method:: from_filepath(filepath, ligand=None)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(id, save_path=None, ligand=None)
+      :classmethod:
+
+
+
+   .. py:method:: from_atom_array(atom_array, header)
+      :classmethod:
+
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: to_sdf_str()
+
+
+.. py:class:: CrossdockDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: AA_NAME_SYM
+
+
+   .. py:attribute:: AA_NAME_NUMBER
+
+
+   .. py:attribute:: AA_NUMBER_NAME
+
+
+   .. py:attribute:: key
+
+
+   .. py:attribute:: filename
+
+
+   .. py:attribute:: atom_features
+
+
+   .. py:attribute:: protein_token
+
+
+   .. py:attribute:: protein_coord
+
+
+   .. py:attribute:: protein_mask
+
+
+   .. py:attribute:: base_path
+      :value: '/mas/projects/molecularmachines/db/crossdocked_targetdiff/crossdocked_v1.1_rmsd1.0/'
+
+
+
+   .. py:method:: coord_center()
+
+
+   .. py:method:: protein_pdb_str()
+
+
+.. py:class:: PDBBindDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: pdb_id
+
+
+   .. py:attribute:: charge
+
+
+   .. py:attribute:: protein_token
+
+
+   .. py:attribute:: protein_coord
+
+
+   .. py:attribute:: protein_mask
+
+
+   .. py:attribute:: base_path
+      :value: '/mas/projects/molecularmachines/db/PDBBind/refined-set'
+
+
+
+   .. py:method:: coord_center()
+
+
+   .. py:method:: protein_pdb_str()
+
+
+   .. py:method:: pocket_pdb_str()
+
+
+.. py:class:: DensityDatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: density
+
+
+   .. py:attribute:: grid
+
+
+.. py:class:: MISATODatum(*args, **kwargs)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: pdb_id
+
+
+   .. py:attribute:: protein_token
+
+
+   .. py:attribute:: protein_coord
+
+
+   .. py:attribute:: protein_mask
+
+
+   .. py:attribute:: atoms_residue
+
+
+   .. py:attribute:: atoms_type
+
+
+   .. py:method:: replace(**kwargs)
+
+
+   .. py:method:: at(i)
+
+
+   .. py:method:: neighborhood_idxs(r)
+
+
+   .. py:method:: keep_neighborhood(r)
+
+
+   .. py:method:: dehydrate()
+
+
+   .. py:method:: pdb_str(frame)
+
+
+.. py:class:: ReactDatum(token, reacts, prods, reacts_mask, prods_mask, mask, protein_token, protein_mask)
+
+   Bases: :py:obj:`MoleculeDatum`
+
+
+   .. py:attribute:: reacts
+
+
+   .. py:attribute:: prods
+
+
+   .. py:attribute:: token
+
+
+   .. py:attribute:: mask
+
+
+   .. py:attribute:: reacts_mask
+
+
+   .. py:attribute:: prods_mask
+
+
+   .. py:attribute:: protein_token
+
+
+   .. py:attribute:: protein_mask
+
+
+   .. py:method:: centralize()
+
+

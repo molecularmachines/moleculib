@@ -1,0 +1,343 @@
+moleculib
+=========
+
+.. py:module:: moleculib
+
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/abstract/index
+   /autoapi/moleculib/assembly/index
+   /autoapi/moleculib/molecule/index
+   /autoapi/moleculib/nucleic/index
+   /autoapi/moleculib/protein/index
+   /autoapi/moleculib/sequence/index
+   /autoapi/moleculib/traj/index
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.PadBatch
+   moleculib.GeometricBatch
+   moleculib.ProteinDatum
+   moleculib.MonomerDataset
+   moleculib.PDBDataset
+
+
+Package Contents
+----------------
+
+.. py:class:: PadBatch(**kwargs)
+
+   Bases: :py:obj:`ProteinCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: revert(constructor=ProteinDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+.. py:class:: GeometricBatch(batch_index, num_nodes, **kwargs)
+
+   Bases: :py:obj:`ProteinCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:attribute:: batch_index
+
+
+   .. py:attribute:: num_nodes
+
+
+   .. py:method:: revert(constructor=ProteinDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+.. py:class:: ProteinDatum(idcode: str, resolution: float, sequence: biotite.sequence.ProteinSequence, residue_token: numpy.ndarray, residue_index: numpy.ndarray, residue_mask: numpy.ndarray, chain_token: numpy.ndarray, atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, **kwargs)
+
+   Incorporates protein data to MolecularDatum
+   and reshapes atom arrays to residue-based representation
+
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: resolution
+
+
+   .. py:attribute:: sequence
+      :value: None
+
+
+
+   .. py:attribute:: residue_token
+
+
+   .. py:attribute:: residue_index
+
+
+   .. py:attribute:: residue_mask
+
+
+   .. py:attribute:: chain_token
+
+
+   .. py:attribute:: atom_token
+
+
+   .. py:attribute:: atom_coord
+
+
+   .. py:attribute:: atom_mask
+
+
+   .. py:attribute:: atom_element
+      :value: None
+
+
+
+   .. py:attribute:: atom_radius
+      :value: None
+
+
+
+   .. py:attribute:: flips_list
+      :value: None
+
+
+
+   .. py:attribute:: flips_mask
+      :value: None
+
+
+
+   .. py:attribute:: angles_list
+      :value: None
+
+
+
+   .. py:attribute:: angles_mask
+      :value: None
+
+
+
+   .. py:attribute:: dihedrals_list
+      :value: None
+
+
+
+   .. py:attribute:: dihedrals_mask
+      :value: None
+
+
+
+   .. py:attribute:: boundary_token
+      :value: None
+
+
+
+   .. py:attribute:: boundary_mask
+      :value: None
+
+
+
+   .. py:method:: separate_chains(datum)
+      :staticmethod:
+
+
+
+   .. py:method:: empty()
+      :classmethod:
+
+
+
+   .. py:method:: replace(**kwargs)
+
+
+   .. py:method:: from_filepath(filepath, format=None, idcode=None, chain_id=None, chain=None, model=1)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(id, format='pdb', chain=None, model=None, save_path=None)
+      :classmethod:
+
+
+
+   .. py:method:: set(**kwargs)
+
+
+   .. py:method:: from_atom_array(atom_array, header)
+      :classmethod:
+
+
+      Reshapes atom array to residue-indexed representation to
+      build a protein datum.
+
+
+
+   .. py:method:: apply_bonds(f)
+
+
+   .. py:method:: apply_angles(f)
+
+
+   .. py:method:: apply_dihedrals(f)
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+   .. py:method:: numpy()
+
+
+   .. py:method:: to_pdb_str()
+
+
+   .. py:method:: plot(view, viewer=None, sphere=False, ribbon=True, sidechain=True, color='spectrum', colors=None)
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: align_to(other, window=None)
+
+      Aligns the current protein datum to another protein datum based on CA atoms.
+
+
+
+   .. py:method:: save_mmcif(filepath)
+
+      Saves the protein datum to an mmcif file.
+
+
+
+   .. py:method:: to_pytree()
+
+
+   .. py:method:: from_pytree(tree)
+
+
+   .. py:method:: from_dict(dict_)
+      :classmethod:
+
+
+
+.. py:class:: MonomerDataset(base_path: str, metadata: pandas.DataFrame = None, single_chain: bool = True, **kwargs)
+
+   Bases: :py:obj:`PDBDataset`
+
+
+   Holds ProteinDatum dataset with specified PDB IDs
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   pdb_ids : List[str]
+       list of all protein IDs that should be in the dataset
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+   attrs : Union[str, List[str]]
+       a partial list of protein attributes that should be in each protein
+
+
+   .. py:attribute:: metadata
+
+
+   .. py:attribute:: splits
+
+
+   .. py:attribute:: filtered
+
+
+   .. py:method:: parse(header, datum)
+
+
+.. py:class:: PDBDataset(base_path: str, transform: moleculib.protein.transform.ProteinTransform = None, attrs: Union[List[str], str] = 'all', metadata: pandas.DataFrame = None, max_resolution: float = None, min_sequence_length: int = None, max_sequence_length: int = None, frac: float = 1.0, preload: bool = False, preload_num_workers: int = 10, keep_ids: List[str] = None, filter_ids=None)
+
+   Holds ProteinDatum dataset with specified PDB IDs
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   pdb_ids : List[str]
+       list of all protein IDs that should be in the dataset
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+   attrs : Union[str, List[str]]
+       a partial list of protein attributes that should be in each protein
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: metadata
+
+
+   .. py:attribute:: transform
+
+
+   .. py:attribute:: protein_attrs
+      :value: ['idcode', 'resolution', 'residue_token', 'residue_index', 'residue_token', 'residue_mask',...
+
+
+
+   .. py:attribute:: filter_ids
+
+
+   .. py:method:: load_index(idx)
+
+
+   .. py:method:: parse(molecules)
+      :abstractmethod:
+
+
+
+   .. py:method:: build(pdb_ids: List[str] = None, save: bool = True, save_path: str = None, max_workers: int = 1, format: str = 'mmtf', **kwargs)
+      :classmethod:
+
+
+      Builds dataset from scratch given specified pdb_ids, prepares
+      data and metadata for later use.
+
+
+

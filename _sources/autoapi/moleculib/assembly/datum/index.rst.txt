@@ -1,0 +1,50 @@
+moleculib.assembly.datum
+========================
+
+.. py:module:: moleculib.assembly.datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.assembly.datum.AssemblyDatum
+
+
+Module Contents
+---------------
+
+.. py:class:: AssemblyDatum(idcode: str = None, protein_data: List[moleculib.protein.datum.ProteinDatum] = None, molecule_data: List[moleculib.molecule.datum.MoleculeDatum] = None)
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: protein_data
+
+
+   .. py:attribute:: molecule_data
+
+
+   .. py:method:: from_datalist()
+
+
+   .. py:method:: filter_proteins(keep=None, drop=None)
+
+      indices to keep or drop
+
+
+
+   .. py:method:: plot(view, viewer=None, protein_style=dict(), molecule_style=dict())
+
+
+   .. py:method:: from_filepath(filepath, idcode=None)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(idcode, save_path=None)
+      :classmethod:
+
+
+
