@@ -1,0 +1,239 @@
+moleculib.molecule.transform
+============================
+
+.. py:module:: moleculib.molecule.transform
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.transform.MoleculeTransform
+   moleculib.molecule.transform.MoleculeCrop
+   moleculib.molecule.transform.MoleculePad
+   moleculib.molecule.transform.PairPad
+   moleculib.molecule.transform.Centralize
+   moleculib.molecule.transform.SingleBonds
+   moleculib.molecule.transform.CastToBFloat
+   moleculib.molecule.transform.DescribeGraph
+   moleculib.molecule.transform.Permuter
+   moleculib.molecule.transform.SortAtoms
+   moleculib.molecule.transform.AtomFeatures
+   moleculib.molecule.transform.StandardizeProperties
+
+
+Module Contents
+---------------
+
+.. py:class:: MoleculeTransform
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum) -> moleculib.molecule.datum.MoleculeDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: MoleculeCrop(crop_size: int)
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:attribute:: crop_size
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum, cut=None) -> moleculib.molecule.datum.MoleculeDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: MoleculePad(pad_size: int)
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:attribute:: pad_size
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum) -> moleculib.molecule.datum.MoleculeDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: PairPad
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum, attrs: dict) -> moleculib.molecule.datum.MoleculeDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: Centralize
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: SingleBonds
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: CastToBFloat
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: DescribeGraph
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.QM9Datum) -> moleculib.molecule.datum.QM9Datum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: Permuter(seed: int = 0)
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Permute the atoms of a molecule and the bonds
+
+
+   .. py:attribute:: seed
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum) -> moleculib.molecule.datum.MoleculeDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: SortAtoms
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.MoleculeDatum) -> moleculib.molecule.datum.MoleculeDatum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: AtomFeatures
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Compute atomistic features from the atom tokens
+
+
+   .. py:attribute:: relevant_features
+      :value: ['atomic_radius', 'atomic_volume', 'density', 'dipole_polarizability', 'electron_affinity',...
+
+
+
+   .. py:attribute:: params
+
+
+   .. py:method:: shift(x, f)
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.QM9Datum) -> moleculib.molecule.datum.QM9Datum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+
+.. py:class:: StandardizeProperties
+
+   Bases: :py:obj:`MoleculeTransform`
+
+
+   Abstract class for transformation of MoleculeDatum datapoints
+
+
+   .. py:attribute:: mins_dict
+
+
+   .. py:attribute:: maxs_dict
+
+
+   .. py:attribute:: means_dict
+
+
+   .. py:attribute:: stds_dict
+
+
+   .. py:method:: transform(datum: moleculib.molecule.datum.QM9Datum) -> moleculib.molecule.datum.QM9Datum
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new MoleculeDatum
+
+
+

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.traj.dataset</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.traj.dataset">
+<span id="moleculib-traj-dataset"></span><h1>moleculib.traj.dataset<a class="headerlink" href="#module-moleculib.traj.dataset" title="Link to this heading">¶</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.traj.dataset.NUM_STEPS" title="moleculib.traj.dataset.NUM_STEPS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NUM_STEPS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.traj.dataset.MODELDataset" title="moleculib.traj.dataset.MODELDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MODELDataset</span></code></a></p></td>
+<td><p>Holds ProteinDatum dataset across trajectories</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.traj.dataset.AdKEquilibriumDataset" title="moleculib.traj.dataset.AdKEquilibriumDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdKEquilibriumDataset</span></code></a></p></td>
+<td><p>Holds ProteinDatum dataset across trajectories</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.traj.dataset.AdKTransitionsDataset" title="moleculib.traj.dataset.AdKTransitionsDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdKTransitionsDataset</span></code></a></p></td>
+<td><p>Holds ProteinDatum dataset across trajectories</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.traj.dataset.AtlasDataset" title="moleculib.traj.dataset.AtlasDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtlasDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.traj.dataset.AtlasEIF4EDataset" title="moleculib.traj.dataset.AtlasEIF4EDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AtlasEIF4EDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.traj.dataset.TimewarpDataset" title="moleculib.traj.dataset.TimewarpDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimewarpDataset</span></code></a></p></td>
+<td><p>Exposes datasets from the Timewarp paper.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.traj.dataset.TimewarpDatasetPreprocessed" title="moleculib.traj.dataset.TimewarpDatasetPreprocessed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimewarpDatasetPreprocessed</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">MODELDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.Dataset" title="moleculib.abstract.dataset.Dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.Dataset</span></code></a></p>
+<p>Holds ProteinDatum dataset across trajectories
+as catalogued in Molecular Dynamics Extended Library (MODEL)</p>
+<section id="arguments">
+<h3>Arguments:<a class="headerlink" href="#arguments" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>base_path<span class="classifier">str</span></dt><dd><p>directory to store all PDB files</p>
+</dd>
+<dt>format<span class="classifier">str</span></dt><dd><p>the file format for each PDB file, either “npz” or “pdb”</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.num_steps">
+<span class="sig-name descname"><span class="pre">num_steps</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.num_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.traj">
+<span class="sig-name descname"><span class="pre">traj</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.traj" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.models_per_traj">
+<span class="sig-name descname"><span class="pre">models_per_traj</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.models_per_traj" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.num_models_per_traj">
+<span class="sig-name descname"><span class="pre">num_models_per_traj</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.num_models_per_traj" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.protein_crop">
+<span class="sig-name descname"><span class="pre">protein_crop</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.protein_crop" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.MODELDataset.crop_size">
+<span class="sig-name descname"><span class="pre">crop_size</span></span><a class="headerlink" href="#moleculib.traj.dataset.MODELDataset.crop_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKEquilibriumDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">AdKEquilibriumDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AdKEquilibriumDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.PreProcessedDataset" title="moleculib.abstract.dataset.PreProcessedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.PreProcessedDataset</span></code></a></p>
+<p>Holds ProteinDatum dataset across trajectories
+as catalogued in Molecular Dynamics Extended Library (MODEL)</p>
+<section id="id1">
+<h3>Arguments:<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>base_path<span class="classifier">str</span></dt><dd><p>directory to store all PDB files</p>
+</dd>
+<dt>format<span class="classifier">str</span></dt><dd><p>the file format for each PDB file, either “npz” or “pdb”</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKEquilibriumDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKEquilibriumDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKEquilibriumDataset.num_steps">
+<span class="sig-name descname"><span class="pre">num_steps</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKEquilibriumDataset.num_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">AdKTransitionsDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'train'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.Dataset" title="moleculib.abstract.dataset.Dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.Dataset</span></code></a></p>
+<p>Holds ProteinDatum dataset across trajectories
+as catalogued in Molecular Dynamics Extended Library (MODEL)</p>
+<section id="id2">
+<h3>Arguments:<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>base_path<span class="classifier">str</span></dt><dd><p>directory to store all PDB files</p>
+</dd>
+<dt>format<span class="classifier">str</span></dt><dd><p>the file format for each PDB file, either “npz” or “pdb”</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.num_steps">
+<span class="sig-name descname"><span class="pre">num_steps</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.num_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.crop_size">
+<span class="sig-name descname"><span class="pre">crop_size</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">214</span></em><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.crop_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.trajectory_folder">
+<span class="sig-name descname"><span class="pre">trajectory_folder</span></span><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.trajectory_folder" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AdKTransitionsDataset.trajectories">
+<span class="sig-name descname"><span class="pre">trajectories</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#moleculib.traj.dataset.AdKTransitionsDataset.trajectories" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.NUM_STEPS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">NUM_STEPS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#moleculib.traj.dataset.NUM_STEPS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">AtlasDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'next_step'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_protein</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_sequence_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_sequence_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expansion_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.Dataset" title="moleculib.abstract.dataset.Dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.Dataset</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.num_steps">
+<span class="sig-name descname"><span class="pre">num_steps</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.num_steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.single_protein">
+<span class="sig-name descname"><span class="pre">single_protein</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.single_protein" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.pdbids">
+<span class="sig-name descname"><span class="pre">pdbids</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.pdbids" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.splits">
+<span class="sig-name descname"><span class="pre">splits</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.splits" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.mode">
+<span class="sig-name descname"><span class="pre">mode</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.mode" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasDataset.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AtlasDataset.to_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasEIF4EDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">AtlasEIF4EDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AtlasEIF4EDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.PreProcessedDataset" title="moleculib.abstract.dataset.PreProcessedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.PreProcessedDataset</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasEIF4EDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.AtlasEIF4EDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.AtlasEIF4EDataset.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.AtlasEIF4EDataset.to_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">TimewarpDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_files</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Exposes datasets from the Timewarp paper.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset.base">
+<span class="sig-name descname"><span class="pre">base</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/mas/projects/molecularmachines/db/timewarp2/'</span></em><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset.base" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset.counter">
+<span class="sig-name descname"><span class="pre">counter</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset.counter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset.tau">
+<span class="sig-name descname"><span class="pre">tau</span></span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset.tau" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDataset.files">
+<span class="sig-name descname"><span class="pre">files</span></span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDataset.files" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDatasetPreprocessed">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.traj.dataset.</span></span><span class="sig-name descname"><span class="pre">TimewarpDatasetPreprocessed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDatasetPreprocessed" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstract/dataset/index.html#moleculib.abstract.dataset.PreProcessedDataset" title="moleculib.abstract.dataset.PreProcessedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moleculib.abstract.dataset.PreProcessedDataset</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.traj.dataset.TimewarpDatasetPreprocessed.splits">
+<span class="sig-name descname"><span class="pre">splits</span></span><a class="headerlink" href="#moleculib.traj.dataset.TimewarpDatasetPreprocessed.splits" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/traj/dataset/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>
