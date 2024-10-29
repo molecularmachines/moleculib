@@ -26,17 +26,22 @@ class RNADataset(PreProcessedDataset):
         train_data = datums[:num_train]
         val_data = datums[num_val:]
         
+        #get casp data:
+        path = "/mas/projects/molecularmachines/db/PREPROCESSED/CASP_puzzles_29datums.pkl"
+        #unpickle the data:
+        with open(path, 'rb') as f:
+            casp_data = pickle.load(f)
+
+        
+            
         splits = {
             'train': train_data,
-            'val': val_data
+            'val': val_data,
+            'casp': casp_data
         }
 
         super().__init__(splits, transform=transform, shuffle=shuffle)
 
-        # self.datums = datums
-        # self.transform = transform if transform is not None else []
-        ## ADD splits
-        # self.splits = { 'train': [], 'val': [] } ##Call super, the parent instead, and then you give super the splits that I made randomly, and then we dont need the getitem or the len cuz its in the super
 
     # def __len__(self):
     #     return len(self.datums)
