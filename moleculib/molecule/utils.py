@@ -8,7 +8,7 @@ from biotite.structure import (
 )
 
 import numpy as np
-import biotite.structure.io.mmtf as mmtf
+# import biotite.structure.io.mmtf as mmtf
 import py3Dmol
 import rdkit
 import jax.numpy as jnp

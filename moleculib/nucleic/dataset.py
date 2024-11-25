@@ -9,6 +9,9 @@ import numpy as np
 import RNA
 import pickle
 
+import torch
+import fm
+
 
 
         
@@ -24,19 +27,35 @@ class RNADataset(PreProcessedDataset):
             np.random.shuffle(datums)
         
         train_data = datums[:num_train]
-        val_data = datums[num_val:]
+        val_data = datums[num_train:]
         
+        #get casp data:
+        path_casp = "/mas/projects/molecularmachines/db/PREPROCESSED/test_CASP_len_8.pkl"
+        #unpickle the data:
+        with open(path_casp, 'rb') as f:
+            casp_data = pickle.load(f)
+            
+        #get RNA Puzzles data:
+        path_rnapuzzles = "/mas/projects/molecularmachines/db/PREPROCESSED/test_RNA-Puzzles_len_21.pkl"
+        with open(path_rnapuzzles, 'rb') as f:
+            rnapuzzles_data = pickle.load(f)
+        
+        #get rna art data:
+        path_rna_art = "/mas/projects/molecularmachines/db/PREPROCESSED/test_RNART1_len_27.pkl"
+        with open(path_rna_art, 'rb') as f:
+            rna_art_data = pickle.load(f)
+
+            
         splits = {
             'train': train_data,
-            'val': val_data
+            'val': val_data,
+            'casp': casp_data,
+            'puzzles': rnapuzzles_data,
+            'rnart': rna_art_data
         }
 
         super().__init__(splits, transform=transform, shuffle=shuffle)
 
-        # self.datums = datums
-        # self.transform = transform if transform is not None else []
-        ## ADD splits
-        # self.splits = { 'train': [], 'val': [] } ##Call super, the parent instead, and then you give super the splits that I made randomly, and then we dont need the getitem or the len cuz its in the super
 
     # def __len__(self):
     #     return len(self.datums)
@@ -77,14 +96,14 @@ def split_datum_by_chain(datum):
                             '3': 'G',
                             '4': 'C',
                             '5': 'I',
-                            '13': 'N',
+                            '13': '-',
                             '6': 'A', #DNA
                             '11': 'U',#DNA
                             '10': 'T',#DNA
                             '8': 'G',#DNA
                             '7': 'C',#DNA
                             '9': 'I',#DNA
-                            '12': 'N'} #PAD
+                            '12': '-'} #PAD
     
     new_datums = []
     for idx_array in split_points:
@@ -100,6 +119,31 @@ def split_datum_by_chain(datum):
         mfe_structure, mfe = fc.mfe() #Example of mfe structure "....(...((.())))"
         contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
         
+        #RNA FM:
+        
+        # Load RNA-FM model
+        model, alphabet = fm.pretrained.rna_fm_t12()
+        batch_converter = alphabet.get_batch_converter()
+        model.eval()  # disables dropout for deterministic results
+        
+        def encode(rnaseq):
+            print(len(rnaseq))
+            data = [
+            ("", rnaseq),
+            ]
+            batch_labels, batch_strs, batch_tokens = batch_converter(data)
+            print(batch_tokens)
+            with torch.no_grad():
+                results = model(batch_tokens, repr_layers=[12])
+            token_embeddings = results["representations"][12][0]
+            print(f' embed shape: {token_embeddings.shape}')
+            if token_embeddings.shape[0] - len(rnaseq) !=2:
+                raise KeyError
+            return token_embeddings
+        
+        fmtoks = encode(seq)
+        #END RNA FM Model
+        
         
         new_datums.append(
             NucleicDatum(
@@ -114,6 +158,7 @@ def split_datum_by_chain(datum):
                 atom_coord=datum.atom_coord[idx_array],
                 atom_mask=datum.atom_mask[idx_array],
                 contact_map = contact_pairs,
+                fmtoks = fmtoks,
                 # id = datum.id
             )
         )
