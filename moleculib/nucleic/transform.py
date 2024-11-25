@@ -50,7 +50,7 @@ class NucCrop(NucTransform):
             if attr == 'contact_map' and obj is not None:
                 #Crop the contact map
                 new_datum_[attr] = obj[cut : cut + self.crop_size, cut : cut + self.crop_size]
-            if attr == 'fmtoks' and obj is not None:
+            elif attr == 'fmtoks' and obj is not None:
                 new_datum_[attr] = no_cls_eos[cut : cut + self.crop_size]
                 
             elif type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
@@ -85,11 +85,8 @@ class NucPad(NucTransform):
             if attr == 'contact_map' and obj is not None:
                 #Pad the contact map
                 padded_contact_map = np.zeros((self.pad_size, self.pad_size), dtype=int)
-                print(padded_contact_map.shape)
                 padded_contact_map[:seq_len, :seq_len] = obj[:, :]
-                print(padded_contact_map.shape)
                 new_datum_[attr] = padded_contact_map
-                print(f' padded_contact_map: {padded_contact_map.shape}, {new_datum_[attr].shape} ')
             
             elif attr == 'fmtoks' and obj is not None:
                 #Pad the fmtoks
