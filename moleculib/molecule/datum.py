@@ -2,7 +2,7 @@ import numpy as np
 from .alphabet import elements
 from .alphabet import PERIODIC_TABLE
 
-import biotite.structure.io.mmtf as mmtf
+# import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.mol as mol
 from biotite.structure import Atom, array
 from biotite.structure import BondList
