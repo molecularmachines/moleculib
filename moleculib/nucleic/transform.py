@@ -51,7 +51,7 @@ class NucCrop(NucTransform):
                 #Crop the contact map
                 new_datum_[attr] = obj[cut : cut + self.crop_size, cut : cut + self.crop_size]
             elif attr == 'fmtoks' and obj is not None:
-                new_datum_[attr] = no_cls_eos[cut : cut + self.crop_size]
+                new_datum_[attr] = obj[cut : cut + self.crop_size, :]
                 
             elif type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
