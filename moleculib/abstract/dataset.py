@@ -38,7 +38,8 @@ class PreProcessedDataset:
         if shuffle:
             for split, data in list(self.splits.items()):
                 print(f'Shuffling {split}...')
-                self.splits[split] = np.random.permutation(data)
+                np.random.shuffle(data)
+                self.splits[split] = data
                 
         self.transform = transform 
         if pre_transform:

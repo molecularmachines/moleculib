@@ -31,7 +31,7 @@ from .alphabet import (
 )
 
 from einops import rearrange, repeat
-
+import py3Dmol
 
 class ProteinSequence:
 
@@ -55,51 +55,24 @@ class ProteinSequence:
             setattr(self, key, value)
 
 
+from flax import struct
+
+@struct.dataclass
 class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
-
-    def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: _ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        **kwargs,
-    ):
-        self.idcode = idcode 
-        self.resolution = resolution
-        self.sequence = None #str(sequence)
-        self.residue_token = residue_token
-        self.residue_index = residue_index
-        self.residue_mask = residue_mask
-        self.chain_token = chain_token
-        self.atom_token = atom_token
-        self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-        self.atom_element = None
-        self.atom_radius = None
-        self.flips_list = None
-        self.flips_mask = None
-        # self.mask = None
-        # self.bonds_list = None
-        # self.bonds_mask = None
-        self.angles_list = None
-        self.angles_mask = None
-        self.dihedrals_list = None
-        self.dihedrals_mask = None
-        self.boundary_token = None
-        self.boundary_mask = None
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    idcode: str
+    resolution: float
+    sequence: _ProteinSequence
+    residue_token: np.ndarray
+    residue_index: np.ndarray
+    residue_mask: np.ndarray
+    chain_token: np.ndarray
+    atom_token: np.ndarray
+    atom_coord: np.ndarray
+    atom_mask: np.ndarray
 
     @classmethod
     def _extract_reshaped_atom_attr(
@@ -394,27 +367,27 @@ class ProteinDatum:
     def apply_dihedrals(self, f):
         return self._apply_chemistry(key="dihedrals", f=f)
 
-    def to_dict(self, attrs=None):
-        if attrs is None:
-            attrs = vars(self).keys()
-        dict_ = {}
-        for attr in attrs:
-            obj = getattr(self, attr)
-            # strings are not JAX types
-            if type(obj) == str:
-                continue
-            if type(obj) in [list, tuple]:
-                if type(obj[0]) not in [int, float]:
-                    continue
-                obj = np.array(obj)
-            dict_[attr] = obj
-        return dict_
+    # def to_dict(self, attrs=None):
+    #     if attrs is None:
+    #         attrs = vars(self).keys()
+    #     dict_ = {}
+    #     for attr in attrs:
+    #         obj = getattr(self, attr)
+    #         # strings are not JAX types
+    #         if type(obj) == str:
+    #             continue
+    #         if type(obj) in [list, tuple]:
+    #             if type(obj[0]) not in [int, float]:
+    #                 continue
+    #             obj = np.array(obj)
+    #         dict_[attr] = obj
+    #     return dict_
 
-    def numpy(self):
+    def apply(self, f):
         for key, value in vars(self).items():
             # if the value has a numpy() method, call it
             if hasattr(value, "numpy"):
-                setattr(self, key, value.numpy())
+                setattr(self, key, f(value))
 
     def to_pdb_str(self):
     # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
@@ -463,9 +436,9 @@ class ProteinDatum:
 
     def plot(
         self, 
-        view, 
-        viewer=None, 
-        sphere=False, 
+        view = None, 
+        viewer = None, 
+        sphere = False, 
         ribbon=True,
         sidechain=True,
         color='spectrum',
@@ -473,6 +446,9 @@ class ProteinDatum:
     ):
         if viewer is None:
             viewer = (0, 0)
+        if view is None:
+            view = py3Dmol.view(width=800, height=800)
+
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         view.setStyle({'model': -1}, {}, viewer=viewer)
         if sphere:
@@ -593,12 +569,6 @@ class ProteinDatum:
         cif.set_structure(file, atom_array)
         file.write(filepath)
 
-    def to_pytree(self):
-        return vars(self)
-    
-    def from_pytree(self, tree):
-        return ProteinDatum(**tree)
-    
     @classmethod
     def from_dict(cls, dict_):
         return cls(**dict_)
