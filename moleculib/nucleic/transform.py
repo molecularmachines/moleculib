@@ -50,7 +50,9 @@ class NucCrop(NucTransform):
             if attr == 'contact_map' and obj is not None:
                 #Crop the contact map
                 new_datum_[attr] = obj[cut : cut + self.crop_size, cut : cut + self.crop_size]
-
+            elif attr == 'fmtoks' and obj is not None:
+                new_datum_[attr] = obj[cut : cut + self.crop_size, :]
+                
             elif type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
                 
@@ -85,6 +87,12 @@ class NucPad(NucTransform):
                 padded_contact_map = np.zeros((self.pad_size, self.pad_size), dtype=int)
                 padded_contact_map[:seq_len, :seq_len] = obj[:, :]
                 new_datum_[attr] = padded_contact_map
+            
+            elif attr == 'fmtoks' and obj is not None:
+                #Pad the fmtoks
+                padded_fmtoks = np.zeros((self.pad_size, obj.shape[1]), dtype=float)
+                padded_fmtoks[:seq_len, :] = obj[:, :]
+                new_datum_[attr] = padded_fmtoks
                 
             elif type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size) #func from utils
@@ -92,6 +100,7 @@ class NucPad(NucTransform):
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
+                
         pad_mask = pad_array(np.ones_like(datum.nuc_token), self.pad_size)
         new_datum_["pad_mask"] = pad_mask
         new_datum = type(datum)(**new_datum_)
