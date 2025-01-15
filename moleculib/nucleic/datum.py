@@ -54,6 +54,11 @@ from biotite.structure.io import pdbx
 
 import numpy as np
 
+import torch
+import fm
+
+
+
 home_dir = str(Path.home()) #not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")} #not sure either
 
@@ -78,7 +83,7 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
         #try block since model may be inaccurate and supposed to be a chain
         try:
             atom_array = pdbx.get_structure(
-                cif_file, model=int(model),extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
+                cif_file, model=int(model),extra_fields=["atom_id", "b_factor", "occupancy"]) # "charge"])
         
         except ValueError as e:
         # Check if the error is specifically about the model not existing
@@ -87,6 +92,8 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
                 atom_array = pdbx.get_structure(
                     cif_file, model=1,extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
                 chain = model
+            else:
+                raise e
    
     else:
         pdb_file = PDBFile.read(pdb_path)
@@ -100,12 +107,18 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
                 atom_array = pdb_file.get_structure(
                 model=int(model), extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
                 chain = model
+            else:
+                raise e 
                 
     #get only the specific chain:
     if chain is not None:
-        atom_array = atom_array[atom_array.chain_id == chain]
+        # if isinstance(chain, str):
+        #     chain = [chain]
+        #chain can be a list of a few chains to connect and give together:
+        atom_array = atom_array[np.isin(atom_array.chain_id, chain)] 
+        # print(atom_array)
         if len(atom_array) ==0 :
-            print(f"Chain {desired_chain} is not present in the atom array of id {id}.")
+            print(f"Chain {chain} is not present in the atom array of id {id}.")
         else:
             print(f'Extracted chain {chain} from the atom array')
         
@@ -125,6 +138,7 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
 ##END OF UTILS
 
 class NucleicDatum:
+    
     """
     Incorporates Biotite nucleic sequence data 
     # and reshapes atom arrays to residue-based representation
@@ -143,6 +157,7 @@ class NucleicDatum:
         atom_coord: np.ndarray,
         atom_mask: np.ndarray,
         contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
+        fmtoks: np.ndarray = None, #len + 2, 640 embeddings of the sequence
         **kwargs, 
     ):
         self.idcode = idcode
@@ -156,6 +171,8 @@ class NucleicDatum:
         self.atom_coord = atom_coord
         self.atom_mask = atom_mask
         self.contact_map = contact_map
+        self.fmtoks = fmtoks
+        
         for key, value in kwargs.items():
             setattr(self, key, value)
     
@@ -420,8 +437,8 @@ class NucleicDatum:
             return contact_map
         
         # Create a fold compound for the sequence
-        seq = str(sequence)
-        if len(seq) != len(residue_token):
+        # seq = str(sequence)
+        # if len(seq) != len(residue_token):
             # print(f'len(seq) != len(residue_token), seq is {seq} residue_token is {residue_token}')
             #get seq from residue_token:
             # rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I', 'UNK']
@@ -431,23 +448,49 @@ class NucleicDatum:
 
             # rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
             # dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
-            token_to_rna_letter = {'0': 'A',
-                                    '1': 'U',
-                                    '2': 'T',
-                                    '3': 'G',
-                                    '4': 'C',
-                                    '5': 'I',
-                                    '13': 'N',
-                                    '6': 'A', #DNA
-                                    '11': 'U',#DNA
-                                    '10': 'T',#DNA
-                                    '8': 'G',#DNA
-                                    '7': 'C',#DNA
-                                    '9': 'I',#DNA
-                                    '12': 'N'} #PAD
-            seq =''
-            for r in residue_token:
-                seq += token_to_rna_letter[str(r)]
+        token_to_rna_letter = {'0': 'A',
+                                '1': 'U',
+                                '2': 'T',
+                                '3': 'G',
+                                '4': 'C',
+                                '5': 'I',
+                                '13': '-',
+                                '6': 'A', #DNA
+                                '11': 'U',#DNA
+                                '10': 'T',#DNA
+                                '8': 'G',#DNA
+                                '7': 'C',#DNA
+                                '9': 'I',#DNA
+                                '12': '-'} #PAD
+        seq =''
+        for r in residue_token:
+            seq += token_to_rna_letter[str(r)]
+        
+        #RNA FM:
+        
+        # Load RNA-FM model
+        model, alphabet = fm.pretrained.rna_fm_t12()
+        batch_converter = alphabet.get_batch_converter()
+        model.eval()  # disables dropout for deterministic results
+        
+        def encode(rnaseq):
+            print(len(rnaseq))
+            data = [
+            ("", rnaseq),
+            ]
+            batch_labels, batch_strs, batch_tokens = batch_converter(data)
+            print(batch_tokens)
+            with torch.no_grad():
+                results = model(batch_tokens, repr_layers=[12])
+            token_embeddings = results["representations"][12][0]
+            print(f' embed shape: {token_embeddings.shape}')
+            if token_embeddings.shape[0] - len(rnaseq) !=2:
+                raise KeyError
+            return token_embeddings
+        
+        fmtoks = encode(seq)
+        #END RNA FM Model
+        
             
             
         fc = RNA.fold_compound(seq)
@@ -471,7 +514,8 @@ class NucleicDatum:
             **atom_extract,
             atom_mask=atom_mask,
             # id=id_, 
-            contact_map = contact_pairs,  
+            contact_map = contact_pairs, 
+            fmtoks = fmtoks 
             
         )
 
@@ -514,6 +558,8 @@ class NucleicDatum:
             line[30:38] = f"{x:.3f}".rjust(8)
             line[38:46] = f"{y:.3f}".rjust(8)
             line[46:54] = f"{z:.3f}".rjust(8)
+            line[54:60] = "1.00".rjust(6)
+            line[60:66] = "1.00".rjust(6)
             line[76:78] = name[0].rjust(2)
             lines.append("".join(line))
         lines = "\n".join(lines)
