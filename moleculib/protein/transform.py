@@ -133,7 +133,6 @@ class ProteinPad(ProteinTransform):
         
         if seq_len >= self.pad_size:
             if type(datum) == ProteinDatum:
-                pad_mask = np.ones(len(datum), dtype=np.bool_) # allan come back here
                 return ProteinDatum( **vars(datum) )
             else: 
                 return datum

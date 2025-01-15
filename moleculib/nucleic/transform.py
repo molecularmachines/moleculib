@@ -104,6 +104,7 @@ class NucPad(NucTransform):
         pad_mask = pad_array(np.ones_like(datum.nuc_token), self.pad_size)
         new_datum_["pad_mask"] = pad_mask
         new_datum = type(datum)(**new_datum_)
+        
         return new_datum
 
 

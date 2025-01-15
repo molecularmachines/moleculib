@@ -51,7 +51,7 @@ from biotite.structure.io.pdb import PDBFile #
 from biotite.structure.io import pdbx
 
 
-
+import py3Dmol
 import numpy as np
 
 home_dir = str(Path.home()) #not sure what this do
@@ -122,43 +122,29 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
     atom_array = atom_array[nuc_filter]
     return atom_array
 
-##END OF UTILS
+from flax import struct
 
+@struct.dataclass
 class NucleicDatum:
     """
     Incorporates Biotite nucleic sequence data 
     # and reshapes atom arrays to residue-based representation
     """
 
-    def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: NucleotideSequence,
-        nuc_token: np.ndarray,
-        nuc_index: np.ndarray,
-        nuc_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
-        **kwargs, 
-    ):
-        self.idcode = idcode
-        self.resolution = resolution
-        self.sequence = str(sequence)
-        self.nuc_token = nuc_token
-        self.nuc_index = nuc_index #do we need that
-        self.nuc_mask = nuc_mask
-        self.chain_token = chain_token
-        self.atom_token = atom_token
-        self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-        self.contact_map = contact_map
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-    
+    idcode: str
+    resolution: float
+    sequence: NucleotideSequence
+    nuc_token: np.ndarray
+    nuc_index: np.ndarray
+    nuc_mask: np.ndarray
+    chain_token: np.ndarray
+    atom_token: np.ndarray
+    atom_coord: np.ndarray
+    atom_mask: np.ndarray
+
+    pad_mask: np.ndarray = None
+    contact_map: np.ndarray = None
+    fmtoks: np.ndarray = None
 
     def __len__(self):
         return len(self.nuc_index)
@@ -302,9 +288,11 @@ class NucleicDatum:
         self,
         **kwargs,
     ):
+        attrs = vars(self).copy()
         for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
+            if key in vars(self):
+                attrs[key] = value
+        return NucleicDatum(**attrs)
 
     @classmethod
     def from_atom_array(
@@ -329,8 +317,6 @@ class NucleicDatum:
         res_names = [
             ("UNK" if (name not in all_nucs) else name) for name in res_names
         ]
-
-
 
         sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
         # breakpoint()
@@ -520,14 +506,9 @@ class NucleicDatum:
         return lines
 
 
-    def to_dict(self):
-        self.idcode=None
-        self.sequence=None
-        return vars(self)
-
     def plot(
         self, 
-        view, 
+        view = None, 
         viewer=None, 
         sphere=False, 
         ribbon=True,
@@ -535,10 +516,15 @@ class NucleicDatum:
         color='spectrum',
         colors = None
     ):
+        if view == None:
+            view = py3Dmol.view(width=800, height=800)
+            
         if viewer is None:
             viewer = (0, 0)
+        
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         view.setStyle({'model': -1}, {}, viewer=viewer)
+
         if sphere:
             view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
 
@@ -550,9 +536,11 @@ class NucleicDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
             else:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
-        if colors is not None:
-            colors = {i+1: c for i, c in enumerate(colors)}
-            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+
+        # if colors is not None:
+        #     colors = {i+1: c for i, c in enumerate(colors)}
+        #     view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+
         return view
     
     def align_to(
