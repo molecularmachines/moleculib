@@ -158,6 +158,7 @@ class NucleicDatum:
         atom_mask: np.ndarray,
         contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
         fmtoks: np.ndarray = None, #len + 2, 640 embeddings of the sequence
+        attention: np.ndarray = None, # [12,20,N,N]
         **kwargs, 
     ):
         self.idcode = idcode
@@ -481,16 +482,17 @@ class NucleicDatum:
             batch_labels, batch_strs, batch_tokens = batch_converter(data)
             print(batch_tokens)
             with torch.no_grad():
-                results = model(batch_tokens, repr_layers=[12])
+                results = model(batch_tokens, repr_layers=[12],need_head_weights=True)
             token_embeddings = results["representations"][12][0]
             print(f' embed shape: {token_embeddings.shape}')
             if token_embeddings.shape[0] - len(rnaseq) !=2:
                 raise KeyError
              # Extract only the actual sequence embeddings (exclude the first and last token)
             sequence_embeddings = token_embeddings[1:-1] 
-            return sequence_embeddings
+            attentions = results["attentions"][0] #shape [12, 20, N, N]
+            return sequence_embeddings, attentions
         
-        fmtoks = encode(seq)
+        fmtoks, attention = encode(seq)
         #END RNA FM Model 
             
         fc = RNA.fold_compound(seq)
@@ -515,7 +517,8 @@ class NucleicDatum:
             atom_mask=atom_mask,
             # id=id_, 
             contact_map = contact_pairs, 
-            fmtoks = fmtoks 
+            fmtoks = fmtoks ,
+            attention = attention
             
         )
 
