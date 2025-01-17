@@ -24,20 +24,31 @@ class RNADataset(PreProcessedDataset):
             np.random.shuffle(datums)
         
         train_data = datums[:num_train]
-        val_data = datums[num_val:]
+        val_data = datums[num_train:]
         
         #get casp data:
-        path = "/mas/projects/molecularmachines/db/PREPROCESSED/CASP_puzzles_29datums.pkl"
+        path_casp = "/mas/projects/molecularmachines/db/PREPROCESSED/test_CASP_len_8.pkl"
         #unpickle the data:
-        with open(path, 'rb') as f:
+        with open(path_casp, 'rb') as f:
             casp_data = pickle.load(f)
-
-        
             
+        #get RNA Puzzles data:
+        path_rnapuzzles = "/mas/projects/molecularmachines/db/PREPROCESSED/test_RNA-Puzzles_len_21.pkl"
+        with open(path_rnapuzzles, 'rb') as f:
+            rnapuzzles_data = pickle.load(f)
+
+        #get rna art data:
+        path_rna_art = "/mas/projects/molecularmachines/db/PREPROCESSED/test_RNART1_len_27.pkl"
+        with open(path_rna_art, 'rb') as f:
+            rna_art_data = pickle.load(f)
+
+
         splits = {
             'train': train_data,
             'val': val_data,
-            'casp': casp_data
+            'casp': casp_data,
+            'puzzles': rnapuzzles_data, 
+            'rnart': rna_art_data 
         }
 
         super().__init__(splits, transform=transform, shuffle=shuffle)
