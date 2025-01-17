@@ -486,12 +486,12 @@ class NucleicDatum:
             print(f' embed shape: {token_embeddings.shape}')
             if token_embeddings.shape[0] - len(rnaseq) !=2:
                 raise KeyError
-            return token_embeddings
+             # Extract only the actual sequence embeddings (exclude the first and last token)
+            sequence_embeddings = token_embeddings[1:-1] 
+            return sequence_embeddings
         
         fmtoks = encode(seq)
-        #END RNA FM Model
-        
-            
+        #END RNA FM Model 
             
         fc = RNA.fold_compound(seq)
         mfe_structure, mfe = fc.mfe() #Example of mfe structure "....(...((.())))"
