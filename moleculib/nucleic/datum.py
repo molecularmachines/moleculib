@@ -159,6 +159,7 @@ class NucleicDatum:
         contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
         fmtoks: np.ndarray = None, #len + 2, 640 embeddings of the sequence
         attention: np.ndarray = None, # [12,20,N,N]
+        msa: np.ndarray = None, # [12,20,N,N]
         **kwargs, 
     ):
         self.idcode = idcode
@@ -173,6 +174,7 @@ class NucleicDatum:
         self.atom_mask = atom_mask
         self.contact_map = contact_map
         self.fmtoks = fmtoks
+        self.attention = attention
         
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -475,20 +477,18 @@ class NucleicDatum:
         model.eval()  # disables dropout for deterministic results
         
         def encode(rnaseq):
-            print(len(rnaseq))
             data = [
             ("", rnaseq),
             ]
             batch_labels, batch_strs, batch_tokens = batch_converter(data)
-            print(batch_tokens)
             with torch.no_grad():
                 results = model(batch_tokens, repr_layers=[12],need_head_weights=True)
             token_embeddings = results["representations"][12][0]
-            print(f' embed shape: {token_embeddings.shape}')
             if token_embeddings.shape[0] - len(rnaseq) !=2:
                 raise KeyError
              # Extract only the actual sequence embeddings (exclude the first and last token)
-            sequence_embeddings = token_embeddings[1:-1] 
+            sequence_embeddings = token_embeddings[1:-1]
+            print(f'Encoding FM. RNA length is {len(rnaseq)}, and FM embeddings are size: {sequence_embeddings.shape} ') 
             attentions = results["attentions"][0] #shape [12, 20, N, N]
             return sequence_embeddings, attentions
         
