@@ -32,7 +32,6 @@ class NucTransform:
 
 class NucCrop(NucTransform):
     def __init__(self, crop_size):
-        #also unsure why we need to init
         self.crop_size = crop_size
     
     def transform(self, datum, cut=None):
@@ -40,7 +39,7 @@ class NucCrop(NucTransform):
         if seq_len<=self.crop_size:
             return datum
         if cut is None:
-            cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
+            cut = 0 #np.random.randint(low=0, high=(seq_len - self.crop_size))
         
         if type(datum) == list:
             return [self.transform(datum_, cut=cut) for datum_ in datum]
@@ -52,9 +51,14 @@ class NucCrop(NucTransform):
                 new_datum_[attr] = obj[cut : cut + self.crop_size, cut : cut + self.crop_size]
             elif attr == 'fmtoks' and obj is not None:
                 new_datum_[attr] = obj[cut : cut + self.crop_size, :]
-                
+            elif attr == 'msa' and obj is not None:
+                new_datum_[attr] = obj[:, cut : cut + self.crop_size]
+            elif attr == 'attention' and obj is not None:
+                new_datum_[attr] = obj[..., cut : cut + self.crop_size, cut : cut + self.crop_size]
+
             elif type(obj) in [np.ndarray, list, tuple, str, e3nn.IrrepsArray, jaxlib.xla_extension.ArrayImpl] and len(obj) == seq_len:
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
+
                 
             else:
                 new_datum_[attr] = obj
@@ -67,6 +71,7 @@ class NucPad(NucTransform):
         self.pad_size = pad_size
     
     def transform(self, datum):
+        # print(f'transform NucPad,  datum has msa: {datum.msa}')
         if type(datum) == list:
             return [self.transform(datum_) for datum_ in datum]
         
@@ -74,8 +79,9 @@ class NucPad(NucTransform):
 
         if seq_len >= self.pad_size:
             # print("here because pad size is {self.pad_size}")
-            datum.pad_mask = np.ones_like(datum.nuc_token)
-            return datum
+            new_datum = vars(datum)
+            new_datum['pad_mask'] = np.ones_like(datum.nuc_token) 
+            return type(datum)(**new_datum)
         
         size_diff = self.pad_size - seq_len
         # shift = np.random.randint(0, size_diff)
@@ -93,17 +99,70 @@ class NucPad(NucTransform):
                 padded_fmtoks = np.zeros((self.pad_size, obj.shape[1]), dtype=float)
                 padded_fmtoks[:seq_len, :] = obj[:, :]
                 new_datum_[attr] = padded_fmtoks
-                
+            elif attr == 'msa' and obj is not None:
+                #Pad the msa
+                depth = obj.shape[0]
+                pad_msa = np.full((depth, self.pad_size), 12, dtype=float) #pad token is 12 for MSA 
+                pad_msa[:, :seq_len] = obj[:, :seq_len]
+                new_datum_[attr] = pad_msa
+            elif attr == 'attention' and obj is not None:
+                padded_attention = np.zeros((12, 20, self.pad_size, self.pad_size))
+                padded_attention[..., :seq_len, :seq_len] = obj[..., :seq_len, :seq_len]
+                new_datum_[attr] = padded_attention
+
             elif type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size) #func from utils
                 # obj = np.roll(obj, shift, axis=0)
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
-                
+
+
         pad_mask = pad_array(np.ones_like(datum.nuc_token), self.pad_size)
         new_datum_["pad_mask"] = pad_mask
         new_datum = type(datum)(**new_datum_)
+        
         return new_datum
+
+
+
+
+class PrepareForPipeline(NucTransform):
+    def __init__(self, msa_depth):
+        self.msa_depth = msa_depth
+
+    def transform(self, datum):
+        new_datum_ = dict()
+        for attr, obj in vars(datum).items():
+
+            if attr == 'msa' : #and obj is not None
+                # new_datum_['msa'] = np.array(datum.msa)[0]
+                msa = np.array(datum.msa)
+                current_depth = msa.shape[0]
+
+                if current_depth < self.msa_depth:
+                    # Pad with sequences of 12s
+                    pad_sequences = np.full((self.msa_depth - current_depth, msa.shape[1]), 12)
+                    msa = np.vstack([msa, pad_sequences])
+                elif current_depth > self.msa_depth:
+                    # Crop to desired depth vertically
+                    msa = msa[:self.msa_depth, :]
+                
+                # Convert T token (2) to U token (1) over all MSAs:
+                msa[msa == 2] = 1
+
+                new_datum_['msa'] = msa
+            
+            elif attr in ['idcode', 'sequence', 'resolution']:
+                new_datum_[attr] = None
+            # elif attr == 'attention' and obj is not None:
+            #     new_datum_["attention"] = None
+            else:
+                new_datum_[attr] = obj
+
+
+        new_datum = type(datum)(**new_datum_)        
+        return new_datum
+
 
 
