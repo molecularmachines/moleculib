@@ -136,7 +136,9 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
     return atom_array
 
 ##END OF UTILS
+from flax import struct
 
+@struct.dataclass
 class NucleicDatum:
     
     """
@@ -144,40 +146,43 @@ class NucleicDatum:
     # and reshapes atom arrays to residue-based representation
     """
 
-    def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: NucleotideSequence,
-        nuc_token: np.ndarray,
-        nuc_index: np.ndarray,
-        nuc_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
-        fmtoks: np.ndarray = None, #len + 2, 640 embeddings of the sequence
-        attention: np.ndarray = None, # [12,20,N,N]
-        msa: np.ndarray = None, # [12,20,N,N]
-        **kwargs, 
-    ):
-        self.idcode = idcode
-        self.resolution = resolution
-        self.sequence = str(sequence)
-        self.nuc_token = nuc_token
-        self.nuc_index = nuc_index #do we need that
-        self.nuc_mask = nuc_mask
-        self.chain_token = chain_token
-        self.atom_token = atom_token
-        self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-        self.contact_map = contact_map
-        self.fmtoks = fmtoks
-        self.attention = attention
+    idcode: str
+    resolution: float
+    sequence: NucleotideSequence
+    nuc_token: np.ndarray
+    nuc_index: np.ndarray
+    nuc_mask: np.ndarray
+    chain_token: np.ndarray
+    atom_token: np.ndarray
+    atom_coord: np.ndarray
+    atom_mask: np.ndarray
+    contact_map: np.ndarray = None #binary map of base pairs [N N] where 1 indicates 2 nucs are paired
+    fmtoks: np.ndarray = None #len + 2 640 embeddings of the sequence
+    attention: np.ndarray = None # [1220NN]
+    msa: np.ndarray = None # 
+    pad_mask: np.ndarray = None
+
+    #     **kwargs, 
+    # ):
+    #     self.idcode = idcode #None
+    #     self.resolution = None
+    #     self.sequence = None #str(sequence)
         
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    #     self.nuc_token = nuc_token
+    #     self.nuc_index = nuc_index #do we need that
+    #     self.nuc_mask = nuc_mask
+    #     self.chain_token = chain_token
+    #     self.atom_token = atom_token
+    #     self.atom_coord = atom_coord
+    #     self.atom_mask = atom_mask
+    #     self.contact_map = contact_map
+        
+    #     self.fmtoks = fmtoks
+    #     self.attention = attention # attention
+    #     self.msa = np.array(msa)
+        
+    #     for key, value in kwargs.items():
+    #         setattr(self, key, value)
     
 
     def __len__(self):
