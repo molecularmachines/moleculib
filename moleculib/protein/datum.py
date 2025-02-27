@@ -31,7 +31,7 @@ from .alphabet import (
 )
 
 from einops import rearrange, repeat
-
+import py3Dmol
 
 class ProteinSequence:
 
@@ -55,51 +55,35 @@ class ProteinSequence:
             setattr(self, key, value)
 
 
+from flax import struct
+
+@struct.dataclass
 class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
+    idcode: str
+    resolution: float
+    sequence: _ProteinSequence
 
-    def __init__(
-        self,
-        idcode: str,
-        resolution: float,
-        sequence: _ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        **kwargs,
-    ):
-        self.idcode = idcode 
-        self.resolution = resolution
-        self.sequence = None #str(sequence)
-        self.residue_token = residue_token
-        self.residue_index = residue_index
-        self.residue_mask = residue_mask
-        self.chain_token = chain_token
-        self.atom_token = atom_token
-        self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-        self.atom_element = None
-        self.atom_radius = None
-        self.flips_list = None
-        self.flips_mask = None
-        # self.mask = None
-        # self.bonds_list = None
-        # self.bonds_mask = None
-        self.angles_list = None
-        self.angles_mask = None
-        self.dihedrals_list = None
-        self.dihedrals_mask = None
-        self.boundary_token = None
-        self.boundary_mask = None
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    residue_token: np.ndarray
+    residue_index: np.ndarray
+    residue_mask: np.ndarray
+    chain_token: np.ndarray
+
+    atom_token: np.ndarray
+    atom_coord: np.ndarray
+    atom_mask: np.ndarray
+    atom_element: np.ndarray = None
+    atom_radius: np.ndarray = None
+
+    bonds_list: np.ndarray = None
+    bonds_mask: np.ndarray = None
+    angles_list: np.ndarray = None
+    angles_mask: np.ndarray = None
+    dihedrals_list: np.ndarray = None
+    dihedrals_mask: np.ndarray = None
 
     @classmethod
     def _extract_reshaped_atom_attr(
@@ -142,7 +126,7 @@ class ProteinDatum:
         return extraction, mask
 
     @staticmethod
-    def separate_chains(datum): 
+    def separate_chains(datum):
         chains = np.unique(datum.chain_token)
         protein_list = []
         for chain in chains:
@@ -198,15 +182,15 @@ class ProteinDatum:
 
     @classmethod
     def from_filepath(
-        cls, 
-        filepath, 
-        format=None, 
+        cls,
+        filepath,
+        format=None,
         idcode=None,
         chain_id=None,
         chain=None,
         model=1,
     ):
-        
+
         if str(filepath).endswith(".pdb") or format == 'pdb':
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=model)
@@ -216,7 +200,7 @@ class ProteinDatum:
                 idcode=idcode,
                 resolution=None,
             )
-        elif str(filepath).endswith(".mmtf"): 
+        elif str(filepath).endswith(".mmtf"):
             mmtf_file = mmtf.MMTFFile.read(filepath)
             atom_array = mmtf.get_structure(mmtf_file, model=model)
             header = dict(
@@ -242,10 +226,10 @@ class ProteinDatum:
         else:
             print(filepath)
             raise ValueError("File format not supported")
-        
+
         aa_filter = filter_amino_acids(atom_array)
         atom_array = atom_array[aa_filter]
-    
+
         if chain is not None:
             atom_array = atom_array[(atom_array.chain_id == chain)]
 
@@ -253,22 +237,22 @@ class ProteinDatum:
 
     @classmethod
     def fetch_pdb_id(
-        cls, 
-        id, 
-        format='pdb', 
-        chain=None, 
-        model=None, 
+        cls,
+        id,
+        format='pdb',
+        chain=None,
+        model=None,
         save_path=None
     ):
         filepath = rcsb.fetch(id, format, save_path)
         return cls.from_filepath(
-            filepath, 
-            format=format, 
-            chain=chain, 
+            filepath,
+            format=format,
+            chain=chain,
             model=model,
             idcode=id if chain is None else f"{id}_{chain}"
         )
-    
+
     def set(
         self,
         **kwargs,
@@ -281,15 +265,26 @@ class ProteinDatum:
     def from_atom_array(
         cls,
         atom_array,
-        header,
+        header = None,
     ):
         """
         Reshapes atom array to residue-indexed representation to
         build a protein datum.
         """
+        if header == None:
+            header = dict(
+                idcode=None,
+                resolution=None,
+            )
 
         if atom_array.array_length() == 0:
             return cls.empty()
+
+        # Small tweak for CHARMM files
+        atom_names = atom_array.atom_name
+        cd_filter = (atom_array.res_name == 'ILE') & (atom_names == 'CD')
+        atom_names[cd_filter] = np.array(['CD1'] * sum(cd_filter))
+        atom_array.set_annotation('atom_name', atom_names)
 
         _, res_names = get_residues(atom_array)
         res_names = [
@@ -394,27 +389,27 @@ class ProteinDatum:
     def apply_dihedrals(self, f):
         return self._apply_chemistry(key="dihedrals", f=f)
 
-    def to_dict(self, attrs=None):
-        if attrs is None:
-            attrs = vars(self).keys()
-        dict_ = {}
-        for attr in attrs:
-            obj = getattr(self, attr)
-            # strings are not JAX types
-            if type(obj) == str:
-                continue
-            if type(obj) in [list, tuple]:
-                if type(obj[0]) not in [int, float]:
-                    continue
-                obj = np.array(obj)
-            dict_[attr] = obj
-        return dict_
+    # def to_dict(self, attrs=None):
+    #     if attrs is None:
+    #         attrs = vars(self).keys()
+    #     dict_ = {}
+    #     for attr in attrs:
+    #         obj = getattr(self, attr)
+    #         # strings are not JAX types
+    #         if type(obj) == str:
+    #             continue
+    #         if type(obj) in [list, tuple]:
+    #             if type(obj[0]) not in [int, float]:
+    #                 continue
+    #             obj = np.array(obj)
+    #         dict_[attr] = obj
+    #     return dict_
 
-    def numpy(self):
+    def apply(self, f):
         for key, value in vars(self).items():
             # if the value has a numpy() method, call it
             if hasattr(value, "numpy"):
-                setattr(self, key, value.numpy())
+                setattr(self, key, f(value))
 
     def to_pdb_str(self):
     # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
@@ -462,10 +457,10 @@ class ProteinDatum:
 
 
     def plot(
-        self, 
-        view, 
-        viewer=None, 
-        sphere=False, 
+        self,
+        view = None,
+        viewer = None,
+        sphere = False,
         ribbon=True,
         sidechain=True,
         color='spectrum',
@@ -473,6 +468,9 @@ class ProteinDatum:
     ):
         if viewer is None:
             viewer = (0, 0)
+        if view is None:
+            view = py3Dmol.view(width=800, height=800)
+
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         view.setStyle({'model': -1}, {}, viewer=viewer)
         if sphere:
@@ -559,7 +557,7 @@ class ProteinDatum:
             common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
 
         self_array, other_array = to_ca_atom_array(self, common_mask), to_ca_atom_array(other, common_mask)
-        _, transform = superimpose(other_array, self_array) 
+        _, transform = superimpose(other_array, self_array)
         new_atom_coord = self.atom_coord + transform.center_translation
         new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
         new_atom_coord += transform.target_translation
@@ -584,21 +582,18 @@ class ProteinDatum:
                                 chain_id=prot.chain_token[i],
                             )
                         )
-            return AtomArrayConstructor(atoms) 
+            return AtomArrayConstructor(atoms)
         atom_array = to_all_atom_array(self)
-        
+
         import biotite.structure.io.pdbx as cif
-        
+
         file = cif.CIFFile()
         cif.set_structure(file, atom_array)
         file.write(filepath)
 
-    def to_pytree(self):
-        return vars(self)
-    
-    def from_pytree(self, tree):
-        return ProteinDatum(**tree)
-    
     @classmethod
     def from_dict(cls, dict_):
         return cls(**dict_)
+
+    def __repr__(self):
+        return f"ProteinDatum(shape={self.atom_coord.shape[:-1]})"
