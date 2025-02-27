@@ -36,17 +36,18 @@ class ProteinTransform:
         the values in it and returns a new ProteinDatum
         """
         raise NotImplementedError("method transform must be implemented")
-        
+
 
 class ProteinCrop(ProteinTransform):
     def __init__(self, crop_size):
         self.crop_size = crop_size
 
     def transform(self, datum, cut=None):
-        
+
         seq_len = len(datum[0] if type(datum) == list else datum)
         if seq_len <= self.crop_size:
             return datum
+
         if cut is None:
             cut = np.random.randint(low=0, high=(seq_len - self.crop_size))
 
@@ -87,7 +88,7 @@ class BackboneOnly(ProteinTransform):
     def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
         self.keep_seq = keep_seq
-        
+
     def transform(self, datum):
         if self.filter:
             datum.atom_coord[..., 4:, :] = 0.0
@@ -101,7 +102,7 @@ class CaOnly(ProteinTransform):
     def __init__(self, filter: bool = True, keep_seq: bool = False):
         self.filter = filter
         self.keep_seq = keep_seq
-        
+
     def transform(self, datum):
         if self.filter:
             datum.atom_mask[..., 0] = False
@@ -114,7 +115,7 @@ class CaOnly(ProteinTransform):
                 datum.residue_token[datum.residue_token > 2] = 10  # GLY
 
         return datum
-    
+
 from einops import repeat
 import e3nn_jax as e3nn
 
@@ -128,14 +129,13 @@ class ProteinPad(ProteinTransform):
     def transform(self, datum: ProteinDatum) -> ProteinDatum:
         if type(datum) == list:
             return [self.transform(datum_) for datum_ in datum]
-        
+
         seq_len = len(datum)
-        
+
         if seq_len >= self.pad_size:
             if type(datum) == ProteinDatum:
-                pad_mask = np.ones(len(datum), dtype=np.bool_) # allan come back here
                 return ProteinDatum( **vars(datum) )
-            else: 
+            else:
                 return datum
 
         size_diff = self.pad_size - seq_len
@@ -173,10 +173,6 @@ class ListBonds(ProteinTransform):
         self.peptide_bonds = peptide_bonds
 
     def transform(self, datum):
-        # solve for intra-residue bonds
-        if hasattr(datum, 'bonds_list'):
-           return datum
-
         num_atoms = datum.atom_coord.shape[-2]
         count = num_atoms * np.expand_dims(
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
@@ -186,11 +182,6 @@ class ListBonds(ProteinTransform):
         bond_list = bonds_per_residue.astype(np.int32)
         bond_mask = bonds_mask[datum.residue_token].squeeze(-1)
         bond_list[~bond_mask] = 0
-
-        if not self.peptide_bonds:
-            return ProteinDatum(
-                **vars(datum), bonds_list=bond_list, bonds_mask=bond_mask
-            )
 
         count = num_atoms * np.expand_dims(
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
@@ -220,9 +211,15 @@ class ListBonds(ProteinTransform):
             atom_mask[left] & atom_mask[right], "(s b) -> s b", b=bond_list.shape[1]
         )
 
-        return ProteinDatum(
-            **vars(datum), bonds_list=bond_list, bonds_mask=bond_mask
+        new_datum = vars(datum)
+        new_datum.update(
+            {
+                "bonds_list": bond_list,
+                "bonds_mask": bond_mask,
+            }
         )
+
+        return type(datum)(**new_datum)
 
 
 
@@ -274,10 +271,15 @@ class ListAngles(ProteinTransform):
             b=angle_list.shape[1],
         )
 
-        datum.angles_list = angle_list
-        datum.angles_mask = angle_mask
+        new_datum = vars(datum)
+        new_datum.update(
+            {
+                "angles_list": angle_list,
+                "angles_mask": angle_mask,
+            }
+        )
 
-        return datum
+        return type(datum)(**new_datum)
 
 
 class ListDihedrals(ProteinTransform):
@@ -326,23 +328,28 @@ class ListDihedrals(ProteinTransform):
             d=dihedral_list.shape[1],
         )
 
-        datum.dihedrals_list = dihedral_list
-        datum.dihedrals_mask = dihedral_mask
+        new_datum = vars(datum)
+        new_datum.update(
+            {
+                "dihedrals_list": dihedral_list,
+                "dihedrals_mask": dihedral_mask,
+            }
+        )
 
-        return datum
+        return type(datum)(**new_datum)
 
 
-class ListMirrorFlips(ProteinTransform):
-    def transform(self, datum):
-        flips_per_residue = flippable_arr[datum.residue_token]
+# class ListMirrorFlips(ProteinTransform):
+#     def transform(self, datum):
+#         flips_per_residue = flippable_arr[datum.residue_token]
 
-        flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)
-        flips_list = (flips_per_residue).astype(np.int32)
+#         flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)
+#         flips_list = (flips_per_residue).astype(np.int32)
 
-        datum.flips_list = flips_list
-        datum.flips_mask = flips_mask_per_residue
+#         datum.flips_list = flips_list
+#         datum.flips_mask = flips_mask_per_residue
 
-        return datum
+#         return datum
 
 
 class DescribeChemistry(ProteinTransform):
@@ -356,16 +363,23 @@ class DescribeChemistry(ProteinTransform):
         self.bond_transform = ListBonds()
         self.angle_transform = ListAngles()
         self.dihedral_transform = ListDihedrals()
-        self.flip_transform = ListMirrorFlips()
+        # Note(Allan): This is not used currently, but I can re-activate it if we find trouble with tyrosine
+        # self.flip_transform = ListMirrorFlips()
 
     def transform(self, datum):
-        datum.atom_token = datum.atom_token.astype(np.int32)
-        datum.atom_element = all_atoms_elements[datum.atom_token]
-        datum.atom_radius = all_atoms_radii[datum.atom_token]
+        new_datum = vars(datum)
+        atom_token = datum.atom_token.astype(np.int32)
+        new_datum.update(
+            {
+                "atom_element": all_atoms_elements[atom_token],
+                "atom_radius": all_atoms_radii[atom_token],
+            }
+        )
+        datum = ProteinDatum(**new_datum)
         datum = self.bond_transform.transform(datum)
         datum = self.angle_transform.transform(datum)
         datum = self.dihedral_transform.transform(datum)
-        datum = self.flip_transform.transform(datum)
+        # datum = self.flip_transform.transform(datum)
         return datum
 
 
@@ -472,7 +486,7 @@ class MaskResidues(ProteinTransform):
     def __init__(self, mask_ratio: float = 0.0, contiguous: float = 0.0):
         self.mask_ratio = mask_ratio
         self.contiguous = contiguous
-        
+
     def transform(self, datum: ProteinDatum, mask=None):
         if mask is not None:
             pass
@@ -480,7 +494,7 @@ class MaskResidues(ProteinTransform):
             num_units = int(np.round(np.random.exponential(self.contiguous)))
             frac = np.round(len(datum.residue_token)*self.mask_ratio)
             if num_units >= frac:
-                mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio   
+                mask = np.random.rand(len(datum.residue_token)) < self.mask_ratio
             else:
                 if num_units > 1:
                     sizes = np.sort(np.random.choice(np.arange(1,frac), size=num_units-1, replace=False))
@@ -499,7 +513,7 @@ class MaskResidues(ProteinTransform):
             mask[choice] = True
 
         mask = mask * datum.residue_mask
-        
+
         datum.residue_token_masked = np.where(
             mask, all_residues.index("MASK"), datum.residue_token
         )
