@@ -1,0 +1,89 @@
+moleculib.graphics.py3Dmol
+==========================
+
+.. py:module:: moleculib.graphics.py3Dmol
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.graphics.py3Dmol.DEFAULT_COLORS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.graphics.py3Dmol.PlotPy3DmolSamples
+   moleculib.graphics.py3Dmol.PlotDensity
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.graphics.py3Dmol.plot_py3dmol
+   moleculib.graphics.py3Dmol.plot_py3dmol_grid
+   moleculib.graphics.py3Dmol.traj_to_pdb
+   moleculib.graphics.py3Dmol.plot_py3dmol_traj
+
+
+Module Contents
+---------------
+
+.. py:data:: DEFAULT_COLORS
+   :value: ['cyan', 'orange', 'lime']
+
+
+.. py:function:: plot_py3dmol(data, color: str = 'DEFAULT', **kwargs)
+
+.. py:class:: PlotPy3DmolSamples(plot_func: Callable, num_samples=None, window_size=(250, 250), pairs=False)
+
+   .. py:attribute:: plot_func
+
+
+   .. py:attribute:: num_samples
+      :value: None
+
+
+
+   .. py:attribute:: window_size
+      :value: (250, 250)
+
+
+
+   .. py:attribute:: pairs
+      :value: False
+
+
+
+.. py:class:: PlotDensity(num_samples=None, window_size=(250, 250), pairs=False)
+
+   .. py:attribute:: num_samples
+      :value: None
+
+
+
+   .. py:attribute:: window_size
+      :value: (250, 250)
+
+
+
+   .. py:attribute:: pairs
+      :value: False
+
+
+
+   .. py:method:: plot_density(grid, density, atom_coord)
+
+
+.. py:function:: plot_py3dmol_grid(grid, window_size=(250, 250), **kwargs)
+
+.. py:function:: traj_to_pdb(traj, num_steps=100, head=0, tail=5)
+
+.. py:function:: plot_py3dmol_traj(traj, view, viewer, num_steps=100)
+

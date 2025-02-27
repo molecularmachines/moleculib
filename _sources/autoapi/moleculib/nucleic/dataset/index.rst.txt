@@ -1,0 +1,38 @@
+moleculib.nucleic.dataset
+=========================
+
+.. py:module:: moleculib.nucleic.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.nucleic.dataset.RNADataset
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.nucleic.dataset.secondary_dot_bracket_to_contact_map
+   moleculib.nucleic.dataset.split_datum_by_chain
+
+
+Module Contents
+---------------
+
+.. py:class:: RNADataset(datums, transform: List[Callable] = None, shuffle=True, train_split=0.9)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:function:: secondary_dot_bracket_to_contact_map(dot_bracket)
+
+.. py:function:: split_datum_by_chain(datum)
+
+   Split a datum into multiple datums based on chain tokens.
+
+

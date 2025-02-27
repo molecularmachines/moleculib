@@ -1,0 +1,64 @@
+moleculib.molecule.utils
+========================
+
+.. py:module:: moleculib.molecule.utils
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.molecule.utils.home_dir
+   moleculib.molecule.utils.config
+   moleculib.molecule.utils.ACCEPTED_FORMATS
+   moleculib.molecule.utils.ACCEPTED_TYPES
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.molecule.utils.pdb_to_atom_array
+   moleculib.molecule.utils.pids_file_to_list
+   moleculib.molecule.utils.pad_array
+   moleculib.molecule.utils.plot_py3dmol_grid
+   moleculib.molecule.utils.plot_dock
+   moleculib.molecule.utils.inner_stack
+   moleculib.molecule.utils.inner_split
+   moleculib.molecule.utils.register_pytree
+   moleculib.molecule.utils.extract_rdkit_mol_properties
+
+
+Module Contents
+---------------
+
+.. py:data:: home_dir
+   :value: ''
+
+
+.. py:data:: config
+
+.. py:function:: pdb_to_atom_array(mmtf_file)
+
+.. py:function:: pids_file_to_list(pids_path)
+
+.. py:function:: pad_array(array, total_size, value=0)
+
+.. py:function:: plot_py3dmol_grid(grid, window_size=(250, 250), spin=False)
+
+.. py:function:: plot_dock(grid, window_size=(400, 400), spin=False)
+
+.. py:function:: inner_stack(pytrees)
+
+.. py:function:: inner_split(pytree)
+
+.. py:data:: ACCEPTED_FORMATS
+
+.. py:data:: ACCEPTED_TYPES
+
+.. py:function:: register_pytree(Datum)
+
+.. py:function:: extract_rdkit_mol_properties(mol)
+
