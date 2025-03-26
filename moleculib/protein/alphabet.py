@@ -4,8 +4,6 @@ from typing import List
 import numpy as np
 from ordered_set import OrderedSet
 
-UNK_TOKEN = 1
-
 # data collected by Jonathan King in
 # SidechainNet https://github.com/jonathanking/sidechainnet
 # Further processed by Eric Alcaide in
@@ -674,6 +672,7 @@ def _atom_to_all_residues_index(atom):
     indices, masks = zip(*list(map(_atom_to_residue_index, all_residues)))
     return np.array(indices), np.array(masks)
 
+UNK_TOKEN = all_residues.index("UNK")
 
 def _index(lst: List[str], item: str) -> int:
     try:
@@ -688,6 +687,8 @@ def atom_index(atom: str) -> int:
 
 
 def get_residue_index(residue: str) -> int:
+    if residue == 'HSD' or residue == 'HSE' or residue == 'HSP':
+        residue = 'HIS'
     return _index(all_residues, residue)
 
 

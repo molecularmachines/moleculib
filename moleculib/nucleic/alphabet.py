@@ -29,6 +29,7 @@ base_atoms_per_nuc = OrderedDict(
         DU =["N1", "C2", "O2", "N3", "C4", "O4", "C5", "C6"] #mutagenic U (doesn't suppose to be a DNA nuc but RNA nuc)
 )
 
+
 backbone_atoms_DNA = ["P", "OP1", "OP2", "OP3", "C1'", "C2'", "C3'", "C4'", "C5'",  "O3'", "O4'", "O5'"] #NOTE: add "" for carbons and Oxygens as in the file
 backbone_atoms_RNA = ["P", "OP1", "OP2",  "OP3","C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"]  
 
@@ -36,8 +37,6 @@ backbone_atoms_RNA = ["P", "OP1", "OP2",  "OP3","C1'", "C2'", "C3'", "C4'", "C5'
 special_tokens = [  "PAD", "UNK"] #what do whese represent?
 
 atoms_per_nuc = OrderedDict()
-atoms_per_nuc["PAD"] = []
-atoms_per_nuc["UNK"] = [] # backbone_atoms
 ##TODO check the DUPLICATES situation
 #for every nuc we add the base and backbone atoms
 for nuc, base_atoms in base_atoms_per_nuc.items():
@@ -45,6 +44,9 @@ for nuc, base_atoms in base_atoms_per_nuc.items():
         atoms_per_nuc[nuc] = backbone_atoms_RNA+ base_atoms 
     else:
         atoms_per_nuc[nuc] = backbone_atoms_DNA+ base_atoms
+atoms_per_nuc["PAD"] = []
+atoms_per_nuc["UNK"] = [] # backbone_atoms
+
 MAX_DNA_ATOMS = max([len(atoms) for atoms in atoms_per_nuc.values()])###==24 ###NOTE MAYBE MORE? 31
 
 all_atoms = list(OrderedSet(sum(list(atoms_per_nuc.values()), [])))
@@ -57,7 +59,7 @@ all_atoms_elements = np.array([elements.index(atom[0]) for atom in all_atoms])
 
 
 all_nucs = list(base_atoms_per_nuc.keys())
-all_nucs =  all_nucs + special_tokens
+all_nucs = all_nucs + special_tokens
 
 all_nucs_tokens = np.arange(len(all_nucs))
 all_nucs_atom_mask = np.array(

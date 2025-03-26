@@ -142,6 +142,8 @@ class NucleicDatum:
     atom_coord: np.ndarray
     atom_mask: np.ndarray
 
+    attention: np.ndarray = None
+    msa: np.ndarray = None
     pad_mask: np.ndarray = None
     contact_map: np.ndarray = None
     fmtoks: np.ndarray = None
@@ -469,7 +471,7 @@ class NucleicDatum:
         all_atom_coords = self.atom_coord[atom_mask]
         all_atom_tokens = self.atom_token[atom_mask]
         all_atom_res_tokens = repeat(self.nuc_token, "r -> r a", a=24)[atom_mask]
-        all_atom_res_indices = repeat(self.nuc_index, "r -> r a", a=24)[atom_mask]
+        all_atom_res_indices = repeat(np.arange(len(self.nuc_token)), "r -> r a", a=24)[atom_mask]
 
         # just in case, move to cpu
         atom_mask = np.array(atom_mask)
@@ -538,8 +540,8 @@ class NucleicDatum:
                 view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
 
         # if colors is not None:
-        #     colors = {i+1: c for i, c in enumerate(colors)}
-        #     view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+            # colors = {i+1: c for i, c in enumerate(colors)}
+            # view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
     

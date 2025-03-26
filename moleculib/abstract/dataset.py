@@ -41,7 +41,7 @@ class PreProcessedDataset:
                 np.random.shuffle(data)
                 self.splits[split] = data
                 
-        self.transform = transform 
+        self.transform = transform
         if pre_transform:
             if self.transform is None:
                 raise ValueError('Cannot pre-transform without a transform')
