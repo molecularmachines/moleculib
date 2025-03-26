@@ -1,0 +1,102 @@
+moleculib.sequence.dataset
+==========================
+
+.. py:module:: moleculib.sequence.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.sequence.dataset.ElutedLigandDataset
+   moleculib.sequence.dataset.MHCBindingAffinityDataset
+   moleculib.sequence.dataset.GFPFitnessDataset
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.sequence.dataset.onehot_encode_datum
+
+
+Module Contents
+---------------
+
+.. py:function:: onehot_encode_datum(sequencedatum: moleculib.sequence.datum.SeqDatum)
+
+.. py:class:: ElutedLigandDataset(base_path: str, transform: moleculib.protein.transform.ProteinTransform = None, encode_one_hot: bool = True)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: encode_one_hot
+      :value: True
+
+
+
+   .. py:attribute:: data_frame
+      :value: None
+
+
+
+   .. py:attribute:: splits
+
+
+.. py:class:: MHCBindingAffinityDataset(base_path: str, transform: moleculib.protein.transform.ProteinTransform = None)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: data_frame
+      :value: None
+
+
+
+   .. py:attribute:: splits
+
+
+.. py:class:: GFPFitnessDataset(base_path: str, transform: moleculib.protein.transform.ProteinTransform = None, encode_one_hot: bool = True, encode_lm: bool = False, lm_model: str = 'esm')
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: data_frame
+      :value: None
+
+
+
+   .. py:attribute:: splits
+
+
+   .. py:attribute:: encode_one_hot
+      :value: True
+
+
+

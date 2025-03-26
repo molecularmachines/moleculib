@@ -1,0 +1,68 @@
+moleculib.protein.jax_utils
+===========================
+
+.. py:module:: moleculib.protein.jax_utils
+
+.. autoapi-nested-parse::
+
+   stringarray: JAX-compatible object array for manipulating strings.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.jax_utils.StringArray
+
+
+Module Contents
+---------------
+
+.. py:class:: StringArray(data: Union[str, List[str], numpy.ndarray, StringArray])
+
+   StringArray: JAX-compatible representation of an array of strings.
+
+   .. rubric:: Examples
+
+   >>> arr = StringArray(['A', 'B', 'C', 'D'])
+   >>> arr
+   StringArray(['A', 'B', 'C', 'D'], dtype=object)
+   >>> len(arr)
+   4
+   >>> arr.shape
+   (4,)
+   >>> arr.dtype
+   dtype('O')
+   >>> arr[0]
+   StringArray('A', dtype=object)
+
+
+   .. py:attribute:: dtype
+
+
+   .. py:attribute:: shape
+
+
+   .. py:attribute:: size
+
+
+   .. py:attribute:: ndim
+
+
+   .. py:attribute:: T
+
+
+   .. py:method:: transpose(*axes: int) -> StringArray
+
+
+   .. py:method:: ravel() -> StringArray
+
+
+   .. py:method:: reshape(*args, **kwargs) -> StringArray
+
+
+   .. py:method:: astype(dtype: numpy.dtype) -> StringArray
+
+

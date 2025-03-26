@@ -1,0 +1,130 @@
+moleculib.protein.metrics
+=========================
+
+.. py:module:: moleculib.protein.metrics
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.metrics.ProteinMetric
+   moleculib.protein.metrics.AlignedRootMeanSquareDeviation
+   moleculib.protein.metrics.CountClashes
+   moleculib.protein.metrics.ChemicalDeviationMetric
+   moleculib.protein.metrics.StandardBondDeviation
+   moleculib.protein.metrics.StandardAngleDeviation
+   moleculib.protein.metrics.StandardDihedralDeviation
+   moleculib.protein.metrics.StandardChemicalDeviation
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.protein.metrics.safe_norm
+   moleculib.protein.metrics.norm
+   moleculib.protein.metrics.normalize
+   moleculib.protein.metrics.measure_bonds
+   moleculib.protein.metrics.measure_angles
+   moleculib.protein.metrics.measure_dihedrals
+
+
+Module Contents
+---------------
+
+.. py:function:: safe_norm(vector: jax.numpy.ndarray, axis: int = -1) -> jax.numpy.ndarray
+
+   safe_norm(x) = norm(x) if norm(x) != 0 else 1.0
+
+
+.. py:class:: ProteinMetric
+
+.. py:class:: AlignedRootMeanSquareDeviation
+
+   Bases: :py:obj:`ProteinMetric`
+
+
+.. py:class:: CountClashes(radius_multiplier=0.8, smooth: bool = False)
+
+   Bases: :py:obj:`ProteinMetric`
+
+
+   .. py:attribute:: radius_multiplier
+      :value: 0.8
+
+
+
+   .. py:attribute:: smooth
+      :value: False
+
+
+
+.. py:function:: norm(vector: numpy.ndarray) -> numpy.ndarray
+
+.. py:function:: normalize(vector: numpy.ndarray) -> numpy.ndarray
+
+.. py:function:: measure_bonds(coord, idx)
+
+.. py:function:: measure_angles(coords, idx)
+
+.. py:function:: measure_dihedrals(coords, indices)
+
+.. py:class:: ChemicalDeviationMetric(key, measure, var_clip=0.0, num_interactive_atoms=1)
+
+   Bases: :py:obj:`ProteinMetric`
+
+
+   .. py:attribute:: key
+
+
+   .. py:attribute:: measure
+
+
+   .. py:attribute:: var_clip
+      :value: 0.0
+
+
+
+   .. py:attribute:: num_interactive_atoms
+      :value: 1
+
+
+
+.. py:class:: StandardBondDeviation
+
+   Bases: :py:obj:`ChemicalDeviationMetric`
+
+
+.. py:class:: StandardAngleDeviation
+
+   Bases: :py:obj:`ChemicalDeviationMetric`
+
+
+.. py:class:: StandardDihedralDeviation(var_clip=0.1)
+
+   Bases: :py:obj:`ChemicalDeviationMetric`
+
+
+.. py:class:: StandardChemicalDeviation
+
+   Bases: :py:obj:`ProteinMetric`
+
+
+   .. py:attribute:: describe_chemistry
+
+
+   .. py:attribute:: count_clashes
+
+
+   .. py:attribute:: bond_deviation
+
+
+   .. py:attribute:: angle_deviation
+
+
+   .. py:attribute:: dihedral_deviation
+
+
