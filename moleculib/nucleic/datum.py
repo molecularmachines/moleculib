@@ -54,6 +54,11 @@ from biotite.structure.io import pdbx
 import py3Dmol
 import numpy as np
 
+import torch
+import fm
+
+
+
 home_dir = str(Path.home()) #not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")} #not sure either
 
@@ -63,7 +68,7 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
 
     Args:
         pdb_path (_type_): _description_
-        RNA (bool, optional): if True, filters out DNA nucleotides, 
+        RNA (bool, optional): if True, filters out DNA nucleotides,
         if False, datum will have both DNA and RNA
         Defaults to False.
 
@@ -72,14 +77,14 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
     """
     if model == None:
         model = 1
-        
+
     if cif:
         cif_file = pdbx.CIFFile.read(pdb_path)
         #try block since model may be inaccurate and supposed to be a chain
         try:
             atom_array = pdbx.get_structure(
-                cif_file, model=int(model),extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
-        
+                cif_file, model=int(model),extra_fields=["atom_id", "b_factor", "occupancy"]) # "charge"])
+
         except ValueError as e:
         # Check if the error is specifically about the model not existing
             if "the given model" in str(e):
@@ -87,7 +92,9 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
                 atom_array = pdbx.get_structure(
                     cif_file, model=1,extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
                 chain = model
-   
+            else:
+                raise e
+
     else:
         pdb_file = PDBFile.read(pdb_path)
         try:
@@ -100,20 +107,26 @@ def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = Non
                 atom_array = pdb_file.get_structure(
                 model=int(model), extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
                 chain = model
-                
+            else:
+                raise e
+
     #get only the specific chain:
     if chain is not None:
-        atom_array = atom_array[atom_array.chain_id == chain]
+        # if isinstance(chain, str):
+        #     chain = [chain]
+        #chain can be a list of a few chains to connect and give together:
+        atom_array = atom_array[np.isin(atom_array.chain_id, chain)]
+        # print(atom_array)
         if len(atom_array) ==0 :
-            print(f"Chain {desired_chain} is not present in the atom array of id {id}.")
+            print(f"Chain {chain} is not present in the atom array of id {id}.")
         else:
             print(f'Extracted chain {chain} from the atom array')
-        
+
     nuc_filter = filter_nucleotides(atom_array)
     if RNA==True:
         DNA = ["DA", "DC", "DG", "DI", "DT", "DU"]
         dna_filter = np.isin(atom_array.res_name, DNA) #filters for DNA only
-        
+
         no_dna_filter = np.logical_not(dna_filter)
         # print(len(dna_filter),len(nuc_filter))
         RNA_filter = np.logical_and(no_dna_filter, nuc_filter) #no DNA and only nucleotides filter
@@ -126,8 +139,9 @@ from flax import struct
 
 @struct.dataclass
 class NucleicDatum:
+
     """
-    Incorporates Biotite nucleic sequence data 
+    Incorporates Biotite nucleic sequence data
     # and reshapes atom arrays to residue-based representation
     """
 
@@ -166,8 +180,8 @@ class NucleicDatum:
                 obj = np.array(obj)
             dict_[attr] = obj
         return dict_
-    
-    
+
+
     @classmethod
     def _extract_reshaped_atom_attr(
         cls,
@@ -179,7 +193,7 @@ class NucleicDatum:
         residue_count = get_residue_count(atom_array)
         extraction = dict()
         mask = np.zeros((residue_count, MAX_DNA_ATOMS)).astype(bool)
-        #creates array of zeroes in the desired shape to 
+        #creates array of zeroes in the desired shape to
         #fill with tokens and coords
         for attr in attrs:
             attr_shape = getattr(atom_array, attr).shape
@@ -190,7 +204,7 @@ class NucleicDatum:
             extraction[attr] = attr_reshape
 
         #NOTE: explored the different chains specifically for 5F9R complex:
-        #the following 3 funcs are for this exploration: 
+        #the following 3 funcs are for this exploration:
         def get_repetition_lengths(lst):
             lengths = []
             count = 1
@@ -208,19 +222,19 @@ class NucleicDatum:
                 if lst[i] < lst[i-1]:
                     return False
             return True
-        
+
         def check_res(lst):
             res =set()
             for i in lst:
                 if i not in res:
                     res.add(i)
             return res
-        
+
         #NOTE: explored the different chains specifically for 5F9R complex:
         # chainA = atom_array[:2462]
         # chainC = atom_array[2462:2462+601]
         # chainD = atom_array[2462+601:]
-        
+
         # print(check_strictly_increasing(atom_array.res_id[2462+601:]))
         # repetition_lengths = get_repetition_lengths(atom_array.chain_id) #[2462, 601, 396]
         # print(repetition_lengths)
@@ -248,7 +262,7 @@ class NucleicDatum:
 
             atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token) ####NOTE
-        
+
         return extraction, mask
 
 
@@ -270,15 +284,15 @@ class NucleicDatum:
     @classmethod
     def from_filepath(cls, filepath, cif, from_filepath=None,model: int = None, chain: str = None, id = None):
         atom_array =  pdb_to_atom_array(filepath, cif, model = model, chain = chain, RNA=True) #NOTE: CHANGE RNA TO TRUE IF WANT ONLY RNA. filters pdb to only nucleotides
-        header = parse_pdb_header(filepath) 
-        # print(f'header is {header}')   
+        header = parse_pdb_header(filepath)
+        # print(f'header is {header}')
         return cls.from_atom_array(atom_array, header=header, id=id)
 
     @classmethod
     def fetch_pdb_id(cls ,id , save_path=None, model: int = None, chain: str = None): ##
         cif = False
         try:
-            filepath = rcsb.fetch(id, "pdb", save_path) 
+            filepath = rcsb.fetch(id, "pdb", save_path)
             exception_raised = False
         except:
             print(f"PDB format not available for {id}, trying CIF format")
@@ -314,7 +328,7 @@ class NucleicDatum:
 
         if chain != None:
             atom_array = atom_array[atom_array.chain_name == chain]
-        
+
         _, res_names = get_residues(atom_array)
         res_names = [
             ("UNK" if (name not in all_nucs) else name) for name in res_names
@@ -340,7 +354,7 @@ class NucleicDatum:
         )
         # print("line 234 in datum, that is atom_array.res_name:", len(atom_array.res_name))
         # print("line 234 in datum, that is atom_array.res_name:", len(residue_token))
-        
+
         residue_mask = np.ones_like(residue_token).astype(bool) #creates array of same shape as res token, with all True
 
         atom_array.add_annotation("residue_token", int)
@@ -361,7 +375,7 @@ class NucleicDatum:
         )
         chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1])) #getting rid of last element, starting from 0.
         atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
-        
+
         # reshape atom attributes to residue-based representation
         # with the correct ordering
         # [N * 14, ...] -> [N, 14, ...]
@@ -404,12 +418,12 @@ class NucleicDatum:
                     j = stack.pop()
                     contact_map[i, j] = 1
                     contact_map[j, i] = 1
-            
+
             return contact_map
-        
+
         # Create a fold compound for the sequence
-        seq = str(sequence)
-        if len(seq) != len(residue_token):
+        # seq = str(sequence)
+        # if len(seq) != len(residue_token):
             # print(f'len(seq) != len(residue_token), seq is {seq} residue_token is {residue_token}')
             #get seq from residue_token:
             # rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I', 'UNK']
@@ -419,25 +433,50 @@ class NucleicDatum:
 
             # rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
             # dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
-            token_to_rna_letter = {'0': 'A',
-                                    '1': 'U',
-                                    '2': 'T',
-                                    '3': 'G',
-                                    '4': 'C',
-                                    '5': 'I',
-                                    '13': 'N',
-                                    '6': 'A', #DNA
-                                    '11': 'U',#DNA
-                                    '10': 'T',#DNA
-                                    '8': 'G',#DNA
-                                    '7': 'C',#DNA
-                                    '9': 'I',#DNA
-                                    '12': 'N'} #PAD
-            seq =''
-            for r in residue_token:
-                seq += token_to_rna_letter[str(r)]
-            
-            
+        token_to_rna_letter = {'0': 'A',
+                                '1': 'U',
+                                '2': 'T',
+                                '3': 'G',
+                                '4': 'C',
+                                '5': 'I',
+                                '13': '-',
+                                '6': 'A', #DNA
+                                '11': 'U',#DNA
+                                '10': 'T',#DNA
+                                '8': 'G',#DNA
+                                '7': 'C',#DNA
+                                '9': 'I',#DNA
+                                '12': '-'} #PAD
+        seq =''
+        for r in residue_token:
+            seq += token_to_rna_letter[str(r)]
+
+        #RNA FM:
+
+        # Load RNA-FM model
+        model, alphabet = fm.pretrained.rna_fm_t12()
+        batch_converter = alphabet.get_batch_converter()
+        model.eval()  # disables dropout for deterministic results
+
+        def encode(rnaseq):
+            data = [
+            ("", rnaseq),
+            ]
+            batch_labels, batch_strs, batch_tokens = batch_converter(data)
+            with torch.no_grad():
+                results = model(batch_tokens, repr_layers=[12],need_head_weights=True)
+            token_embeddings = results["representations"][12][0]
+            if token_embeddings.shape[0] - len(rnaseq) !=2:
+                raise KeyError
+             # Extract only the actual sequence embeddings (exclude the first and last token)
+            sequence_embeddings = token_embeddings[1:-1]
+            print(f'Encoding FM. RNA length is {len(rnaseq)}, and FM embeddings are size: {sequence_embeddings.shape} ')
+            attentions = results["attentions"][0] #shape [12, 20, N, N]
+            return sequence_embeddings, attentions
+
+        fmtoks, attention = encode(seq)
+        #END RNA FM Model
+
         fc = RNA.fold_compound(seq)
         mfe_structure, mfe = fc.mfe() #Example of mfe structure "....(...((.())))"
         contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
@@ -446,8 +485,8 @@ class NucleicDatum:
         if contact_pairs.shape[0] != len(residue_token):
             print("contact_pairs.shape[0] != len(residue_token)")
         # print("Done")
-        
-        
+
+
         return cls(
             idcode=id,
             sequence=sequence,
@@ -458,9 +497,11 @@ class NucleicDatum:
             chain_token=chain_token,
             **atom_extract,
             atom_mask=atom_mask,
-            # id=id_, 
-            contact_map = contact_pairs,  
-            
+            # id=id_,
+            contact_map = contact_pairs,
+            fmtoks = fmtoks ,
+            attention = attention
+
         )
 
 
@@ -502,6 +543,8 @@ class NucleicDatum:
             line[30:38] = f"{x:.3f}".rjust(8)
             line[38:46] = f"{y:.3f}".rjust(8)
             line[46:54] = f"{z:.3f}".rjust(8)
+            line[54:60] = "1.00".rjust(6)
+            line[60:66] = "1.00".rjust(6)
             line[76:78] = name[0].rjust(2)
             lines.append("".join(line))
         lines = "\n".join(lines)
@@ -509,10 +552,10 @@ class NucleicDatum:
 
 
     def plot(
-        self, 
-        view = None, 
-        viewer=None, 
-        sphere=False, 
+        self,
+        view = None,
+        viewer=None,
+        sphere=False,
         ribbon=True,
         sidechain=True,
         color='spectrum',
@@ -520,10 +563,10 @@ class NucleicDatum:
     ):
         if view == None:
             view = py3Dmol.view(width=800, height=800)
-            
+
         if viewer is None:
             viewer = (0, 0)
-        
+
         view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
         view.setStyle({'model': -1}, {}, viewer=viewer)
 
@@ -544,7 +587,7 @@ class NucleicDatum:
             # view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
 
         return view
-    
+
     def align_to(
         self,
         other,
@@ -586,7 +629,7 @@ class NucleicDatum:
         # self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
         self_array = self.atom_coord.reshape(-1, 3)
         other_array = other.atom_coord.reshape(-1, 3)
-        _, transform = superimpose(other_array, self_array) 
+        _, transform = superimpose(other_array, self_array)
         # print("T",type(transform))
         new_atom_coord = self.atom_coord + transform.center_translation
         new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
@@ -595,10 +638,10 @@ class NucleicDatum:
         # if new_atom_coord == _:
         #     print("new_atom_coord == _")
         return self.set(atom_coord=new_atom_coord)
-    
+
     def to_pytree(self):
         return vars(self)
-    
+
     def from_pytree(self, tree):
         return NucleicDatum(**tree)
 
@@ -618,10 +661,10 @@ def _scatter_coord(name, coord, color='black', visible=True):
                 size=7,
                 colorscale="Viridis",
             ),
-            
+
             hovertemplate="<b>%{text}</b><extra></extra>",
             text=np.arange(0, len(coord)),
-            
+
             line=dict(color=color, width=4),
             visible="legendonly" if not visible else True,
         )
@@ -632,11 +675,11 @@ def _scatter_coord(name, coord, color='black', visible=True):
         height=750,
     )
     fig.update_scenes(
-        xaxis_visible=False, 
-        yaxis_visible=False, 
+        xaxis_visible=False,
+        yaxis_visible=False,
         zaxis_visible=False
     )
-    
+
     return fig
 
 # np.array(list(map(lambda atom: atom_index(atom), atom_array.atom_name)))
@@ -648,7 +691,7 @@ rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
 
 if __name__ == '__main__':
     dna_datum = NucleicDatum.fetch_pdb_id('1ZEW')  #2n96
-    # print(dna_datum)   
+    # print(dna_datum)
     # breakpoint()
     ##DNADATUM: str,
         # resolution: float,
@@ -667,12 +710,12 @@ if __name__ == '__main__':
     #     print("there are 0 coords")
     # else:
     #     print("NO")
-    
-    
-    
+
+
+
     import plotly.graph_objects as go
     atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(-1) #all_atoms[dna_datum.atom_token]
-    # atomcoords = 
+    # atomcoords =
     # print(dna_datum.nuc_token.shape)
     x, y, z = coords.reshape(-1, 3).T
     # print(dna_datum.chain_token)
@@ -682,7 +725,7 @@ if __name__ == '__main__':
         2: 'rgb(44, 160, 44)',     # green
         3: 'rgb(214, 39, 40)',     # red
         4: 'rgb(148, 103, 189)',   # purple
-        5: 'rgb(247, 182, 210)' ,  # light pink    
+        5: 'rgb(247, 182, 210)' ,  # light pink
         6: 'rgb(227, 119, 194)',   # pink
         7: 'rgb(0, 0, 0)',         # gray
         8: 'rgb(188, 189, 34)',    # yellow
@@ -717,7 +760,7 @@ if __name__ == '__main__':
         height=800,
         title='3D Scatter Plot of Atom Coordinates'
     )
-    
+
     ####TO PLOT:
     fig.show()
 
@@ -742,7 +785,7 @@ if __name__ == '__main__':
     dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
     # print(rna_res_tokens_dict)
     # print(dna_res_tokens_dict)
-    
+
     # num_chains = dna_datum.chain_token[-1]
     # chains_len = get_repetition_lengths(dna_datum.chain_token)
     # follow=[]
@@ -756,13 +799,13 @@ if __name__ == '__main__':
     # print(dna_datum.nuc_token[140])
     # print(len(dna_datum))
     # print(len(dna_datum.nuc_token))
-    # #number of RNA chains, 
+    # #number of RNA chains,
     # for chain in range(num_chains+1):
     #     chain_len = chains_len[chain]
-        
+
     #number of DNA chains, (check for chain and RNA/DNA),
 
     # how long the chain is
-    #total number of nucleotides, 
-    
+    #total number of nucleotides,
+
     breakpoint()

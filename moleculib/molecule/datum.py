@@ -1,536 +1,830 @@
 import numpy as np
-from .alphabet import elements
-from .alphabet import PERIODIC_TABLE
+from Bio.PDB import parse_pdb_header
+from Bio.PDB import MMCIFParser, PDBIO, Select
 
-import biotite.structure.io.mmtf as mmtf
-import biotite.structure.io.mol as mol
-from biotite.structure import Atom, array
-from biotite.structure import BondList
-from .utils import register_pytree, pdb_to_atom_array
 from biotite.database import rcsb
-from biotite.structure import get_molecule_masks
-from moleculib.molecule.h5_to_pdb import create_pdb
-from copy import deepcopy
+from biotite.sequence import ProteinSequence, NucleotideSequence, GeneralSequence, Alphabet
+from biotite.structure import (
+    apply_chain_wise,
+    apply_residue_wise,
+    get_chain_count,
+    get_residue_count,
+    get_residues,
+    get_chains,
+    spread_chain_wise,
+    spread_residue_wise,
+    Atom,
+    superimpose,
+    AffineTransformation,
+    rmsd,
+    AtomArray
+)
+import RNA #ViennaRNA
+from biotite.structure import filter_nucleotides
 import os
+# import biotite.structure.io.mmtf as mmtf
+from einops import rearrange, repeat
+# from biotite.structure import Atom
+from biotite.structure import array as AtomArrayConstructor
+# from biotite.structure import superimpose
+
+
+from biotite.structure.io.pdb import PDBFile
+from biotite.structure.io import pdbx
+
+import plotly.graph_objects as go
+import plotly.offline as pyo
+
+import sys
+sys.path.append('.')
+
+from moleculib.nucleic.alphabet import *
+
+# from utils import  pdb_to_atom_array
 import os
+from pathlib import Path
+
+from biotite.structure import filter_nucleotides
+# from biotite.structure.io import PDBFile, MMCIFFile
+from biotite.structure.io.pdb import PDBFile #
+# from biotite.structure.io. import MMCIFFile
+from biotite.structure.io import pdbx
 
 
-class MoleculeDatum:
-    def __init__(
-        self,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        bonds: np.ndarray,
-        **kwargs,
-    ):
-        self.atom_token = atom_token
-        self.atom_coord = atom_coord
-        self.atom_mask = atom_mask
-        self.bonds = bonds
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+
+import numpy as np
+
+import torch
+import fm
 
 
-    def replace(self, **kwargs):
-        _vars = deepcopy(vars(self))
-        _vars.update(**kwargs)
-        return self.__class__(**_vars)
-    
-    def empty(self):
-        new_datum_ = dict()
-        for attr, obj in vars(self).items():
-            new_datum_[attr] = np.zeros_like(obj)
-        return self.__class__(**new_datum_)
 
-    def to_atom_array(self):
-        tokens = self.atom_token
-        coords = self.atom_coord
-        atoms = []
-        for coord, token in zip(coords, tokens):
-            if token == 0:
-                break
-            el = elements.iloc[int(token) - 1]
-            atom = Atom(
-                np.array(coord),
-                chain_id="A",
-                element=el.symbol,
-                hetero=False,
-                atom_name=el.symbol,
-            )
-            atoms.append(atom)
-        arr = array(atoms)
-        bonds = BondList(len(atoms))
-        if self.bonds is not None:
-            sub = np.array(self.bonds[self.bonds[:, -1] != -1])
-            pairs = np.sort(sub[:, :-1], axis=1)
-            sub = np.unique(np.column_stack([pairs, sub[:, -1]]), axis=0)
-            sorted_indices = np.lexsort((sub[:, 1], sub[:, 0]))
-            bonds._bonds = sub[sorted_indices]
-        arr.bonds = bonds
-        return arr
+home_dir = str(Path.home()) #not sure what this do
+config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")} #not sure either
 
-    def to_sdf_str(self):
-        file = mol.MOLFile()
-        file.set_structure(self.to_atom_array())
-        return str(file)
 
-    def plot(self, view, viewer=None, color=None):
-        if viewer is None:
-            viewer = (0, 0)
-        view.addModel(self.to_sdf_str(), "sdf", viewer=viewer)
-        if color is not None:
-            view.addStyle(
-                {"model": -1},
-                {"stick": {"color": color}, "sphere": {"color": color, "radius": 0.5}},
-                viewer=viewer,
-            )
+def pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id = None):
+    """_summary_
+
+    Args:
+        pdb_path (_type_): _description_
+        RNA (bool, optional): if True, filters out DNA nucleotides, 
+        if False, datum will have both DNA and RNA
+        Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
+    if model == None:
+        model = 1
+        
+    if cif:
+        cif_file = pdbx.CIFFile.read(pdb_path)
+        #try block since model may be inaccurate and supposed to be a chain
+        try:
+            atom_array = pdbx.get_structure(
+                cif_file, model=int(model),extra_fields=["atom_id", "b_factor", "occupancy"]) # "charge"])
+        
+        except ValueError as e:
+        # Check if the error is specifically about the model not existing
+            if "the given model" in str(e):
+                print(f"Model {model} does not exist. Treating input as a chain.")
+                atom_array = pdbx.get_structure(
+                    cif_file, model=1,extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
+                chain = model
+            else:
+                raise e
+   
+    else:
+        pdb_file = PDBFile.read(pdb_path)
+        try:
+            atom_array = pdb_file.get_structure(
+                model=int(model), extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
+        except ValueError as e:
+        # Check if the error is specifically about the model not existing
+            if "the given model" in str(e):
+                print(f"Model {model} does not exist. Treating input as a chain.")
+                atom_array = pdb_file.get_structure(
+                model=int(model), extra_fields=["atom_id", "b_factor", "occupancy", "charge"])
+                chain = model
+            else:
+                raise e 
+                
+    #get only the specific chain:
+    if chain is not None:
+        # if isinstance(chain, str):
+        #     chain = [chain]
+        #chain can be a list of a few chains to connect and give together:
+        atom_array = atom_array[np.isin(atom_array.chain_id, chain)] 
+        # print(atom_array)
+        if len(atom_array) ==0 :
+            print(f"Chain {chain} is not present in the atom array of id {id}.")
         else:
-            view.addStyle(
-                {"model": -1}, {"sphere": {"radius": 0.5}, "stick": {}}, viewer=viewer
-            )
-        return view
+            print(f'Extracted chain {chain} from the atom array')
+        
+    nuc_filter = filter_nucleotides(atom_array)
+    if RNA==True:
+        DNA = ["DA", "DC", "DG", "DI", "DT", "DU"]
+        dna_filter = np.isin(atom_array.res_name, DNA) #filters for DNA only
+        
+        no_dna_filter = np.logical_not(dna_filter)
+        # print(len(dna_filter),len(nuc_filter))
+        RNA_filter = np.logical_and(no_dna_filter, nuc_filter) #no DNA and only nucleotides filter
+        nuc_filter=RNA_filter
 
+    atom_array = atom_array[nuc_filter]
+    return atom_array
 
-register_pytree(MoleculeDatum)
+##END OF UTILS
 
-
-class QM9Datum(MoleculeDatum):
-    def __init__(
-        self,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        bonds: np.ndarray,
-        properties: np.ndarray,
-        stds: np.ndarray,
-        **kwargs,
-    ):
-        super().__init__(atom_token, atom_coord, atom_mask, bonds, **kwargs)
-        """
-        Properties found in https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html
-        """
-        self.relevant_properties = {
-            # 0: "μ Dipole moment, D",
-            # 1: "α Isotropic polarizability, a₀³",
-            2: "ε_HOMO Highest occupied molecular orbital energy, eV",
-            3: "ε_LUMO Lowest unoccupied molecular orbital energy, eV",
-            4: "Δε Gap between ε_HOMO and ε_LUMO, eV",
-            # 5: "⟨R²⟩ Electronic spatial extent, a₀²",
-            # 6: "ZPVE Zero point vibrational energy, eV",
-            # 7: "U₀ Internal energy at 0K, eV",
-            # 8: "U Internal energy at 298.15K, eV",
-            # 9: "H Enthalpy at 298.15K, eV",
-            # 10: "G Free energy at 298.15K, eV",
-            # 11: "c_v Heat capacity at 298.15K, cal/(mol K)",
-            # 12: "U₀_ATOM Atomization energy at 0K, eV",
-            # 13: "U_ATOM Atomization energy at 298.15K, eV",
-            # 14: "H_ATOM Atomization enthalpy at 298.15K, eV",
-            # 15: "G_ATOM Atomization free energy at 298.15K, eV",
-            # 16: "A Rotational constant, GHz",
-            # 17: "B Rotational constant, GHz",
-            # 18: "C Rotational constant, GHz",
-        }
-        self.properties = properties
-        self.stds = stds
-        # self.signature = np.bincount(self.atom_token, minlength=9 + 1)
-
-
-register_pytree(QM9Datum)
-
-
-class RSDatum(MoleculeDatum):
-    def __init__(
-        self,
-        atom_token: np.ndarray,
-        atom_coord: np.ndarray,
-        atom_mask: np.ndarray,
-        bonds: np.ndarray,
-        properties: np.ndarray,
-        adjacency: np.ndarray,
-        laplacian: np.ndarray,
-        **kwargs,
-    ):
-        super().__init__(atom_token, atom_coord, atom_mask, bonds, **kwargs)
-        self.properties = properties
-        self.adjacency = adjacency
-        self.laplacian = laplacian
-
-
-register_pytree(RSDatum)
-
-import biotite.structure.io.pdb as pdb
-from biotite.structure import connect_via_distances
-from biotite.database import rcsb
-
-
-class PDBMoleculeDatum:
+class NucleicDatum:
+    
+    """
+    Incorporates Biotite nucleic sequence data 
+    # and reshapes atom arrays to residue-based representation
+    """
 
     def __init__(
         self,
         idcode: str,
+        resolution: float,
+        sequence: NucleotideSequence,
+        nuc_token: np.ndarray,
+        nuc_index: np.ndarray,
+        nuc_mask: np.ndarray,
+        chain_token: np.ndarray,
         atom_token: np.ndarray,
         atom_coord: np.ndarray,
-        atom_name: np.ndarray,
         atom_mask: np.ndarray,
-        bonds: np.ndarray,
+        contact_map: np.ndarray = None, #binary map of base pairs [N, N] where 1 indicates 2 nucs are paired
+        fmtoks: np.ndarray = None, #len + 2, 640 embeddings of the sequence
+        attention: np.ndarray = None, # [12,20,N,N]
+        msa: np.ndarray = None, # 
+        **kwargs, 
     ):
-        self.idcode = idcode
+        self.idcode = idcode #None
+        self.resolution = None
+        self.sequence = None #str(sequence)
+        
+        self.nuc_token = nuc_token
+        self.nuc_index = nuc_index #do we need that
+        self.nuc_mask = nuc_mask
+        self.chain_token = chain_token
         self.atom_token = atom_token
         self.atom_coord = atom_coord
-        self.atom_name = atom_name
         self.atom_mask = atom_mask
-        self.bonds = bonds
+        self.contact_map = contact_map
+        
+        self.fmtoks = fmtoks
+        self.attention = attention # attention
+        self.msa = np.array(msa)
+        
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
 
     def __len__(self):
-        return len(self.sequence)
+        return len(self.nuc_index)
+
+    def to_dict(self, attrs=None):
+        if attrs is None:
+            attrs = vars(self).keys()
+        dict_ = {}
+        for attr in attrs:
+            obj = getattr(self, attr)
+            # strings are not JAX types
+            if type(obj) == str:
+                continue
+            if type(obj) in [list, tuple]:
+                if type(obj[0]) not in [int, float]:
+                    continue
+                obj = np.array(obj)
+            dict_[attr] = obj
+        return dict_
+    
+    
+    @classmethod
+    def _extract_reshaped_atom_attr(
+        cls,
+        atom_array,
+        atom_alphabet=all_atoms,
+        atom_to_indices=atom_to_nucs_index,
+        attrs=["coord", "token"],
+    ):
+        residue_count = get_residue_count(atom_array)
+        extraction = dict()
+        mask = np.zeros((residue_count, MAX_DNA_ATOMS)).astype(bool)
+        #creates array of zeroes in the desired shape to 
+        #fill with tokens and coords
+        for attr in attrs:
+            attr_shape = getattr(atom_array, attr).shape
+            if len(attr_shape) == 1:
+                attr_reshape = np.zeros((residue_count, MAX_DNA_ATOMS))
+            else:
+                attr_reshape = np.zeros((residue_count, MAX_DNA_ATOMS, attr_shape[-1])) #NOTE: do we want to change it from 506,3 to 16, 24, 3?? its much less than 506... 1518 -->1152
+            extraction[attr] = attr_reshape
+
+        #NOTE: explored the different chains specifically for 5F9R complex:
+        #the following 3 funcs are for this exploration: 
+        def get_repetition_lengths(lst):
+            lengths = []
+            count = 1
+            for i in range(1, len(lst)):
+                if lst[i] == lst[i-1]:
+                    count += 1
+                else:
+                    lengths.append(count)
+                    count = 1
+            lengths.append(count)
+            return lengths
+
+        def check_strictly_increasing(lst):
+            for i in range(1, len(lst)):
+                if lst[i] < lst[i-1]:
+                    return False
+            return True
+        
+        def check_res(lst):
+            res =set()
+            for i in lst:
+                if i not in res:
+                    res.add(i)
+            return res
+        
+        #NOTE: explored the different chains specifically for 5F9R complex:
+        # chainA = atom_array[:2462]
+        # chainC = atom_array[2462:2462+601]
+        # chainD = atom_array[2462+601:]
+        
+        # print(check_strictly_increasing(atom_array.res_id[2462+601:]))
+        # repetition_lengths = get_repetition_lengths(atom_array.chain_id) #[2462, 601, 396]
+        # print(repetition_lengths)
+        # print(len(atom_array.res_name))
+
+        def _atom_slice(atom_name, atom_array, atom_token):
+            # print("atom_name: ", atom_name, "atom_array: ",atom_array[:10],"atom_token: ", atom_token)
+            atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
+            # kill pads and kill unks that are not backbone
+            # print("atom.res: ",atom_array_.residue_token )
+            atom_array_ = atom_array_[(atom_array_.residue_token != 12)] #UNK is 13 #NOTE: WE BASICALLY CANCEL UNK?
+
+            if atom_name not in backbone_atoms_RNA:
+                atom_array_ = atom_array_[(atom_array_.residue_token !=13 )] #>1 #PAD IS 12 ##flag as masks
+
+            res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
+            atom_indices = atom_to_indices[atom_token][res_tokens]
+
+            for attr in attrs:
+                attr_tensor = getattr(atom_array_, attr)
+                extraction[attr][seq_id, atom_indices, ...] = attr_tensor
+            mask[seq_id, atom_indices] = True
+
+        for atom_name in atom_alphabet:
+
+            atom_token = atom_alphabet.index(atom_name)
+            _atom_slice(atom_name, atom_array, atom_token) ####NOTE
+        
+        return extraction, mask
+
 
     @classmethod
-    def empty_molecule(cls):
+    def empty_nuc(cls):
         return cls(
             idcode="",
             resolution=0.0,
-            chain_id=np.array([]),
-            res_id=np.array([]),
-            res_name=np.array([]),
+            sequence=NucleotideSequence(""),
+            nuc_index=np.array([]),
+            nuc_token=np.array([]),
+            nuc_mask=np.array([]),
+            chain_token=np.array([]),
             atom_token=np.array([]),
             atom_coord=np.array([]),
-            atom_name=np.array([]),
-            b_factor=np.array([]),
             atom_mask=np.array([]),
-            bonds=np.array([]),
-        )
-
-    @classmethod
-    def from_filepath(cls, filepath, ligand=None):
-        if filepath.endswith(".mmtf"):
-            mmtf_file = mmtf.MMTFFile.read(filepath)
-            atom_array = pdb_to_atom_array(mmtf_file)
-            header = dict(
-                idcode=mmtf_file["structureId"],
-                resolution=(
-                    None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
-                ),
-            )
-            atom_array = atom_array[atom_array.hetero & (atom_array.res_name != "HOH")]
-            ligand_arrays = []
-            ligand_names = np.unique(atom_array.res_name)
-            for ligand_name in ligand_names:
-                if ligand is not None and ligand_name != ligand:
-                    continue
-                ligand_arrays.append(atom_array[atom_array.res_name == ligand_name])
-            return [
-                cls.from_atom_array(atom_array, header=header)
-                for atom_array in ligand_arrays
-            ]
-        elif filepath.endswith(".sdf"):
-            mol_file = mol.MOLFile.read(filepath)
-            atom_array = mol_file.get_structure()
-            header = dict(idcode="allancomebackhere", resolution=None)
-            return cls.from_atom_array(atom_array, header=header)
-        else:
-            raise NotImplementedError(
-                f"File type {filepath.split('.')[-1]} is not supported"
             )
 
     @classmethod
-    def fetch_pdb_id(cls, id, save_path=None, ligand=None):
-        filepath = rcsb.fetch(id, "mmtf", save_path)
-        return cls.from_filepath(filepath, ligand=ligand)
+    def from_filepath(cls, filepath, cif, from_filepath=None,model: int = None, chain: str = None, id = None):
+        atom_array =  pdb_to_atom_array(filepath, cif, model = model, chain = chain, RNA=True) #NOTE: CHANGE RNA TO TRUE IF WANT ONLY RNA. filters pdb to only nucleotides
+        header = parse_pdb_header(filepath) 
+        # print(f'header is {header}')   
+        return cls.from_atom_array(atom_array, header=header, id=id)
 
     @classmethod
-    def from_atom_array(cls, atom_array, header):
-        if atom_array.array_length() == 0:
-            return cls.empty_molecule()
-
-        # (Ilan) to add other attributes from mendeleev for atoms
-        # atom_attrs = ["spin", "mass_number",...] #other attributes from mendeleev
-        # atom_extract = dict()
-        # for attr in atom_attrs:
-        #     atom_extract[attr] = elements.loc[orig_indexes][attr].to_numpy()
-
-        atom_array.element[atom_array.element == "D"] = (
-            "H"  # set deuterium to hydrogen (use mass_number to differentiate later)
-        )
-        atom_token = np.array([PERIODIC_TABLE.index(el) for el in atom_array.element])
-
-        atom_mask = np.ones(len(atom_token), dtype=bool)
-        bonds = connect_via_distances(atom_array)
-
-        return cls(
-            idcode=header["idcode"],
-            atom_token=atom_token,
-            atom_coord=atom_array.coord,
-            atom_name=atom_array.atom_name,
-            atom_mask=atom_mask,
-            bonds=bonds,
-        )
-
-    def to_atom_array(self):
-        tokens = self.atom_token[self.atom_mask]
-        coords = self.atom_coord[self.atom_mask]
-        atoms = []
-        for coord, token in zip(coords, tokens):
-            el = PERIODIC_TABLE[token]
-            atom = Atom(
-                coord,
-                chain_id="A",
-                element=el.symbol.upper(),
-                hetero=False,
-                atom_name=el.symbol.upper(),
-            )
-            atoms.append(atom)
-        arr = array(atoms)
-        # bonds = BondList(len(atoms))
-        # if self.bonds is not None:
-        # print(self.bonds.shape)
-        # bonds._bonds = self.bonds[self.bonds[:, 0] != -1]
-        arr.bonds = self.bonds
-        return arr
-
-    def to_sdf_str(self):
-        file = mol.MOLFile()
-        file.set_structure(self.to_atom_array())
-        return str(file)
-
-
-class CrossdockDatum(MoleculeDatum):
-    AA_NAME_SYM = {
-        "ALA": "A",
-        "CYS": "C",
-        "ASP": "D",
-        "GLU": "E",
-        "PHE": "F",
-        "GLY": "G",
-        "HIS": "H",
-        "ILE": "I",
-        "LYS": "K",
-        "LEU": "L",
-        "MET": "M",
-        "ASN": "N",
-        "PRO": "P",
-        "GLN": "Q",
-        "ARG": "R",
-        "SER": "S",
-        "THR": "T",
-        "VAL": "V",
-        "TRP": "W",
-        "TYR": "Y",
-    }
-
-    AA_NAME_NUMBER = {k: i for i, (k, _) in enumerate(AA_NAME_SYM.items())}
-
-    AA_NUMBER_NAME = {v: k for k, v in AA_NAME_NUMBER.items()}
-
-    def __init__(self, *args, **kwargs):
-        self.key = kwargs.pop("key")
-        self.filename = kwargs.pop("filename")
-        self.atom_features = kwargs.pop("atom_features")
-        self.protein_token = kwargs.pop("protein_token")
-        self.protein_coord = kwargs.pop("protein_coord")
-        self.protein_mask = kwargs.pop("protein_mask")
-        self.base_path = "/mas/projects/molecularmachines/db/crossdocked_targetdiff/crossdocked_v1.1_rmsd1.0/"
-
-        super().__init__(*args, **kwargs)
-
-    def coord_center(self):
-        return (self.atom_coord * self.atom_mask[:, None]).sum(0) / self.atom_mask.sum()
-
-    def protein_pdb_str(self):
-        folder, file = self.filename.split("/")
-        pdb_path = os.path.join(
-            self.base_path, folder, "_".join(file.split("_")[:3]) + ".pdb"
-        )
-        with open(pdb_path, "r") as f:
-            s = str(f.read())
-        return s
-
-
-register_pytree(CrossdockDatum)
-
-
-class PDBBindDatum(MoleculeDatum):
-    def __init__(self, *args, **kwargs):
-        self.pdb_id = kwargs.pop("pdb_id")
+    def fetch_pdb_id(cls ,id , save_path=None, model: int = None, chain: str = None): ##
+        cif = False
         try:
-            self.pka = kwargs.pop("pka")
-        except KeyError:
-            self.pka = None
-        self.charge = kwargs.pop("charge")
-        self.protein_token = kwargs.pop("protein_token")
-        self.protein_coord = kwargs.pop("protein_coord")
-        self.protein_mask = kwargs.pop("protein_mask")
-        self.base_path = "/mas/projects/molecularmachines/db/PDBBind/refined-set"
+            filepath = rcsb.fetch(id, "pdb", save_path) 
+            exception_raised = False
+        except:
+            print(f"PDB format not available for {id}, trying CIF format")
+            filepath = rcsb.fetch(id, "cif", save_path)
+            cif = True
+        return cls.from_filepath(filepath, cif, model = model, chain = chain, id=id)
 
-        super().__init__(*args, **kwargs)
-
-    def coord_center(self):
-        return (self.atom_coord * self.atom_mask[:, None]).sum(0) / self.atom_mask.sum()
-
-    def protein_pdb_str(self):
-        pdb_path = os.path.join(
-            self.base_path, f"{self.pdb_id}", f"{self.pdb_id}_protein.pdb"
-        )
-        with open(pdb_path, "r") as f:
-            s = str(f.read())
-        return s
-
-    def pocket_pdb_str(self):
-        pdb_path = os.path.join(
-            self.base_path, f"{self.pdb_id}", f"{self.pdb_id}_pocket.pdb"
-        )
-        with open(pdb_path, "r") as f:
-            s = str(f.read())
-        return s
-
-
-register_pytree(PDBBindDatum)
-
-
-class DensityDatum(MoleculeDatum):
-    def __init__(self, *args, **kwargs):
-        self.density = kwargs.pop("density")
-        self.grid = kwargs.pop("grid")
-
-        super().__init__(*args, **kwargs)
-
-
-register_pytree(DensityDatum)
-
-
-class MISATODatum(MoleculeDatum):
-    def __init__(self, *args, **kwargs):
-        self.pdb_id = kwargs.pop("pdb_id")
-        self.protein_token = kwargs.pop("protein_token")
-        self.protein_coord = kwargs.pop("protein_coord")
-        self.protein_mask = kwargs.pop("protein_mask")
-        self.atoms_residue = kwargs.pop("atoms_residue")
-        self.atoms_type = kwargs.pop("atoms_type")
-
-        super().__init__(*args, **kwargs)
-
-    def replace(self, **kwargs):
-        _vars = deepcopy(vars(self))
-        _vars.update(**kwargs)
-        return self.__class__(**_vars)
-
-    def at(self, i):
-        return self.__class__(
-            atom_token=self.atom_token,
-            atom_coord=self.atom_coord[..., i, :, :],
-            atom_mask=self.atom_mask,
-            bonds=self.bonds,
-            pdb_id=self.pdb_id,
-            protein_token=self.protein_token,
-            protein_coord=self.protein_coord[..., i, :, :],
-            protein_mask=self.protein_mask,
-            atoms_residue=self.atoms_residue,
-            atoms_type=self.atoms_type,
-        )
-
-    def neighborhood_idxs(self, r):
-        return np.where(
-            (
-                ((self.atom_coord[0][None] - self.protein_coord[0][:, None]) ** 2).sum(
-                    -1
-                )
-                ** 0.5
-                < r
-            ).sum(1)
-        )[0]
-
-    def keep_neighborhood(self, r):
-        idxs = self.neighborhood_idxs(r)
-        return self.__class__(
-            atom_token=self.atom_token,
-            atom_coord=self.atom_coord,
-            atom_mask=self.atom_mask,
-            bonds=self.bonds,
-            pdb_id=self.pdb_id,
-            protein_token=self.protein_token[idxs],
-            protein_coord=self.protein_coord[..., :, idxs, :],
-            protein_mask=self.protein_mask[idxs],
-            atoms_residue=self.atoms_residue[idxs],
-            atoms_type=self.atoms_type[idxs],
-        )
-
-    def dehydrate(self):
-        h_atom = np.where(self.atom_token != 1)[0]
-        h_protein = np.where(self.protein_token != 1)[0]
-        return self.__class__(
-            atom_token=self.atom_token[h_atom],
-            atom_coord=self.atom_coord[..., h_atom, :],
-            atom_mask=self.atom_mask[h_atom],
-            bonds=self.bonds,
-            pdb_id=self.pdb_id,
-            protein_token=self.protein_token[h_protein],
-            protein_coord=self.protein_coord[..., h_protein, :],
-            protein_mask=self.protein_mask[h_protein],
-            atoms_residue=self.atoms_residue[h_protein],
-            atoms_type=self.atoms_type[h_protein],
-        )
-
-    def pdb_str(self, frame):
-        return "\n".join(
-            create_pdb(
-                self.protein_coord[frame],
-                self.atoms_type,
-                self.protein_token,
-                self.atoms_residue,
-                [],
-            )
-        )
-
-
-register_pytree(MISATODatum)
-
-
-class ReactDatum(MoleculeDatum):
-    def __init__(
+    def set(
         self,
-        token,
-        reacts,
-        prods,
-        reacts_mask,
-        prods_mask,
-        mask,
-        protein_token,
-        protein_mask,
+        **kwargs,
     ):
-        self.reacts = reacts
-        self.prods = prods
-        self.token = token
-        self.mask = mask
-        self.reacts_mask = reacts_mask
-        self.prods_mask = prods_mask
-        self.protein_token = protein_token
-        self.protein_mask = protein_mask
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
 
-    def centralize(self):
-        # the reacts_mask indicates which atoms are part of which reactant
-        # to centralize the reacts we need to centralize each reactant independently
-        num_reacts = self.reacts_mask.max()
-        reacts_shift = np.zeros_like(self.reacts)
-        for i in range(num_reacts):
-            react_mask = self.reacts_mask == i
-            react_center = self.reacts[np.where(react_mask)].mean(0)
-            reacts_shift += react_mask[:, None] * react_center[None]
-        num_prods = self.prods_mask.max()
-        prods_shift = np.zeros_like(self.prods)
-        for i in range(num_prods):
-            prod_mask = self.prods_mask == i
-            prod_center = self.prods[np.where(prod_mask)].mean(0)
-            prods_shift += prod_mask[:, None] * prod_center[None]
-        return self.__class__(
-            token=self.token,
-            reacts=self.reacts - reacts_shift,
-            prods=self.prods - prods_shift,
-            reacts_mask=self.reacts_mask,
-            prods_mask=self.prods_mask,
-            mask=self.mask,
-            protein_token=self.protein_token,
-            protein_mask=self.protein_mask,
+    @classmethod
+    def from_atom_array(
+        cls,
+        atom_array,
+        header,
+        id = None,
+        chain: str = None,
+        ):
+        """
+        Reshapes atom array to residue-indexed representation to
+        build a protein datum.
+        """
+        # print("length of atom array: " , len(atom_array))
+        if atom_array.array_length() == 0:
+            return cls.empty_nuc()
+
+        if chain != None:
+            atom_array = atom_array[atom_array.chain_name == chain]
+        
+        _, res_names = get_residues(atom_array)
+        res_names = [
+            ("UNK" if (name not in all_nucs) else name) for name in res_names
+        ]
+
+
+
+        sequence = GeneralSequence(Alphabet(all_nucs), list(res_names))
+        # breakpoint()
+        # index residues globally
+        atom_array.add_annotation("seq_uid", int)
+        atom_array.seq_uid = spread_residue_wise(
+            atom_array, np.arange(0, get_residue_count(atom_array))
+        )
+
+        # tokenize atoms
+        atom_array.add_annotation("token", int)
+        atom_array.token = np.array(
+            list(map(lambda atom: atom_index(atom), atom_array.atom_name))
+        )
+
+        # tokenize residues
+        residue_token = np.array(
+            list(map(lambda res: get_nucleotide_index(res), atom_array.res_name))
+        )
+        # print("line 234 in datum, that is atom_array.res_name:", len(atom_array.res_name))
+        # print("line 234 in datum, that is atom_array.res_name:", len(residue_token))
+        
+        residue_mask = np.ones_like(residue_token).astype(bool) #creates array of same shape as res token, with all True
+
+        atom_array.add_annotation("residue_token", int)
+        atom_array.residue_token = residue_token
+        chain_token = spread_chain_wise(
+            atom_array, np.arange(0, get_chain_count(atom_array))
+        )
+
+        # count number of residues per chain
+        # and index residues per chain using cumulative sum
+        atom_array.add_annotation("res_uid", int)
+
+        def _count_residues_per_chain(chain_atom_array, axis=0):
+            return get_residue_count(chain_atom_array)
+
+        chain_res_sizes = apply_chain_wise(
+            atom_array, atom_array, _count_residues_per_chain, axis=0
+        )
+        chain_res_cumsum = np.cumsum([0] + list(chain_res_sizes[:-1])) #getting rid of last element, starting from 0.
+        atom_array.res_uid = atom_array.res_id + chain_res_cumsum[chain_token]
+        
+        # reshape atom attributes to residue-based representation
+        # with the correct ordering
+        # [N * 14, ...] -> [N, 14, ...]
+        atom_extract, atom_mask = cls._extract_reshaped_atom_attr(
+            atom_array, atom_alphabet=all_atoms, atom_to_indices=atom_to_nucs_index, attrs=["coord", "token"]
         )
 
 
-register_pytree(ReactDatum)
+
+        atom_extract = dict(
+            map(lambda kv: (f"atom_{kv[0]}", kv[1]), atom_extract.items())
+        )
+
+        # pool residue attributes and create residue features
+        # [N * 14, ...] -> [N, ...]
+        def _pool_residue_token(atom_residue_tokens, axis=0):
+            representative = atom_residue_tokens[0]
+            return representative
+
+        def _reshape_residue_attr(attr):
+            return apply_residue_wise(atom_array, attr, _pool_residue_token, axis=0)
+
+        residue_token = _reshape_residue_attr(residue_token)
+        residue_index = np.arange(0, residue_token.shape[0])
+
+        residue_mask = _reshape_residue_attr(residue_mask)
+        residue_mask = residue_mask & (atom_extract["atom_coord"].sum((-1, -2)) != 0)
+
+        chain_token = _reshape_residue_attr(chain_token)
+
+        def secondary_dot_bracket_to_contact_map(dot_bracket):
+            length = len(dot_bracket)
+            contact_map = np.zeros((length, length), dtype=int)
+            stack = []
+
+            for i, char in enumerate(dot_bracket):
+                if char == '(':
+                    stack.append(i)
+                elif char == ')':
+                    j = stack.pop()
+                    contact_map[i, j] = 1
+                    contact_map[j, i] = 1
+            
+            return contact_map
+        
+        # Create a fold compound for the sequence
+        # seq = str(sequence)
+        # if len(seq) != len(residue_token):
+            # print(f'len(seq) != len(residue_token), seq is {seq} residue_token is {residue_token}')
+            #get seq from residue_token:
+            # rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I', 'UNK']
+            # dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI', 'UNK', 'PAD']
+            # dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+            # rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
+
+            # rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
+            # dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
+        token_to_rna_letter = {'0': 'A',
+                                '1': 'U',
+                                '2': 'T',
+                                '3': 'G',
+                                '4': 'C',
+                                '5': 'I',
+                                '13': '-',
+                                '6': 'A', #DNA
+                                '11': 'U',#DNA
+                                '10': 'T',#DNA
+                                '8': 'G',#DNA
+                                '7': 'C',#DNA
+                                '9': 'I',#DNA
+                                '12': '-'} #PAD
+        seq =''
+        for r in residue_token:
+            seq += token_to_rna_letter[str(r)]
+        
+        #RNA FM:
+        
+        # Load RNA-FM model
+        model, alphabet = fm.pretrained.rna_fm_t12()
+        batch_converter = alphabet.get_batch_converter()
+        model.eval()  # disables dropout for deterministic results
+        
+        def encode(rnaseq):
+            data = [
+            ("", rnaseq),
+            ]
+            batch_labels, batch_strs, batch_tokens = batch_converter(data)
+            with torch.no_grad():
+                results = model(batch_tokens, repr_layers=[12],need_head_weights=True)
+            token_embeddings = results["representations"][12][0]
+            if token_embeddings.shape[0] - len(rnaseq) !=2:
+                raise KeyError
+             # Extract only the actual sequence embeddings (exclude the first and last token)
+            sequence_embeddings = token_embeddings[1:-1]
+            print(f'Encoding FM. RNA length is {len(rnaseq)}, and FM embeddings are size: {sequence_embeddings.shape} ') 
+            attentions = results["attentions"][0] #shape [12, 20, N, N]
+            return sequence_embeddings, attentions
+        
+        fmtoks, attention = encode(seq)
+        #END RNA FM Model 
+            
+        fc = RNA.fold_compound(seq)
+        mfe_structure, mfe = fc.mfe() #Example of mfe structure "....(...((.())))"
+        contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
+        if contact_pairs is None:
+            print("contact pairs is None, seq is ", seq)
+        if contact_pairs.shape[0] != len(residue_token):
+            print("contact_pairs.shape[0] != len(residue_token)")
+        # print("Done")
+        
+        
+        return cls(
+            idcode=id,
+            sequence=sequence,
+            resolution=header["resolution"],
+            nuc_token=residue_token,
+            nuc_index=residue_index,
+            nuc_mask=residue_mask,
+            chain_token=chain_token,
+            **atom_extract,
+            atom_mask=atom_mask,
+            # id=id_, 
+            contact_map = contact_pairs, 
+            fmtoks = fmtoks ,
+            attention = attention
+            
+        )
+
+
+    def to_pdb_str(self):
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        assert len(self.nuc_token.shape) == 1 ##?????
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        all_atom_tokens = self.atom_token[atom_mask]
+        all_atom_res_tokens = repeat(self.nuc_token, "r -> r a", a=24)[atom_mask]
+        all_atom_res_indices = repeat(self.nuc_index, "r -> r a", a=24)[atom_mask]
+
+        # just in case, move to cpu
+        atom_mask = np.array(atom_mask)
+        all_atom_coords = np.array(all_atom_coords)
+        all_atom_tokens = np.array(all_atom_tokens)
+        all_atom_res_tokens = np.array(all_atom_res_tokens) #all_nucs_atom_tokens
+        all_atom_res_indices = np.array(all_atom_res_indices)
+
+        lines = []
+        for idx, (coord, token, res_token, res_index) in enumerate(
+            zip(
+                all_atom_coords,
+                all_atom_tokens,
+                all_atom_res_tokens,
+                all_atom_res_indices,
+            )
+        ):
+            name = all_atoms[int(token)]
+            res_name = all_nucs[int(res_token)]
+            x, y, z = coord
+            line = list(" " * 80)
+            line[0:6] = "ATOM".ljust(6)
+            line[6:11] = str(idx + 1).ljust(5)
+            line[12:16] = name.ljust(4)
+            line[17:20] = res_name.ljust(3)
+            line[21:22] = "A" ##if that is chain identifier it should go from a to z?
+            line[23:27] = str(res_index + 1).ljust(4)
+            line[30:38] = f"{x:.3f}".rjust(8)
+            line[38:46] = f"{y:.3f}".rjust(8)
+            line[46:54] = f"{z:.3f}".rjust(8)
+            line[54:60] = "1.00".rjust(6)
+            line[60:66] = "1.00".rjust(6)
+            line[76:78] = name[0].rjust(2)
+            lines.append("".join(line))
+        lines = "\n".join(lines)
+        return lines
+
+
+    def to_dict(self):
+        self.idcode=None
+        self.sequence=None
+        return vars(self)
+
+    def plot(
+        self, 
+        view, 
+        viewer=None, 
+        sphere=False, 
+        ribbon=True,
+        sidechain=True,
+        color='spectrum',
+        colors = None
+    ):
+        if viewer is None:
+            viewer = (0, 0)
+        view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
+        view.setStyle({'model': -1}, {}, viewer=viewer)
+        if sphere:
+            view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
+
+        if ribbon:
+            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer) #may need to change to stick if doesnt work
+
+        if sidechain:
+            if color != 'spectrum':
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
+            else:
+                view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+        if colors is not None:
+            colors = {i+1: c for i, c in enumerate(colors)}
+            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+        return view
+    
+    def align_to(
+        self,
+        other,
+        window=None
+        ):
+        """
+        Aligns the current protein datum to another protein datum based on CA atoms.
+        """
+        def to_atom_array(prot, mask):
+            c5s = prot.atom_coord[..., 8, :] #center is C3'
+            print("Atom token:" , prot.atom_token[..., 8])
+            print("C5:" , c5s)
+            print(Atom(
+                    atom_name="C3'",
+                    element="C",
+                    coord=c5s[0],
+                    res_id=prot.nuc_index[0],
+                    chain_id=prot.chain_token[0],
+                ))
+            atoms = [
+                Atom(
+                    atom_name="C3'",
+                    element="C",
+                    coord=c,
+                    res_id=prot.nuc_index[i],
+                    chain_id=str(prot.chain_token[i]),
+                )
+                for i, c in enumerate(c5s) if mask[i]
+            ]
+            # print("ATOMS: " ,atoms)
+            return AtomArrayConstructor(atoms)
+
+
+        common_mask = self.atom_mask[..., 8] & other.atom_mask[..., 8]
+        # print("commom mask: " ,common_mask)
+        if window is not None:
+            common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
+
+        # self_array, other_array = to_atom_array(self, common_mask), to_atom_array(other, common_mask)
+        self_array = self.atom_coord.reshape(-1, 3)
+        other_array = other.atom_coord.reshape(-1, 3)
+        _, transform = superimpose(other_array, self_array) 
+        # print("T",type(transform))
+        new_atom_coord = self.atom_coord + transform.center_translation
+        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
+        new_atom_coord += transform.target_translation
+        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
+        # if new_atom_coord == _:
+        #     print("new_atom_coord == _")
+        return self.set(atom_coord=new_atom_coord)
+    
+    def to_pytree(self):
+        return vars(self)
+    
+    def from_pytree(self, tree):
+        return NucleicDatum(**tree)
+
+
+
+
+def _scatter_coord(name, coord, color='black', visible=True):
+    sc_coords = []
+    x, y, z = coord.T
+    data = [
+        go.Scatter3d(
+            name=name + " coord",
+            x=x,
+            y=y,
+            z=z,
+            marker=dict(
+                size=7,
+                colorscale="Viridis",
+            ),
+            
+            hovertemplate="<b>%{text}</b><extra></extra>",
+            text=np.arange(0, len(coord)),
+            
+            line=dict(color=color, width=4),
+            visible="legendonly" if not visible else True,
+        )
+    ]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        width=650,
+        height=750,
+    )
+    fig.update_scenes(
+        xaxis_visible=False, 
+        yaxis_visible=False, 
+        zaxis_visible=False
+    )
+    
+    return fig
+
+# np.array(list(map(lambda atom: atom_index(atom), atom_array.atom_name)))
+rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
+dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
+
+
+if __name__ == '__main__':
+    dna_datum = NucleicDatum.fetch_pdb_id('1ZEW')  #2n96
+    # print(dna_datum)   
+    # breakpoint()
+    ##DNADATUM: str,
+        # resolution: float,
+        # sequence: NucleotideSequence,
+        # nuc_token: np.ndarray, #tokenize nucs (0 to ~14 or so, ie options of nucs)
+        # nuc_index: np.ndarray, #index each nuc from 0 to len of nucleotides in the datum
+        # nuc_mask: np.ndarray, #
+        # chain_token: np.ndarray, #gives each chain a different token 0-number of chains in datum
+        # atom_token: np.ndarray, #shape of (len nucs, max_DNA)
+        # atom_coord: np.ndarray, #shape of (len nucs, max_DNA, 3)
+        # atom_mask
+##PLOTTING:
+    coords = dna_datum.atom_coord[dna_datum.atom_mask]
+    # zerocheck = (coords==0).any(axis=-1) &dna_datum.atom_mask
+    # if zerocheck.any():
+    #     print("there are 0 coords")
+    # else:
+    #     print("NO")
+    
+    
+    
+    import plotly.graph_objects as go
+    atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(-1) #all_atoms[dna_datum.atom_token]
+    # atomcoords = 
+    # print(dna_datum.nuc_token.shape)
+    x, y, z = coords.reshape(-1, 3).T
+    # print(dna_datum.chain_token)
+    color_mapping = {
+        0: 'rgb(31, 119, 180)',    # blue
+        1: 'rgb(255, 127, 14)',    # orange
+        2: 'rgb(44, 160, 44)',     # green
+        3: 'rgb(214, 39, 40)',     # red
+        4: 'rgb(148, 103, 189)',   # purple
+        5: 'rgb(247, 182, 210)' ,  # light pink    
+        6: 'rgb(227, 119, 194)',   # pink
+        7: 'rgb(0, 0, 0)',         # gray
+        8: 'rgb(188, 189, 34)',    # yellow
+        9: 'rgb(23, 190, 207)',    # cyan
+        10: 'rgb(174, 199, 232)',  # light blue
+        11: 'rgb(255, 152, 150)',  # light red
+        12: 'rgb(197, 176, 213)',  # light purple
+        13: 'rgb(196, 156, 148)',  # light brown
+    }
+    cord = coords.reshape(-1).reshape(322,-1)
+    colors = [color_mapping[token] for token in dna_datum.nuc_token for _ in range(24)]
+    fig = go.Figure(data=[go.Scatter3d(mode='markers',
+            x=x,
+            y=y,
+            z=z,
+            # text=atom_names,
+            text = cord,
+            hovertemplate='<b>%{text}</b>',
+            marker=dict(size=3),
+            # color = dna_datum.nuc_token,
+            line=dict(
+                color=colors,
+                width=3,)
+                )])
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        ),
+        width=800,
+        height=800,
+        title='3D Scatter Plot of Atom Coordinates'
+    )
+    
+    ####TO PLOT:
+    fig.show()
+
+    def get_repetition_lengths(lst):
+        lengths = []
+        count = 1
+        for i in range(1, len(lst)):
+            if lst[i] == lst[i-1]:
+                count += 1
+            else:
+                lengths.append(count)
+                count = 1
+        lengths.append(count)
+        return lengths
+
+    rna_res_names = ['A', 'U', 'RT', 'G', 'C', 'I']
+    dna_res_names = ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+    dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
+    rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
+
+    rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
+    dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
+    # print(rna_res_tokens_dict)
+    # print(dna_res_tokens_dict)
+    
+    # num_chains = dna_datum.chain_token[-1]
+    # chains_len = get_repetition_lengths(dna_datum.chain_token)
+    # follow=[]
+    # for nuci in dna_datum.nuc_token:
+    #     if nuci in rna_res_tokens:
+    #         follow.append('R')
+    #     elif nuci in dna_res_tokens:
+    #         follow.append('D')
+    #     else:
+    #         follow.append('confused')
+    # print(dna_datum.nuc_token[140])
+    # print(len(dna_datum))
+    # print(len(dna_datum.nuc_token))
+    # #number of RNA chains, 
+    # for chain in range(num_chains+1):
+    #     chain_len = chains_len[chain]
+        
+    #number of DNA chains, (check for chain and RNA/DNA),
+
+    # how long the chain is
+    #total number of nucleotides, 
+    
+    breakpoint()
