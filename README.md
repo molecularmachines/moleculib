@@ -1,4 +1,4 @@
-# 🧬 `moleculib`
+# 🧬 moleculib
 
 [![](https://img.shields.io/badge/documentation-black?logo=Sphinx)](https://molecularmachines.github.io/moleculib/index.html)
 [![](https://img.shields.io/badge/PyPI-lightgray?logo=Pypi)](https://pypi.org/project/moleculib/)
