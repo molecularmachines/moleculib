@@ -369,7 +369,9 @@ class FuncDataset(PreProcessedDataset):
             splits = pickle.load(fin)
         super().__init__(splits, transform, shuffle)
 
+
 from tqdm import tqdm
+
 
 class ScaffoldsDataset(PreProcessedDataset):
 
@@ -389,20 +391,19 @@ class ScaffoldsDataset(PreProcessedDataset):
         super().__init__(splits, transform, shuffle)
 
 
-
 FAST_FOLDING_PROTEINS = {
-    'chignolin': 10,
-    'trpcage': 20,
-    'bba': 28,
-    'wwdomain': 34,
-    'villin': 35,
-    'ntl9': 39,
-    'bbl': 47,
-    'proteinb': 47,
-    'homeodomain': 54,
-    'proteing': 56,
-    'a3D': 73,
-    'lambda': 80
+    "chignolin": 10,
+    "trpcage": 20,
+    "bba": 28,
+    "wwdomain": 34,
+    "villin": 35,
+    "ntl9": 39,
+    "bbl": 47,
+    "proteinb": 47,
+    "homeodomain": 54,
+    "proteing": 56,
+    "a3D": 73,
+    "lambda": 80,
 }
 
 
@@ -414,8 +415,7 @@ import biotite.structure.io.pdb as pdb
 import numpy as np
 from tqdm import tqdm
 
-import mdtraj
-import os 
+import os
 from collections import defaultdict
 from copy import deepcopy
 from biotite.structure.io.xtc import XTCFile
@@ -423,11 +423,11 @@ from numpy.lib.format import open_memmap
 
 
 class FastFoldingDataset:
-    
+
     def __init__(
-        self, 
-        base = "/mas/projects/molecularmachines/db/FastFoldingProteins/memmap/",
-        proteins=None, 
+        self,
+        base="/mas/projects/molecularmachines/db/FastFoldingProteins/memmap/",
+        proteins=None,
         tau=0,
         shuffle=True,
         stride=1,
@@ -439,29 +439,35 @@ class FastFoldingDataset:
         if proteins == None:
             proteins = list(FAST_FOLDING_PROTEINS.keys())
 
-        self.base_path = base 
-        self.proteins = proteins 
+        self.base_path = base
+        self.proteins = proteins
         self.tau = tau
         self.time_sort = True
         self.stride = stride
         self.epoch_size = epoch_size * len(proteins)
         self.num_folders = num_folders
-        
+
         self.describe()
 
         self.atom_arrays = {
             protein: pdb.PDBFile.read(
                 self.base_path + protein + "/0/filtered.pdb"
-            ).get_structure()[0] for protein in proteins
+            ).get_structure()[0]
+            for protein in proteins
         }
         self.atom_arrays = {
-            protein: atom_array[filter_amino_acids(atom_array)] for protein, atom_array in self.atom_arrays.items()
+            protein: atom_array[filter_amino_acids(atom_array)]
+            for protein, atom_array in self.atom_arrays.items()
         }
 
-        if padded: self.pad = ProteinPad(pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
-        else: self.pad = lambda x: x
+        if padded:
+            self.pad = ProteinPad(
+                pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins])
+            )
+        else:
+            self.pad = lambda x: x
 
-        self.splits = { 'train': self }
+        self.splits = {"train": self}
 
     def describe(self):
         # file is indexed by protein, trajectory, and frame
@@ -473,45 +479,54 @@ class FastFoldingDataset:
         for protein in self.proteins:
             protein_path = self.base_path + protein + "/"
             for idx, trajectory in enumerate(os.listdir(protein_path)):
-                if trajectory.startswith("."): continue
+                if trajectory.startswith("."):
+                    continue
                 self.num_trajectories[protein] += 1
                 trajectory_path = protein_path + trajectory + "/"
                 for supframe in os.listdir(trajectory_path):
-                    if supframe.startswith("."): continue
-                    if not supframe.endswith('.mmap'): continue
+                    if supframe.startswith("."):
+                        continue
+                    if not supframe.endswith(".mmap"):
+                        continue
                     self.num_frames[protein] += 1
                     self.num_frames_per_traj[protein][int(trajectory)] += 1
                     if self.files[protein].get(int(trajectory)) is None:
                         self.files[protein][int(trajectory)] = []
-                    self.files[protein][int(trajectory)].append(trajectory_path + supframe)
+                    self.files[protein][int(trajectory)].append(
+                        trajectory_path + supframe
+                    )
                 if idx == self.num_folders - 1:
                     break
-                    
-        
+
         for protein in self.proteins:
-            print(f"{protein}: {self.num_trajectories[protein]} trajectories, {self.num_frames[protein]} total frames")
+            print(
+                f"{protein}: {self.num_trajectories[protein]} trajectories, {self.num_frames[protein]} total frames"
+            )
             # print(f"Trajectory lengths: {self.num_frames_per_traj[protein]}")
 
     def __len__(self):
         return self.epoch_size
-    
+
     def __getitem__(self, idx):
         protein = self.proteins[idx % len(self.proteins)]
-        
+
         # need to check if len(coord) > self.tau + 1
         while True:
             traj_idx = np.random.randint(0, self.num_trajectories[protein])
-            subtraj_idx = np.random.randint(0, self.num_frames_per_traj[protein][traj_idx])
-            
+            subtraj_idx = np.random.randint(
+                0, self.num_frames_per_traj[protein][traj_idx]
+            )
+
             mmap_path = self.files[protein][traj_idx][subtraj_idx]
-            coord = open_memmap(mmap_path, mode='r', dtype=np.float32)       
+            coord = open_memmap(mmap_path, mode="r", dtype=np.float32)
             template = self.atom_arrays[protein]
-            
-            if len(coord) > self.tau + 1: break
-    
+
+            if len(coord) > self.tau + 1:
+                break
+
         idx1 = np.random.randint(0, len(coord) - self.tau - 1)
 
-        aa1 = deepcopy(template)    
+        aa1 = deepcopy(template)
         aa1._coord = coord[idx1]
 
         p1 = ProteinDatum.from_atom_array(
@@ -521,7 +536,7 @@ class FastFoldingDataset:
                 resolution=None,
             ),
         )
-        
+
         p1 = self.pad.transform(p1)
         if self.tau == 0:
             return p1
@@ -539,10 +554,6 @@ class FastFoldingDataset:
 
         p2 = self.pad.transform(p2)
         return [p1, p2]
-    
-
-
-
 
 
 from biotite.structure.io import pdb
@@ -550,61 +561,63 @@ from moleculib.protein.transform import ProteinPad
 
 
 TAUS = [0, 1, 2, 4, 8, 16]
-import webdataset as wds 
+import webdataset as wds
 
 from copy import deepcopy
 from moleculib.protein.datum import ProteinDatum
 
 
 class ShardedFastFoldingDataset:
-    
+
     def __init__(
-        self, 
-        base = "/mas/projects/molecularmachines/db/FastFoldingProteins/web/",
-        proteins=None, 
+        self,
+        base="/mas/projects/molecularmachines/db/FastFoldingProteins/web/",
+        proteins=None,
         tau=0,
         padded=True,
         batch_size=1,
     ):
         assert tau in TAUS, f"tau must be one of {TAUS}"
-        
+
         if proteins == None:
             proteins = list(FAST_FOLDING_PROTEINS.keys())
         else:
             for protein in proteins:
-                assert protein in FAST_FOLDING_PROTEINS.keys(), f'{protein} is not a valid option'
+                assert (
+                    protein in FAST_FOLDING_PROTEINS.keys()
+                ), f"{protein} is not a valid option"
 
-        num_shards = len(list(filter(lambda x: 'shards-' in x, os.listdir(base))))
+        num_shards = len(list(filter(lambda x: "shards-" in x, os.listdir(base))))
 
-        self.base_path = base 
-        self.proteins = proteins 
+        self.base_path = base
+        self.proteins = proteins
         self.tau = tau
         self.time_sort = True
         self.num_shards = num_shards
-        self.batch_size = batch_size   
+        self.batch_size = batch_size
 
         self.atom_arrays = {
             protein: pdb.PDBFile.read(
-               os.path.join(base, protein + ".pdb")
-            ).get_structure()[0] for protein in proteins
+                os.path.join(base, protein + ".pdb")
+            ).get_structure()[0]
+            for protein in proteins
         }
 
-        if padded: 
+        if padded:
             self.pad = ProteinPad(
-                pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins]))
-        else: 
+                pad_size=max([FAST_FOLDING_PROTEINS[protein] for protein in proteins])
+            )
+        else:
             self.pad = lambda x: x
-
-
 
         def build_webdataset(sample):
             if self.tau == 0:
                 key, coord1 = sample
-                coords = [ coord1 ]
+                coords = [coord1]
             else:
                 key, coord1, coord2 = sample
-                coords = [ coord1, coord2 ]
-            protein = key.split('_')[-1]
+                coords = [coord1, coord2]
+            protein = key.split("_")[-1]
             template = self.atom_arrays[protein]
             data = []
             for coord in coords:
@@ -613,35 +626,34 @@ class ShardedFastFoldingDataset:
                 data.append(
                     self.pad.transform(
                         ProteinDatum.from_atom_array(
-                            new_aa,
-                            header={'idcode': protein, 'resolution': None}
+                            new_aa, header={"idcode": protein, "resolution": None}
                         )
                     )
                 )
             return data
 
-        keys = ('__key__', 'coord.npy')
+        keys = ("__key__", "coord.npy")
         if self.tau > 0:
-            keys = keys + (f'coord_{self.tau}.npy', )
+            keys = keys + (f"coord_{self.tau}.npy",)
 
         self.web_ds = iter(
-            wds.WebDataset(base + 'shards-' + '{00000..%05d}.tar' % (num_shards - 1))
+            wds.WebDataset(base + "shards-" + "{00000..%05d}.tar" % (num_shards - 1))
             .decode()
             .to_tuple(*keys)
             .map(build_webdataset)
             .batched(batch_size, collation_fn=lambda x: x)
         )
 
-        self.splits = { 'train': self }
+        self.splits = {"train": self}
 
     def __len__(self):
         return self.num_shards * 1000 // self.batch_size
-    
+
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         return next(self.web_ds)
-    
+
     def __getitem__(self, index):
         return next(self)

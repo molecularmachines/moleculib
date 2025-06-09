@@ -927,41 +927,41 @@ class DensityDataDir(Dataset):
                 )
             )
 
-#         print(f"Loaded {_split} {len(self)} datapoints")
-#         if _split == "train":
-#             self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
-#             test = self.__class__(
-#                 max_atoms=max_atoms,
-#                 grid_size=grid_size,
-#                 samples=5000,
-#                 _split="test",
-#             )
-#             self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
-#             valid = self.__class__(
-#                 max_atoms=max_atoms,
-#                 grid_size=grid_size,
-#                 samples=5000,
-#                 _split="validation",
-#             )
-#             self.splits["valid"] = RotatingPoolData(valid, 30) if _rotated else valid
+        #         print(f"Loaded {_split} {len(self)} datapoints")
+        #         if _split == "train":
+        #             self.splits = {"train": RotatingPoolData(self, 300) if _rotated else self}
+        #             test = self.__class__(
+        #                 max_atoms=max_atoms,
+        #                 grid_size=grid_size,
+        #                 samples=5000,
+        #                 _split="test",
+        #             )
+        #             self.splits["test"] = RotatingPoolData(test, 90) if _rotated else test
+        #             valid = self.__class__(
+        #                 max_atoms=max_atoms,
+        #                 grid_size=grid_size,
+        #                 samples=5000,
+        #                 _split="validation",
+        #             )
+        #             self.splits["valid"] = RotatingPoolData(valid, 30) if _rotated else valid
 
-#     def __len__(self):
-#         return len(self.member_list)
+        #     def __len__(self):
+        #         return len(self.member_list)
 
-#     def extractfile(self, index):
-#         filename = self.member_list[index]
-#         path = os.path.join(
-#             self.directory, f"{int(filename.split('.')[0]) // 1000}", filename
-#         )
-#         if filename.endswith(".npz"):
-#             with np.load(path) as f:
-#                 return {
-#                     "density": f["density"],
-#                     "coord": f["coord"],
-#                     "token": f["token"],
-#                     "grid": f["grid"],
-#                     "filename": filename,
-#                 }
+        #     def extractfile(self, index):
+        #         filename = self.member_list[index]
+        #         path = os.path.join(
+        #             self.directory, f"{int(filename.split('.')[0]) // 1000}", filename
+        #         )
+        #         if filename.endswith(".npz"):
+        #             with np.load(path) as f:
+        #                 return {
+        #                     "density": f["density"],
+        #                     "coord": f["coord"],
+        #                     "token": f["token"],
+        #                     "grid": f["grid"],
+        #                     "filename": filename,
+        #                 }
 
         filecontent = _decompress_file(path)
         density, atoms, origin = _read_vasp(filecontent)
@@ -977,22 +977,22 @@ class DensityDataDir(Dataset):
             "cell": cell,
         }
 
-#     def _process(self, index):
-#         dp = self.extractfile(index)
-#         file_num = dp["filename"].split(".")[0]
-#         path = os.path.join(
-#             self.directory, f"{int(file_num) // 1000}", file_num + ".npz"
-#         )
-#         np.savez(
-#             path,
-#             density=dp["density"],
-#             grid=dp["grid"],
-#             coord=dp["coord"],
-#             token=dp["token"],
-#         )
+        #     def _process(self, index):
+        #         dp = self.extractfile(index)
+        #         file_num = dp["filename"].split(".")[0]
+        #         path = os.path.join(
+        #             self.directory, f"{int(file_num) // 1000}", file_num + ".npz"
+        #         )
+        #         np.savez(
+        #             path,
+        #             density=dp["density"],
+        #             grid=dp["grid"],
+        #             coord=dp["coord"],
+        #             token=dp["token"],
+        #         )
 
-#     def __getitem__(self, index):
-#         dp = self.extractfile(index)
+        #     def __getitem__(self, index):
+        #         dp = self.extractfile(index)
 
         density = dp["density"]
         grid = dp["grid"]
@@ -1031,6 +1031,7 @@ class DensityDataDir(Dataset):
             atom_mask=np.ones_like(dp["token"]),
             bonds=None,
         )
+
 
 #         datum = self.padding.transform(
 #             datum,
@@ -1123,99 +1124,6 @@ class DensityDataDir(Dataset):
 #         probe_pos = grid_pos[probe_choice]
 #         probe_target = density[probe_choice]
 #         return probe_target, probe_pos
-
-
-# class MISATO(Dataset):
-#     def __init__(self, neighborhood=15.0, _split="train") -> None:
-#         super().__init__()
-#         self.base_path = "/mas/projects/molecularmachines/db/MISATO"
-#         self.data = h5py.File(os.path.join(self.base_path, "MD.hdf5"))
-#         self.h5_properties = [
-#             "trajectory_coordinates",
-#             "atoms_type",
-#             "atoms_number",
-#             "atoms_residue",
-#             "atoms_element",
-#             "molecules_begin_atom_index",
-#             # "frames_rmsd_ligand",
-#             # "frames_distance",
-#             # "frames_interaction_energy",
-#             # "frames_bSASA",
-#         ]
-#         self.neighborhood = neighborhood
-#         self.index = (
-#             open(os.path.join(self.base_path, f"{_split}_MD.txt"), "r")
-#             .read()
-#             .split("\n")
-#         )
-
-#         print(f"Loading {_split} {len(self)} datapoints")
-
-#         if _split == "train":
-#             self.splits = {"train": self}
-#             self.splits["valid"] = self.__class__(
-#                 _split="valid",
-#             )
-#             self.splits["test"] = self.__class__(
-#                 _split="test",
-#             )
-
-#     def __len__(self):
-#         return len(self.index)
-
-#     def __getitem__(self, index):
-#         pdb_id = self.index[index]
-#         dp = self.get_entries(pdb_id)
-
-#         traj_coord = dp["trajectory_coordinates"]
-#         token = dp["atoms_number"]
-#         mol_idx = dp["molecules_begin_atom_index"][-1]
-
-#         atom_token = token[mol_idx:]
-#         atom_coord = traj_coord[:, mol_idx:]
-#         atom_mask = np.ones_like(atom_token)
-
-#         protein_token = token[:mol_idx]
-#         atoms_residue = dp["atoms_residue"][:mol_idx]
-#         atoms_type = dp["atoms_type"][:mol_idx]
-#         protein_coord = traj_coord[:, :mol_idx]
-#         protein_mask = np.ones_like(protein_token)
-
-#         datum = MISATODatum(
-#             pdb_id=pdb_id,
-#             atom_token=atom_token,
-#             atom_coord=atom_coord,
-#             atom_mask=atom_mask,
-#             bonds=None,
-#             protein_token=protein_token,
-#             protein_coord=protein_coord,
-#             protein_mask=protein_mask,
-#             atoms_residue=atoms_residue,
-#             atoms_type=atoms_type,
-#         )
-#         if self.neighborhood:
-#             return datum.keep_neighborhood(self.neighborhood)
-
-#         return datum
-
-#     def get_entries(self, pdbid):
-#         h5_entries = {}
-#         for h5_property in self.h5_properties:
-#             h5_entries[h5_property] = self.data.get(pdbid + "/" + h5_property)
-#         return h5_entries
-
-#     def pdb_str(self, index, frame):
-#         pdb_id = self.index[index]
-#         dp = self.get_entries(pdb_id)
-#         return "\n".join(
-#             create_pdb(
-#                 dp["trajectory_coordinates"][frame],
-#                 dp["atoms_type"],
-#                 dp["atoms_number"],
-#                 dp["atoms_residue"],
-#                 dp["molecules_begin_atom_index"],
-#             )
-#         )
 
 
 # class MISATODensity(Dataset):

@@ -33,6 +33,7 @@ from .alphabet import (
 from einops import rearrange, repeat
 import py3Dmol
 
+
 class ProteinSequence:
 
     def __init__(
@@ -57,12 +58,14 @@ class ProteinSequence:
 
 from flax import struct
 
+
 @struct.dataclass
 class ProteinDatum:
     """
     Incorporates protein data to MolecularDatum
     and reshapes atom arrays to residue-based representation
     """
+
     idcode: str
     resolution: float
     sequence: _ProteinSequence
@@ -157,7 +160,7 @@ class ProteinDatum:
             chain_token=np.zeros(0, dtype=int),
             atom_token=np.zeros((0, 14), dtype=int),
             atom_mask=np.zeros((0, 14), dtype=bool),
-            atom_coord=np.zeros((0, 14, 3), dtype=float)
+            atom_coord=np.zeros((0, 14, 3), dtype=float),
         )
 
     def replace(self, **kwargs):
@@ -191,7 +194,7 @@ class ProteinDatum:
         model=1,
     ):
 
-        if str(filepath).endswith(".pdb") or format == 'pdb':
+        if str(filepath).endswith(".pdb") or format == "pdb":
             pdb_file = pdb.PDBFile.read(filepath)
             atom_array = pdb.get_structure(pdb_file, model=model)
             if idcode is None:
@@ -205,24 +208,18 @@ class ProteinDatum:
             atom_array = mmtf.get_structure(mmtf_file, model=model)
             header = dict(
                 idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
-                resolution=None
-                if ("resolution" not in mmtf_file)
-                else mmtf_file["resolution"],
+                resolution=(
+                    None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
+                ),
             )
         elif str(filepath).endswith(".bcif"):
             bcif_file = pdbx.BinaryCIFFile.read(filepath)
             atom_array = pdbx.get_structure(bcif_file, model=model)
-            header = dict(
-                idcode=None,
-                resolution=None
-            )
+            header = dict(idcode=None, resolution=None)
         elif str(filepath).endswith(".mmcif"):
             mmcif_file = pdbx.PDBxFile.read(filepath)
             atom_array = pdbx.get_structure(mmcif_file, model=model)
-            header = dict(
-                idcode=None,
-                resolution=None
-            )
+            header = dict(idcode=None, resolution=None)
         else:
             print(filepath)
             raise ValueError("File format not supported")
@@ -236,21 +233,14 @@ class ProteinDatum:
         return cls.from_atom_array(atom_array, header=header)
 
     @classmethod
-    def fetch_pdb_id(
-        cls,
-        id,
-        format='pdb',
-        chain=None,
-        model=None,
-        save_path=None
-    ):
+    def fetch_pdb_id(cls, id, format="pdb", chain=None, model=None, save_path=None):
         filepath = rcsb.fetch(id, format, save_path)
         return cls.from_filepath(
             filepath,
             format=format,
             chain=chain,
             model=model,
-            idcode=id if chain is None else f"{id}_{chain}"
+            idcode=id if chain is None else f"{id}_{chain}",
         )
 
     def set(
@@ -261,11 +251,14 @@ class ProteinDatum:
             setattr(self, key, value)
         return self
 
+    def get_sequence(self):
+        return _ProteinSequence([all_residues[token] for token in self.residue_token])
+
     @classmethod
     def from_atom_array(
         cls,
         atom_array,
-        header = None,
+        header=None,
     ):
         """
         Reshapes atom array to residue-indexed representation to
@@ -282,9 +275,9 @@ class ProteinDatum:
 
         # Small tweak for CHARMM files
         atom_names = atom_array.atom_name
-        cd_filter = (atom_array.res_name == 'ILE') & (atom_names == 'CD')
-        atom_names[cd_filter] = np.array(['CD1'] * sum(cd_filter))
-        atom_array.set_annotation('atom_name', atom_names)
+        cd_filter = (atom_array.res_name == "ILE") & (atom_names == "CD")
+        atom_names[cd_filter] = np.array(["CD1"] * sum(cd_filter))
+        atom_array.set_annotation("atom_name", atom_names)
 
         _, res_names = get_residues(atom_array)
         res_names = [
@@ -412,8 +405,8 @@ class ProteinDatum:
                 setattr(self, key, f(value))
 
     def to_pdb_str(self):
-    # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
-    # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
+        # https://colab.research.google.com/github/pb3lab/ibm3202/blob/
+        # master/tutorials/lab02_molviz.ipynb#scrollTo=FPS04wJf5k3f
         assert len(self.residue_token.shape) == 1
         atom_mask = self.atom_mask.astype(np.bool_)
         all_atom_coords = self.atom_coord[atom_mask]
@@ -455,15 +448,14 @@ class ProteinDatum:
         lines = "\n".join(lines)
         return lines
 
-
     def plot(
         self,
-        view = None,
-        viewer = None,
-        sphere = False,
+        view=None,
+        viewer=None,
+        sphere=False,
         ribbon=True,
         sidechain=True,
-        color='spectrum',
+        color="spectrum",
         colors=None,
     ):
         if viewer is None:
@@ -471,23 +463,38 @@ class ProteinDatum:
         if view is None:
             view = py3Dmol.view(width=800, height=800)
 
-        view.addModel(self.to_pdb_str(), 'pdb', viewer=viewer)
-        view.setStyle({'model': -1}, {}, viewer=viewer)
+        view.addModel(self.to_pdb_str(), "pdb", viewer=viewer)
+        view.setStyle({"model": -1}, {}, viewer=viewer)
         if sphere:
-            view.addStyle({'model': -1}, {'sphere': {'radius': 0.3}}, viewer=viewer)
+            view.addStyle(
+                {"model": -1},
+                {"sphere": {"radius": 0.3, "color": color}},
+                viewer=viewer,
+            )
 
         if ribbon:
-            view.addStyle({'model': -1}, {'cartoon': {'color': color}}, viewer=viewer)
+            view.addStyle({"model": -1}, {"cartoon": {"color": color}}, viewer=viewer)
 
         if sidechain:
-            if color != 'spectrum':
-                view.addStyle({'model': -1}, {'stick': {'radius': 0.2, 'color': color}}, viewer=viewer)
+            if color != "spectrum":
+                view.addStyle(
+                    {"model": -1},
+                    {"stick": {"radius": 0.2, "color": color}},
+                    viewer=viewer,
+                )
             else:
-                view.addStyle({'model': -1}, {'stick': {'radius': 0.2}}, viewer=viewer)
+                view.addStyle({"model": -1}, {"stick": {"radius": 0.2}}, viewer=viewer)
 
         if colors is not None:
-            colors = {i+1: c for i, c in enumerate(colors)}
-            view.addStyle({'model': -1}, {'stick':{'colorscheme':{'prop':'resi','map':colors}}})
+            colors = {i + 1: c for i, c in enumerate(colors)}
+            view.addStyle(
+                {"model": -1},
+                {
+                    "stick": {"colorscheme": {"prop": "resi", "map": colors}},
+                    "sphere": {"colorscheme": {"prop": "resi", "map": colors}},
+                    "cartoon": {"colorscheme": {"prop": "resi", "map": colors}},
+                },
+            )  # 'label': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'surface': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'dot': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'contact': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'callback': 'function(){}'}, viewer=viewer)
 
         return view
 
@@ -523,21 +530,17 @@ class ProteinDatum:
                     coord=coord,
                     res_id=res_index,
                     res_name=res_name,
-                    chain_id='A',
+                    chain_id="A",
                 )
             )
 
         return AtomArrayConstructor(atoms)
 
-
-    def align_to(
-        self,
-        other,
-        window=None
-    ):
+    def align_to(self, other, window=None):
         """
         Aligns the current protein datum to another protein datum based on CA atoms.
         """
+
         def to_ca_atom_array(prot, mask):
             cas = prot.atom_coord[..., 1, :]
             atoms = [
@@ -548,18 +551,27 @@ class ProteinDatum:
                     res_id=prot.residue_index[i],
                     chain_id=prot.chain_token[i],
                 )
-                for i, ca in enumerate(cas) if mask[i]
+                for i, ca in enumerate(cas)
+                if mask[i]
             ]
             return AtomArrayConstructor(atoms)
 
         common_mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]
         if window is not None:
-            common_mask = common_mask & (np.arange(len(common_mask)) < window[1]) & (np.arange(len(common_mask)) >= window[0])
+            common_mask = (
+                common_mask
+                & (np.arange(len(common_mask)) < window[1])
+                & (np.arange(len(common_mask)) >= window[0])
+            )
 
-        self_array, other_array = to_ca_atom_array(self, common_mask), to_ca_atom_array(other, common_mask)
+        self_array, other_array = to_ca_atom_array(self, common_mask), to_ca_atom_array(
+            other, common_mask
+        )
         _, transform = superimpose(other_array, self_array)
         new_atom_coord = self.atom_coord + transform.center_translation
-        new_atom_coord = np.einsum("rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0))
+        new_atom_coord = np.einsum(
+            "rca,ab->rcb", new_atom_coord, transform.rotation.squeeze(0)
+        )
         new_atom_coord += transform.target_translation
         new_atom_coord = new_atom_coord * self.atom_mask[..., None]
 
@@ -569,6 +581,7 @@ class ProteinDatum:
         """
         Saves the protein datum to an mmcif file.
         """
+
         def to_all_atom_array(prot):
             atoms = []
             for i, coord in enumerate(prot.atom_coord):
@@ -583,6 +596,7 @@ class ProteinDatum:
                             )
                         )
             return AtomArrayConstructor(atoms)
+
         atom_array = to_all_atom_array(self)
 
         import biotite.structure.io.pdbx as cif

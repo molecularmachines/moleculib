@@ -1,11 +1,3 @@
-from mendeleev.fetch import fetch_table
-
-elements = fetch_table("elements")
-
-# elements = elements.assign(
-#             symbol=lambda df: df.symbol.str.upper()
-#         ) #TODO: add deuterium and tritium using the isotopes table
-
 PERIODIC_TABLE = [
     "H",
     "He",
@@ -67,6 +59,4 @@ PERIODIC_TABLE = [
     "Ce",
     "Pr",
     "Nd",
-]  # 60 elements
-
-# assert elements.symbol[: len(PERIODIC_TABLE)].to_list() == PERIODIC_TABLE
+]

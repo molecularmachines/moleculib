@@ -1,7 +1,7 @@
-from .datum import AssemblyDatum 
+from .datum import AssemblyDatum
 from ..protein.datum import ProteinDatum
 from typing import List
-import numpy as np 
+import numpy as np
 
 from copy import deepcopy
 from moleculib.protein.transform import ProteinTransform
@@ -21,7 +21,7 @@ class AssemblyTransform:
 
 
 class ApplyToProteins(AssemblyTransform):
-    
+
     def __init__(self, protein_transform: List[ProteinTransform]):
         self.protein_transform = protein_transform
 
@@ -33,7 +33,7 @@ class ApplyToProteins(AssemblyTransform):
                 protein = transform.transform(protein)
             new_protein_data.append(protein)
         return AssemblyDatum(protein_data=new_protein_data)
-            
+
 
 class ComplexPad(AssemblyTransform):
 
@@ -64,9 +64,17 @@ class FilterProteinChains(AssemblyTransform):
 
     def transform(self, datum):
         protein_data = datum.protein_data
-        coord = lambda prot: getattr(prot, 'atom_coord')[..., 1, :] if type(datum.protein_data[0]) == ProteinDatum else getattr(prot, 'coord') 
-        mask = lambda prot: getattr(prot, 'atom_mask')[..., 1] if type(datum.protein_data[0]) == ProteinDatum else getattr(prot, 'mask')
-        
+        coord = lambda prot: (
+            getattr(prot, "atom_coord")[..., 1, :]
+            if type(datum.protein_data[0]) == ProteinDatum
+            else getattr(prot, "coord")
+        )
+        mask = lambda prot: (
+            getattr(prot, "atom_mask")[..., 1]
+            if type(datum.protein_data[0]) == ProteinDatum
+            else getattr(prot, "mask")
+        )
+
         def protein_distance(protein1, protein2):
             coord1 = coord(protein1)
             mask1 = mask(protein1)
@@ -75,14 +83,14 @@ class FilterProteinChains(AssemblyTransform):
 
             vector_map = coord1[:, None] - coord2
             map_mask = mask1[:, None] | mask2
-            
+
             distance_map = np.linalg.norm(vector_map, axis=-1)
             distance_map = np.ma.array(distance_map, mask=~map_mask)
             min_distance = distance_map.min()
             return min_distance
 
         distance_map = {
-            i: [ protein_distance(protein, protein2) for protein2 in protein_data ]
+            i: [protein_distance(protein, protein2) for protein2 in protein_data]
             for i, protein in enumerate(protein_data)
         }
 
@@ -103,11 +111,13 @@ class FilterProteinChains(AssemblyTransform):
 
             distances = distance_map[index]
 
-            acceptable = [ 
-                i for i, distance in enumerate(distances) if (distance < 10) and (i != index) and (i in remaining_indices) ]
+            acceptable = [
+                i
+                for i, distance in enumerate(distances)
+                if (distance < 10) and (i != index) and (i in remaining_indices)
+            ]
 
-        return AssemblyDatum(protein_data=new_protein_data)            
-
+        return AssemblyDatum(protein_data=new_protein_data)
 
 
 class StackProteins(AssemblyTransform):
@@ -117,7 +127,9 @@ class StackProteins(AssemblyTransform):
         sample_datum = protein_data[0]
         attrs = dict()
 
-        assert all([type(protein) == type(sample_datum) for protein in protein_data]), "All proteins must be of the same type"
+        assert all(
+            [type(protein) == type(sample_datum) for protein in protein_data]
+        ), "All proteins must be of the same type"
 
         for attr, _ in vars(sample_datum).items():
             batched = []
@@ -126,10 +138,10 @@ class StackProteins(AssemblyTransform):
             if isinstance(batched[0], np.ndarray):
                 try:
                     attrs[attr] = np.stack(batched, axis=0)
-                except: 
+                except:
                     breakpoint()
             else:
-                attrs[attr] = np.empty((len(batched), ))
+                attrs[attr] = np.empty((len(batched),))
         datum = AssemblyDatum(protein_data=type(sample_datum)(**attrs))
         return datum
 
@@ -152,7 +164,7 @@ class UnstackProteins(AssemblyTransform):
 
         new_protein_data = []
         for i in range(num_prot):
-            attrs = { attr: values[i] for attr, values in attr_lists.items() }
+            attrs = {attr: values[i] for attr, values in attr_lists.items()}
             new_protein_data.append(type(protein_data)(**attrs))
-        
+
         return AssemblyDatum(protein_data=new_protein_data)

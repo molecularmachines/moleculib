@@ -32,7 +32,7 @@ class AlignedRootMeanSquareDeviation(ProteinMetric):
         diff = diff[mask]
         diff = diff.sum()
         diff = diff / (mask.sum() + 1e-6)
-        return {"rmsd": diff ** 0.5}
+        return {"rmsd": diff**0.5}
 
 
 class CountClashes(ProteinMetric):
@@ -131,7 +131,6 @@ def measure_dihedrals(coords, indices):
     return rad * mask
 
 
-
 class ChemicalDeviationMetric(ProteinMetric):
     def __init__(self, key, measure, var_clip=0.0, num_interactive_atoms=1):
         self.key = key
@@ -162,14 +161,18 @@ class ChemicalDeviationMetric(ProteinMetric):
 
         error = jnp.square(values - standard_values) * mask
 
-        error_internal = error[..., :-self.num_interactive_atoms]
-        mask_internal = mask[..., :-self.num_interactive_atoms]
+        error_internal = error[..., : -self.num_interactive_atoms]
+        mask_internal = mask[..., : -self.num_interactive_atoms]
 
-        error_external = error[..., -self.num_interactive_atoms:]
-        mask_external = mask[..., -self.num_interactive_atoms:]
+        error_external = error[..., -self.num_interactive_atoms :]
+        mask_external = mask[..., -self.num_interactive_atoms :]
 
-        error_internal = error_internal.sum((-1, -2)) / (mask_internal.sum((-1, -2)) + 1e-6)
-        error_external = error_external.sum((-1, -2)) / (mask_external.sum((-1, -2)) + 1e-6)
+        error_internal = error_internal.sum((-1, -2)) / (
+            mask_internal.sum((-1, -2)) + 1e-6
+        )
+        error_external = error_external.sum((-1, -2)) / (
+            mask_external.sum((-1, -2)) + 1e-6
+        )
 
         out = dict()
         out[f"peptide_{self.key}_deviation"] = error_external
@@ -188,15 +191,14 @@ class StandardAngleDeviation(ChemicalDeviationMetric):
         super().__init__("angles", measure_angles, num_interactive_atoms=2)
 
 
-
 class StandardDihedralDeviation(ChemicalDeviationMetric):
     def __init__(self, var_clip=0.1):
-        super().__init__("dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3)
-        
+        super().__init__(
+            "dihedrals", measure_dihedrals, var_clip=var_clip, num_interactive_atoms=3
+        )
 
-from moleculib.protein.transform import (
-    DescribeChemistry
-)
+
+from moleculib.protein.transform import DescribeChemistry
 
 
 class StandardChemicalDeviation(ProteinMetric):
