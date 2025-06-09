@@ -1,0 +1,22 @@
+moleculib.molecule
+==================
+
+.. py:module:: moleculib.molecule
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/molecule/alphabet/index
+   /autoapi/moleculib/molecule/batch/index
+   /autoapi/moleculib/molecule/dataset/index
+   /autoapi/moleculib/molecule/datum/index
+   /autoapi/moleculib/molecule/h5_to_pdb/index
+   /autoapi/moleculib/molecule/tests/index
+   /autoapi/moleculib/molecule/transform/index
+   /autoapi/moleculib/molecule/utils/index
+
+

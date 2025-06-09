@@ -1,0 +1,181 @@
+moleculib.molecule.datum
+========================
+
+.. py:module:: moleculib.molecule.datum
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.home_dir
+   moleculib.molecule.datum.config
+   moleculib.molecule.datum.rna_res_names
+   moleculib.molecule.datum.dna_res_names
+   moleculib.molecule.datum.dna_res_tokens
+   moleculib.molecule.datum.rna_res_tokens
+   moleculib.molecule.datum.dna_datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.NucleicDatum
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.pdb_to_atom_array
+
+
+Module Contents
+---------------
+
+.. py:data:: home_dir
+   :value: ''
+
+
+.. py:data:: config
+
+.. py:function:: pdb_to_atom_array(pdb_path, cif, model=None, chain=None, RNA=False, id=None)
+
+   _summary_
+
+   :param pdb_path: _description_
+   :type pdb_path: _type_
+   :param RNA: if True, filters out DNA nucleotides,
+   :type RNA: bool, optional
+   :param if False:
+   :param datum will have both DNA and RNA:
+   :param Defaults to False.:
+
+   :returns: _description_
+   :rtype: _type_
+
+
+.. py:class:: NucleicDatum(idcode: str, resolution: float, sequence: biotite.sequence.NucleotideSequence, nuc_token: numpy.ndarray, nuc_index: numpy.ndarray, nuc_mask: numpy.ndarray, chain_token: numpy.ndarray, atom_token: numpy.ndarray, atom_coord: numpy.ndarray, atom_mask: numpy.ndarray, contact_map: numpy.ndarray = None, fmtoks: numpy.ndarray = None, attention: numpy.ndarray = None, msa: numpy.ndarray = None, **kwargs)
+
+   Incorporates Biotite nucleic sequence data
+   # and reshapes atom arrays to residue-based representation
+
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: resolution
+      :value: None
+
+
+
+   .. py:attribute:: sequence
+      :value: None
+
+
+
+   .. py:attribute:: nuc_token
+
+
+   .. py:attribute:: nuc_index
+
+
+   .. py:attribute:: nuc_mask
+
+
+   .. py:attribute:: chain_token
+
+
+   .. py:attribute:: atom_token
+
+
+   .. py:attribute:: atom_coord
+
+
+   .. py:attribute:: atom_mask
+
+
+   .. py:attribute:: contact_map
+      :value: None
+
+
+
+   .. py:attribute:: fmtoks
+      :value: None
+
+
+
+   .. py:attribute:: attention
+      :value: None
+
+
+
+   .. py:attribute:: msa
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+   .. py:method:: empty_nuc()
+      :classmethod:
+
+
+
+   .. py:method:: from_filepath(filepath, cif, from_filepath=None, model: int = None, chain: str = None, id=None)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(id, save_path=None, model: int = None, chain: str = None)
+      :classmethod:
+
+
+
+   .. py:method:: set(**kwargs)
+
+
+   .. py:method:: from_atom_array(atom_array, header, id=None, chain: str = None)
+      :classmethod:
+
+
+      Reshapes atom array to residue-indexed representation to
+      build a protein datum.
+
+
+
+   .. py:method:: to_pdb_str()
+
+
+   .. py:method:: plot(view, viewer=None, sphere=False, ribbon=True, sidechain=True, color='spectrum', colors=None)
+
+
+   .. py:method:: align_to(other, window=None)
+
+      Aligns the current protein datum to another protein datum based on CA atoms.
+
+
+
+   .. py:method:: to_pytree()
+
+
+   .. py:method:: from_pytree(tree)
+
+
+.. py:data:: rna_res_names
+   :value: ['A', 'U', 'RT', 'G', 'C', 'I']
+
+
+.. py:data:: dna_res_names
+   :value: ['DA', 'DU', 'DT', 'DG', 'DC', 'DI']
+
+
+.. py:data:: dna_res_tokens
+
+.. py:data:: rna_res_tokens
+
+.. py:data:: dna_datum
+
