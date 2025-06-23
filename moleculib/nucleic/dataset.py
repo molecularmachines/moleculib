@@ -1,13 +1,15 @@
-from moleculib.abstract.dataset import PreProcessedDataset
-from moleculib.nucleic.datum import NucleicDatum
-from typing import List, Callable
-from functools import reduce
-from tqdm import tqdm
 import os
-from torch.utils.data import Dataset
+import pickle
+from functools import reduce
+from typing import Callable, List
+
 import numpy as np
 import RNA
-import pickle
+from torch.utils.data import Dataset
+from tqdm import tqdm
+
+from moleculib.abstract.dataset import PreProcessedDataset
+from moleculib.nucleic.datum import NucleicDatum
 
 
 class RNADataset(PreProcessedDataset):

@@ -1,30 +1,18 @@
 import math
+from typing import Union
 
 import biotite
-from .datum import ProteinDatum
-from .alphabet import (
-    all_atoms,
-    all_residues,
-    all_atoms_elements,
-    all_atoms_radii,
-    backbone_atoms,
-    bonds_arr,
-    bond_lens_arr,
-    bonds_mask,
-    angles_arr,
-    angles_mask,
-    dihedrals_arr,
-    dihedrals_mask,
-    flippable_arr,
-    flippable_mask,
-)
+import jaxlib
 import numpy as np
 from einops import rearrange
-from .utils import pad_array
 
-import jaxlib
-from typing import Union
 from ..assembly.datum import AssemblyDatum
+from .alphabet import (all_atoms, all_atoms_elements, all_atoms_radii,
+                       all_residues, angles_arr, angles_mask, backbone_atoms,
+                       bond_lens_arr, bonds_arr, bonds_mask, dihedrals_arr,
+                       dihedrals_mask, flippable_arr, flippable_mask)
+from .datum import ProteinDatum
+from .utils import pad_array
 
 
 class ProteinTransform:
@@ -140,8 +128,8 @@ class CaOnly(ProteinTransform):
         return datum
 
 
-from einops import repeat
 import e3nn_jax as e3nn
+from einops import repeat
 
 
 class ProteinPad(ProteinTransform):

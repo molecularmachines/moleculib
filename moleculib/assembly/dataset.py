@@ -1,8 +1,10 @@
-from ..abstract.dataset import PreProcessedDataset
-from typing import List, Callable
 import os
 import pickle
+from typing import Callable, List
+
 from tqdm import tqdm
+
+from ..abstract.dataset import PreProcessedDataset
 
 
 class ChromaDataset(PreProcessedDataset):

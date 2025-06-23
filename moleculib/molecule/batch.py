@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from functools import reduce
 from typing import List
+
 import jax.numpy as jnp
 import numpy as np
+
 from .datum import MoleculeDatum
 
 

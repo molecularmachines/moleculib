@@ -1,0 +1,15 @@
+--2024-03-25 15:34:08--  https://pitt-my.sharepoint.com/:f:/g/personal/ria43_pitt_edu/EtwrtGBrS49MuezZtoxRQ3UBoJTHvPPGh8IV3JjzPpT91A?e=Asx29i
+Resolving pitt-my.sharepoint.com (pitt-my.sharepoint.com)... 13.107.138.10, 13.107.136.10, 2620:1ec:8fa::10, ...
+Connecting to pitt-my.sharepoint.com (pitt-my.sharepoint.com)|13.107.138.10|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://pitt-my.sharepoint.com/personal/ria43_pitt_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fria43%5Fpitt%5Fedu%2FDocuments%2Fapobind&ga=1 [following]
+--2024-03-25 15:34:08--  https://pitt-my.sharepoint.com/personal/ria43_pitt_edu/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fria43%5Fpitt%5Fedu%2FDocuments%2Fapobind&ga=1
+Reusing existing connection to pitt-my.sharepoint.com:443.
+HTTP request sent, awaiting response... 200 OK
+Length: 270454 (264K) [text/html]
+Saving to: ‘EtwrtGBrS49MuezZtoxRQ3UBoJTHvPPGh8IV3JjzPpT91A?e=Asx29i’
+
+                 EtwrtGBrS49MuezZ   0%[                                                            ]       0  --.-KB/s               EtwrtGBrS49MuezZtoxRQ3UBoJTHvPPGh 100%[===========================================================>] 264.12K  --.-KB/s    in 0.008s  
+
+2024-03-25 15:34:09 (30.8 MB/s) - ‘EtwrtGBrS49MuezZtoxRQ3UBoJTHvPPGh8IV3JjzPpT91A?e=Asx29i’ saved [270454/270454]
+

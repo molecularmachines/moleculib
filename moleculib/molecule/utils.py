@@ -1,21 +1,17 @@
 import os
 from pathlib import Path
+from typing import Any, List, Tuple
 
-from biotite.structure import (
-    filter_amino_acids,
-    filter_monoatomic_ions,
-    filter_nucleotides,
-)
-
-import numpy as np
 import biotite.structure.io.mmtf as mmtf
-import py3Dmol
-import rdkit
+import jax
 import jax.numpy as jnp
 import jaxlib
+import numpy as np
+import py3Dmol
+import rdkit
+from biotite.structure import (filter_amino_acids, filter_monoatomic_ions,
+                               filter_nucleotides)
 from jax.tree_util import register_pytree_node
-import jax
-from typing import List, Tuple, Any
 
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}

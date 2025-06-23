@@ -1,21 +1,21 @@
 # need to implement transform which will
 # be able to crop and pad the nucleic datum
-import os
-from einops import repeat, rearrange
 import math
-import biotite
-from moleculib.nucleic.datum import NucleicDatum, dna_res_tokens, rna_res_tokens
-from moleculib.nucleic.alphabet import *
+import os
 
+import biotite
+import e3nn_jax as e3nn
+import jax.numpy as jnp
+import jaxlib
 # UNK_TOKEN
 import numpy as np
-from moleculib.nucleic.utils import pad_array, pids_file_to_list
-
-import jax.numpy as jnp
+from einops import rearrange, repeat
 from tqdm import tqdm
-import e3nn_jax as e3nn
-import jaxlib
 
+from moleculib.nucleic.alphabet import *
+from moleculib.nucleic.datum import (NucleicDatum, dna_res_tokens,
+                                     rna_res_tokens)
+from moleculib.nucleic.utils import pad_array, pids_file_to_list
 
 # followed Allan but not sure exactly why we need all these abstraction:
 

@@ -1,73 +1,47 @@
-import numpy as np
-from Bio.PDB import parse_pdb_header
-from Bio.PDB import MMCIFParser, PDBIO, Select
-
-from biotite.database import rcsb
-from biotite.sequence import (
-    ProteinSequence,
-    NucleotideSequence,
-    GeneralSequence,
-    Alphabet,
-)
-from biotite.structure import (
-    apply_chain_wise,
-    apply_residue_wise,
-    get_chain_count,
-    get_residue_count,
-    get_residues,
-    get_chains,
-    spread_chain_wise,
-    spread_residue_wise,
-    Atom,
-    superimpose,
-    AffineTransformation,
-    rmsd,
-    AtomArray,
-)
-import RNA  # ViennaRNA
-from biotite.structure import filter_nucleotides
 import os
+import sys
 
+import numpy as np
+import plotly.graph_objects as go
+import plotly.offline as pyo
+import RNA  # ViennaRNA
+from Bio.PDB import PDBIO, MMCIFParser, Select, parse_pdb_header
+from biotite.database import rcsb
+from biotite.sequence import (Alphabet, GeneralSequence, NucleotideSequence,
+                              ProteinSequence)
+# from biotite.structure import Atom
+from biotite.structure import (AffineTransformation, Atom, AtomArray,
+                               apply_chain_wise, apply_residue_wise)
+from biotite.structure import array as AtomArrayConstructor
+from biotite.structure import (filter_nucleotides, get_chain_count, get_chains,
+                               get_residue_count, get_residues, rmsd,
+                               spread_chain_wise, spread_residue_wise,
+                               superimpose)
+from biotite.structure.io import pdbx
+from biotite.structure.io.pdb import PDBFile
 # import biotite.structure.io.mmtf as mmtf
 from einops import rearrange, repeat
-
-# from biotite.structure import Atom
-from biotite.structure import array as AtomArrayConstructor
 
 # from biotite.structure import superimpose
 
 
-from biotite.structure.io.pdb import PDBFile
-from biotite.structure.io import pdbx
-
-import plotly.graph_objects as go
-import plotly.offline as pyo
-
-import sys
-
 sys.path.append(".")
-
-from moleculib.nucleic.alphabet import *
 
 # from utils import  pdb_to_atom_array
 import os
 from pathlib import Path
 
+import fm
+import numpy as np
+import py3Dmol
+import torch
 from biotite.structure import filter_nucleotides
-
-# from biotite.structure.io import PDBFile, MMCIFFile
-from biotite.structure.io.pdb import PDBFile  #
-
 # from biotite.structure.io. import MMCIFFile
 from biotite.structure.io import pdbx
+# from biotite.structure.io import PDBFile, MMCIFFile
+from biotite.structure.io.pdb import PDBFile
 
-
-import py3Dmol
-import numpy as np
-
-import torch
-import fm
-
+from moleculib.nucleic.alphabet import *
 
 home_dir = str(Path.home())  # not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}  # not sure either

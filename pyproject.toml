@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "moleculib"
+version = "0.0.1"
+
+description = "A sample Python project"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+
+# keywords = [""]
+# authors = [{ name = "", email = "" }]
+# maintainers = [{ name = "A. Great Maintainer", email = "maintainer@example.com" }]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+]
+
+dependencies = [
+    "numpy",
+    "einops",
+    "ordered_set",
+    "biopython",
+    "biotite",
+    "pandas",
+    "tqdm",
+    "mendeleev",
+    "py3Dmol",
+    "rdkit",
+    "plotly",
+    "mdtraj",
+]
+
+
+# [project.optional-dependencies] # optional as pip install project[dev]
+# dev = ["check-manifest"]
+# test = ["coverage"]
+
+[project.urls]
+"Homepage" = "https://github.com/molecularmachines/moleculib"
+"Documentation" = "https://molecularmachines.github.io/moleculib/index.html"
+
+# [project.scripts]
+# sample = "sample:main"
+
+# [tool.setuptools]
+# # If there are data files included in your packages that need to be
+# # installed, specify them here.
+# package-data = { "sample" = ["*.dat"] }

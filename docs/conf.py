@@ -8,12 +8,13 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../moleculib'))
 
-project = 'moleculib'
-copyright = '2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines'
-author = 'Molecular Machines'
-release = '-'
+sys.path.insert(0, os.path.abspath("../moleculib"))
+
+project = "moleculib"
+copyright = "2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines"
+author = "Molecular Machines"
+release = "-"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -28,8 +29,8 @@ extensions = [
     "autoapi.extension",
 ]
 
-autoapi_type = 'python'
-autoapi_dirs = ['../moleculib']
+autoapi_type = "python"
+autoapi_dirs = ["../moleculib"]
 # autoapi_template_dir = "_templates/autoapi"
 autoapi_options = [
     "members",
@@ -39,13 +40,13 @@ autoapi_options = [
     "imported-members",
 ]
 autoapi_python_use_implicit_namespaces = True
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'insegel'
-html_static_path = ['_static']
-html_logo = '_static/logo.png'
+html_theme = "insegel"
+html_static_path = ["_static"]
+html_logo = "_static/logo.png"

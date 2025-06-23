@@ -1,4 +1,6 @@
+import inspect
 from collections import defaultdict
+from copy import deepcopy
 from typing import List
 
 from moleculib.abstract.metrics import MetricsPipe
@@ -6,9 +8,6 @@ from moleculib.protein.transform import DescribeChemistry
 
 from ..protein.metrics import ProteinMetric
 from .datum import AssemblyDatum
-from copy import deepcopy
-
-import inspect
 
 
 class AssemblyMetric:

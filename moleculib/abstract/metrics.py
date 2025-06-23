@@ -1,5 +1,5 @@
-from typing import Callable, List
 from inspect import signature
+from typing import Callable, List
 
 
 class MetricsPipe:

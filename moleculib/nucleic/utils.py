@@ -1,11 +1,9 @@
 import os
 from pathlib import Path
 
+import numpy as np
 from biotite.structure import filter_nucleotides
 from biotite.structure.io.pdb import PDBFile
-
-
-import numpy as np
 
 home_dir = str(Path.home())  # not sure what this do
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}  # not sure either

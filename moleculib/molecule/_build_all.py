@@ -1,6 +1,7 @@
-from moleculib import MoleculeDataset
 import numpy as np
 import plotly.express as px
+
+from moleculib import MoleculeDataset
 
 path = "/mas/projects/molecularmachines/db/PDB"
 # MoleculeDataset.build(save_path=path, max_workers=30)

@@ -1,41 +1,67 @@
-from scipy.linalg.decomp import nonzero
-# Standard libraries
-# Python Packages
-import pandas as pd
-import numpy as np
-# Deep Learning ones
-import torch
 # from torch.utils.data import Dataset, DataLoader
 # from Bio.PDB import PDBParser
 # from Bio.SeqUtils import seq1
 # from transformers import T5Tokenizer, T5EncoderModel
 from typing import List, Tuple
+
+import numpy as np
+# Standard libraries
+# Python Packages
+import pandas as pd
+# Deep Learning ones
+import torch
 from biotite.sequence.io import fasta
+from scipy.linalg.decomp import nonzero
 
-alphabet = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
-                         'Y', "X"]
+alphabet = [
+    "A",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "V",
+    "W",
+    "Y",
+    "X",
+]
 
-def onehot_encode_datum(sequencedatum:SeqDatum):
+
+def onehot_encode_datum(sequencedatum: SeqDatum):
     residue_tokens = sequencedatum.residue_token
     one_hot_tensor = torch.zeros(len(residue_tokens), len(all_residues))
     for i, token in enumerate(residue_tokens):
         one_hot_tensor[i, token] = 1
     return one_hot_tensor
 
+
 def decode_one_hot(x):
     decoded = np.argmax(x, axis=2)
     return decoded
 
-def residue_tokens_to_sequence(sequencedatum:SeqDatum):
+
+def residue_tokens_to_sequence(sequencedatum: SeqDatum):
     sequence_list = [all_residues[i] for i in sequencedatum.residue_token]
-    residues=[]
+    residues = []
     for name in sequence_list:
-        if name!="MASK":
+        if name != "MASK":
             residues.append(ProteinSequence.convert_letter_3to1(name))
         else:
             residues.append("U")
-#     residues = [ProteinSequence.convert_letter_3to1(name) for name in sequence_list if name != "MASK"]
+    #     residues = [ProteinSequence.convert_letter_3to1(name) for name in sequence_list if name != "MASK"]
     return "".join(residues)
+
 
 def load_fasta_file(input: str) -> List[Tuple[str]]:
     # read input fasta file
@@ -45,9 +71,10 @@ def load_fasta_file(input: str) -> List[Tuple[str]]:
     sequences = [str(s) for s in sequences]
     names = list(fasta_sequences.keys())
     all_sequences = {}
-    for k,v in zip(names,sequences):
-        all_sequences[k]=v
+    for k, v in zip(names, sequences):
+        all_sequences[k] = v
     return all_sequences
+
 
 def save_fasta_file(sequences, names, save_path):
     step_fasta_file = fasta.FastaFile()
@@ -55,7 +82,8 @@ def save_fasta_file(sequences, names, save_path):
         step_fasta_file[res_name] = sequences[j]
     step_fasta_file.write(save_path)
     return save_path
-    
+
+
 def one_hot_encode_seq(protein_seq, max_length=14):
     char_to_int = dict((c, i) for i, c in enumerate(alphabet))
     encoded_protein = np.zeros((max_length, len(alphabet)))
@@ -72,6 +100,7 @@ def one_hot_encode_seq(protein_seq, max_length=14):
         letter = [0 for _ in range(len(alphabet))]
         pad_hot_array.append(letter)
     return np.array(one_hot_array + pad_hot_array)
+
 
 # def encode_seq_with_ankh(protein_seq):
 #     model, tokenizer = ankh.load_large_model()

@@ -1,11 +1,12 @@
-from einops import rearrange
-import numpy as np
+from typing import List
 
-from .measures import STANDARD_CHEMICAL_MEASURES
+import jax.numpy as jnp
+import numpy as np
+from einops import rearrange
 
 from moleculib.protein.datum import ProteinDatum
-import jax.numpy as jnp
-from typing import List
+
+from .measures import STANDARD_CHEMICAL_MEASURES
 
 
 def safe_norm(vector: jnp.ndarray, axis: int = -1) -> jnp.ndarray:

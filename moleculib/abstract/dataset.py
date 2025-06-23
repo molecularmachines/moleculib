@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import Callable, List
-import numpy as np
 
+import numpy as np
 from tqdm import tqdm
 
 

@@ -1,10 +1,12 @@
-from .datum import AssemblyDatum
-from ..protein.datum import ProteinDatum
+from copy import deepcopy
 from typing import List
+
 import numpy as np
 
-from copy import deepcopy
 from moleculib.protein.transform import ProteinTransform
+
+from ..protein.datum import ProteinDatum
+from .datum import AssemblyDatum
 
 
 class AssemblyTransform:

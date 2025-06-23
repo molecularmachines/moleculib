@@ -1,5 +1,6 @@
-from moleculib.molecule import batch, dataset, utils, transform
 from torch.utils.data import DataLoader
+
+from moleculib.molecule import batch, dataset, transform, utils
 
 
 def test_dataloader():

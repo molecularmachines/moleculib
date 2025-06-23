@@ -1,57 +1,61 @@
-import numpy as np
-from biotite.database import rcsb
-from biotite.sequence import ProteinSequence as _ProteinSequence
-from biotite.structure import (
-    apply_chain_wise,
-    apply_residue_wise,
-    get_chain_count,
-    get_residue_count,
-    get_residues,
-    spread_chain_wise,
-    spread_residue_wise,
-    chain_iter,
-)
-
-from biotite.structure import filter_amino_acids
-
 import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.pdb as pdb
 import biotite.structure.io.pdbx as pdbx
-from biotite.structure import Atom
-from biotite.structure import array as AtomArrayConstructor
-from biotite.structure import superimpose
-
-from .alphabet import (
-    all_atoms,
-    all_residues,
-    backbone_atoms,
-    atom_index,
-    atom_to_residues_index,
-    get_residue_index,
-)
-
-from einops import rearrange, repeat
+import numpy as np
 import py3Dmol
+from biotite.database import rcsb
+from biotite.sequence import ProteinSequence as _ProteinSequence
+from biotite.structure import Atom, apply_chain_wise, apply_residue_wise
+from biotite.structure import array as AtomArrayConstructor
+from biotite.structure import (chain_iter, filter_amino_acids, get_chain_count,
+                               get_residue_count, get_residues,
+                               spread_chain_wise, spread_residue_wise,
+                               superimpose)
+from einops import rearrange, repeat
+
+from .alphabet import (all_atoms, all_residues, atom_index,
+                       atom_to_residues_index, backbone_atoms,
+                       get_residue_index)
 
 
 class ProteinSequence:
+    """
+    A class representing a protein sequence with tokenized residues and associated metadata.
+
+    This class provides a container for protein sequence information including residue tokens,
+    indexes, masks, and chain assignments. It serves as a lightweight representation of
+    protein sequence data that can be used for sequence-based analysis.
+    """
 
     def __init__(
         self,
-        idcode: str,
-        sequence: _ProteinSequence,
-        residue_token: np.ndarray,
-        residue_index: np.ndarray,
-        residue_mask: np.ndarray,
-        chain_token: np.ndarray,
-        **kwargs,
+        idcode: str,  # Protein identifier (e.g., PDB ID)
+        sequence: _ProteinSequence,  # Biotite protein sequence object
+        residue_token: np.ndarray,  # Tokenized representation of residues
+        residue_index: np.ndarray,  # Sequential indices for residues
+        residue_mask: np.ndarray,  # Boolean mask for valid residues
+        chain_token: np.ndarray,  # Chain identifiers for each residue
+        **kwargs,  # Additional attributes to store
     ):
+        """
+        Initialize a ProteinSequence object.
+
+        Args:
+            idcode: Protein identifier (e.g., PDB ID)
+            sequence: Biotite protein sequence object
+            residue_token: Numerical representation of each residue type
+            residue_index: Sequential indices for each residue position
+            residue_mask: Boolean mask indicating valid residues
+            chain_token: Chain identifier for each residue
+            **kwargs: Additional attributes to store in the object
+        """
         self.idcode = idcode
         self.sequence = str(sequence)
         self.residue_token = residue_token
         self.residue_index = residue_index
         self.residue_mask = residue_mask
         self.chain_token = chain_token
+        # Add any additional attributes passed as kwargs
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -62,31 +66,51 @@ from flax import struct
 @struct.dataclass
 class ProteinDatum:
     """
-    Incorporates protein data to MolecularDatum
-    and reshapes atom arrays to residue-based representation
+    A comprehensive representation of protein structure data.
+
+    This class organizes protein structural data in a residue-centric format,
+    storing both sequence and atomic-level information. It provides methods for
+    manipulation, visualization, and conversion between different protein structure
+    representations. The data is organized as arrays with shapes that facilitate
+    machine learning applications.
+
+    The primary organization is:
+    - Residue-level arrays: [num_residues]
+    - Atom-level arrays: [num_residues, max_atoms_per_residue, ...]
+
+    Attributes are categorized into sequence information, residue properties,
+    atomic coordinates, and molecular geometry.
     """
 
-    idcode: str
-    resolution: float
-    sequence: _ProteinSequence
+    # Basic protein identifiers
+    idcode: str  # Protein identifier (e.g., PDB ID)
+    resolution: float  # Structure resolution (in Angstroms)
+    sequence: _ProteinSequence  # Biotite protein sequence object
 
-    residue_token: np.ndarray
-    residue_index: np.ndarray
-    residue_mask: np.ndarray
-    chain_token: np.ndarray
+    # Residue-level information
+    residue_token: np.ndarray  # Tokenized representation of each residue [num_residues]
+    residue_index: np.ndarray  # Index of each residue [num_residues]
+    residue_mask: np.ndarray  # Boolean mask for valid residues [num_residues]
+    chain_token: np.ndarray  # Chain identifier for each residue [num_residues]
 
-    atom_token: np.ndarray
-    atom_coord: np.ndarray
-    atom_mask: np.ndarray
-    atom_element: np.ndarray = None
-    atom_radius: np.ndarray = None
+    # Atom-level information
+    atom_token: (
+        np.ndarray
+    )  # Tokenized representation of atoms [num_residues, max_atoms]
+    atom_coord: np.ndarray  # 3D coordinates for each atom [num_residues, max_atoms, 3]
+    atom_mask: np.ndarray  # Boolean mask for valid atoms [num_residues, max_atoms]
 
-    bonds_list: np.ndarray = None
-    bonds_mask: np.ndarray = None
-    angles_list: np.ndarray = None
-    angles_mask: np.ndarray = None
-    dihedrals_list: np.ndarray = None
-    dihedrals_mask: np.ndarray = None
+    # Optional atomic properties
+    atom_element: np.ndarray = None  # Element type for each atom
+    atom_radius: np.ndarray = None  # Atomic radii
+
+    # Molecular geometry features
+    bonds_list: np.ndarray = None  # List of atom pairs forming bonds
+    bonds_mask: np.ndarray = None  # Boolean mask for valid bonds
+    angles_list: np.ndarray = None  # List of atom triplets forming angles
+    angles_mask: np.ndarray = None  # Boolean mask for valid angles
+    dihedrals_list: np.ndarray = None  # List of atom quartets forming dihedrals
+    dihedrals_mask: np.ndarray = None  # Boolean mask for valid dihedrals
 
     @classmethod
     def _extract_reshaped_atom_attr(
@@ -96,32 +120,77 @@ class ProteinDatum:
         atom_to_indices=atom_to_residues_index,
         attrs=["coord", "token"],
     ):
+        """
+        Reshapes atom attributes from a flat atom array into a residue-based representation.
+
+        This method converts Biotite's flat atom array structure into a tensor representation
+        where atoms are organized by residue. It creates arrays with shape [num_residues, max_atoms_per_residue, ...]
+        for each requested attribute.
+
+        Args:
+            atom_array: Biotite atom array containing protein structure data
+            atom_alphabet: List of atom names to process
+            atom_to_indices: Mapping from atom tokens to positions within each residue
+            attrs: List of atom attributes to extract (e.g., 'coord', 'token')
+
+        Returns:
+            tuple: (
+                extraction: Dictionary of reshaped attributes
+                mask: Boolean mask indicating valid atoms [num_residues, max_atoms_per_residue]
+            )
+        """
+        # Get number of residues for array sizing
         residue_count = get_residue_count(atom_array)
 
+        # Initialize extraction dictionary and atom mask
         extraction = dict()
-        mask = np.zeros((residue_count, 14)).astype(bool)
+        mask = np.zeros((residue_count, 14)).astype(bool)  # 14 = max atoms per residue
+
+        # Initialize arrays for each requested attribute
         for attr in attrs:
             attr_shape = getattr(atom_array, attr).shape
             if len(attr_shape) == 1:
+                # For scalar attributes like 'token'
                 attr_reshape = np.zeros((residue_count, 14))
             else:
+                # For vector attributes like 'coord'
                 attr_reshape = np.zeros((residue_count, 14, attr_shape[-1]))
             extraction[attr] = attr_reshape
 
         def _atom_slice(atom_name, atom_array, atom_token):
+            """
+            Process a specific atom type and place its attributes in the residue-based arrays.
+
+            Args:
+                atom_name: Name of the atom to process (e.g., 'CA', 'CB')
+                atom_array: The full atom array
+                atom_token: Token ID of this atom type
+            """
+            # Filter the atom array to only include atoms of the given name
             atom_array_ = atom_array[(atom_array.atom_name == atom_name)]
-            # kill pads and kill unks that are not backbone
+
+            # Remove padding residues (token 0)
             atom_array_ = atom_array_[(atom_array_.residue_token > 0)]
+
+            # For non-backbone atoms, also remove unknown residues (token 1)
             if atom_name not in backbone_atoms:
                 atom_array_ = atom_array_[(atom_array_.residue_token > 1)]
 
+            # Get residue tokens and sequence IDs for these atoms
             res_tokens, seq_id = atom_array_.residue_token, atom_array_.seq_uid
+
+            # Find the position index for this atom type within each residue
             atom_indices = atom_to_indices[atom_token][res_tokens]
+
+            # Copy attribute values to the corresponding positions in the output arrays
             for attr in attrs:
                 attr_tensor = getattr(atom_array_, attr)
                 extraction[attr][seq_id, atom_indices, ...] = attr_tensor
+
+            # Mark these positions as valid in the mask
             mask[seq_id, atom_indices] = True
 
+        # Process each atom type in the alphabet
         for atom_name in atom_alphabet:
             atom_token = atom_alphabet.index(atom_name)
             _atom_slice(atom_name, atom_array, atom_token)
@@ -130,57 +199,132 @@ class ProteinDatum:
 
     @staticmethod
     def separate_chains(datum):
+        """
+        Splits a multi-chain protein datum into a list of single-chain protein data.
+
+        This method identifies unique chains in the protein structure and creates
+        separate ProteinDatum objects for each chain, preserving all relevant
+        attributes while subsetting the arrays to include only data for that chain.
+
+        Args:
+            datum: The ProteinDatum object containing multiple chains
+
+        Returns:
+            list: List of ProteinDatum objects, one for each chain
+        """
+        # Get unique chain identifiers
         chains = np.unique(datum.chain_token)
         protein_list = []
+
+        # Process each chain separately
         for chain in chains:
             new_datum_ = dict()
-            cut = np.where(datum.chain_token == chain)[0][0]
-            length = np.sum(datum.chain_token == chain)
+
+            # Find the start index and length of this chain
+            cut = np.where(datum.chain_token == chain)[0][
+                0
+            ]  # First residue of this chain
+            length = np.sum(
+                datum.chain_token == chain
+            )  # Number of residues in this chain
+
+            # Copy attributes, slicing arrays to include only this chain's data
             for attr, obj in vars(datum).items():
                 if type(obj) in [np.ndarray, list, tuple, str]:
                     new_datum_[attr] = obj[cut : cut + length]
                 else:
+                    # Non-array attributes are copied directly
                     new_datum_[attr] = obj
+
+            # Create a new ProteinDatum for this chain
             new_datum = ProteinDatum(**new_datum_)
             protein_list.append(new_datum)
+
         return protein_list
 
     def __len__(self):
+        """
+        Returns the number of residues in the protein.
+
+        Returns:
+            int: Number of residues
+        """
         return len(self.atom_coord)
 
     @classmethod
     def empty(cls):
+        """
+        Creates an empty ProteinDatum object with zero-sized arrays.
+
+        This is useful when handling edge cases, errors, or as a placeholder.
+
+        Returns:
+            ProteinDatum: An empty protein datum with empty arrays
+        """
         return cls(
             idcode="",
             resolution=0.0,
             sequence=_ProteinSequence(""),
-            residue_index=np.zeros(0, dtype=int),
-            residue_token=np.zeros(0, dtype=int),
-            residue_mask=np.zeros(0, dtype=bool),
-            chain_token=np.zeros(0, dtype=int),
-            atom_token=np.zeros((0, 14), dtype=int),
-            atom_mask=np.zeros((0, 14), dtype=bool),
-            atom_coord=np.zeros((0, 14, 3), dtype=float),
+            residue_index=np.zeros(0, dtype=int),  # Empty residue indices
+            residue_token=np.zeros(0, dtype=int),  # Empty residue tokens
+            residue_mask=np.zeros(0, dtype=bool),  # Empty residue mask
+            chain_token=np.zeros(0, dtype=int),  # Empty chain tokens
+            atom_token=np.zeros((0, 14), dtype=int),  # Empty atom tokens
+            atom_mask=np.zeros((0, 14), dtype=bool),  # Empty atom mask
+            atom_coord=np.zeros((0, 14, 3), dtype=float),  # Empty coordinates
         )
 
     def replace(self, **kwargs):
+        """
+        Creates a new ProteinDatum with specific attributes replaced.
+
+        This method creates a copy of the current datum and updates
+        specific attributes with new values provided in kwargs.
+
+        Args:
+            **kwargs: Key-value pairs of attributes to update
+
+        Returns:
+            ProteinDatum: A new ProteinDatum with updated attributes
+        """
         new_datum = dict()
+        # Copy all current attributes
         for attr, obj in vars(self).items():
             new_datum[attr] = obj
+        # Update with new values
         new_datum.update(kwargs)
+        # Create and return a new ProteinDatum
         return ProteinDatum(**new_datum)
 
     def __getitem__(self, idx):
+        """
+        Enables slicing of the protein to get a subset of residues.
+
+        Supports both integer indexing (single residue) and slicing.
+
+        Args:
+            idx: An integer index or slice object
+
+        Returns:
+            ProteinDatum: A new ProteinDatum containing only the specified residues
+        """
+        # Convert integer index to slice indices
         if type(idx) == int:
             idx = [idx, idx + 1]
+        # Convert slice to explicit start and stop indices
         elif type(idx) == slice:
             idx = [idx.start, idx.stop]
+
         new_datum = dict()
+        # Copy attributes, slicing arrays that match the protein length
         for attr, obj in vars(self).items():
             if type(obj) in [np.ndarray, list, tuple, str] and len(obj) == len(self):
+                # Only slice arrays that match the number of residues
                 new_datum[attr] = obj[idx[0] : idx[1]]
             else:
+                # Keep other attributes unchanged
                 new_datum[attr] = obj
+
         return ProteinDatum(**new_datum)
 
     @classmethod
@@ -362,45 +506,84 @@ class ProteinDatum:
         )
 
     def _apply_chemistry(self, key, f):
+        """
+        Generic helper method to apply geometric functions to molecular components.
+
+        This method reshapes atom coordinates and indices to apply calculations
+        to bonds, angles, or dihedrals in the protein structure.
+
+        Args:
+            key: The type of component ('bonds', 'angles', or 'dihedrals')
+            f: Function to apply to the component that computes geometric measurements
+
+        Returns:
+            np.ndarray: Array of computed measurements
+        """
+        # Reshape atom coordinates to a flat list
         all_atoms = rearrange(self.atom_coord, "r a c -> (r a) c")
+        # Reshape component indices to a flat list
         all_idx = rearrange(getattr(self, f"{key}_list"), "r o i -> (r o) i")
+        # Get the mask for valid components
         mask = getattr(self, f"{key}_mask")
 
+        # Apply the measurement function
         measures = f(all_atoms, all_idx)
+        # Reshape the results back to [residues, components]
         measures = rearrange(measures, "(r o) -> r o", r=len(self.residue_token))
 
+        # Apply mask to zero out invalid measurements
         output = dict()
         output[key] = measures * mask
         return measures
 
     def apply_bonds(self, f):
+        """
+        Applies a function to calculate bond properties.
+
+        Args:
+            f: Function that calculates bond properties from atom coordinates
+
+        Returns:
+            np.ndarray: Array of bond measurements
+        """
         return self._apply_chemistry(key="bonds", f=f)
 
     def apply_angles(self, f):
+        """
+        Applies a function to calculate angle properties.
+
+        Args:
+            f: Function that calculates angle properties from atom coordinates
+
+        Returns:
+            np.ndarray: Array of angle measurements
+        """
         return self._apply_chemistry(key="angles", f=f)
 
     def apply_dihedrals(self, f):
+        """
+        Applies a function to calculate dihedral angle properties.
+
+        Args:
+            f: Function that calculates dihedral properties from atom coordinates
+
+        Returns:
+            np.ndarray: Array of dihedral angle measurements
+        """
         return self._apply_chemistry(key="dihedrals", f=f)
 
-    # def to_dict(self, attrs=None):
-    #     if attrs is None:
-    #         attrs = vars(self).keys()
-    #     dict_ = {}
-    #     for attr in attrs:
-    #         obj = getattr(self, attr)
-    #         # strings are not JAX types
-    #         if type(obj) == str:
-    #             continue
-    #         if type(obj) in [list, tuple]:
-    #             if type(obj[0]) not in [int, float]:
-    #                 continue
-    #             obj = np.array(obj)
-    #         dict_[attr] = obj
-    #     return dict_
-
     def apply(self, f):
+        """
+        Applies a function to all numpy-convertible attributes of the protein datum.
+
+        This is useful for batch processing of attributes, such as moving data between devices,
+        converting data types, or applying transformations.
+
+        Args:
+            f: Function to apply to each attribute with a numpy() method
+        """
         for key, value in vars(self).items():
-            # if the value has a numpy() method, call it
+            # If the value has a numpy() method, apply the function
             if hasattr(value, "numpy"):
                 setattr(self, key, f(value))
 
@@ -539,9 +722,31 @@ class ProteinDatum:
     def align_to(self, other, window=None):
         """
         Aligns the current protein datum to another protein datum based on CA atoms.
+
+        This method performs a structural alignment between two protein structures
+        using only their alpha carbon atoms. It computes the optimal rotation and
+        translation to minimize RMSD between aligned atoms.
+
+        Args:
+            other: Target ProteinDatum to align to
+            window: Optional tuple of (start, end) to restrict alignment to a specific region
+
+        Returns:
+            ProteinDatum: A new protein datum with aligned coordinates
         """
 
         def to_ca_atom_array(prot, mask):
+            """
+            Extracts CA atoms from a protein datum to create a Biotite atom array.
+
+            Args:
+                prot: ProteinDatum to extract CA atoms from
+                mask: Boolean mask indicating which residues to include
+
+            Returns:
+                AtomArray: Biotite atom array containing only CA atoms
+            """
+            # Extract CA atom coordinates (index 1 in atom dimension is CA)
             cas = prot.atom_coord[..., 1, :]
             atoms = [
                 Atom(
@@ -577,37 +782,18 @@ class ProteinDatum:
 
         return self.set(atom_coord=new_atom_coord)
 
-    def save_mmcif(self, filepath):
-        """
-        Saves the protein datum to an mmcif file.
-        """
-
-        def to_all_atom_array(prot):
-            atoms = []
-            for i, coord in enumerate(prot.atom_coord):
-                for j, atom in enumerate(coord):
-                    if prot.atom_mask[i, j]:
-                        atoms.append(
-                            Atom(
-                                atom_name=all_atoms[int(prot.atom_token[i, j])],
-                                coord=atom,
-                                res_id=prot.residue_index[i],
-                                chain_id=prot.chain_token[i],
-                            )
-                        )
-            return AtomArrayConstructor(atoms)
-
-        atom_array = to_all_atom_array(self)
-
-        import biotite.structure.io.pdbx as cif
-
-        file = cif.CIFFile()
-        cif.set_structure(file, atom_array)
-        file.write(filepath)
-
     @classmethod
     def from_dict(cls, dict_):
         return cls(**dict_)
 
     def __repr__(self):
+        """
+        Returns a string representation of the ProteinDatum object.
+
+        The representation shows the shape of the atom coordinate array,
+        which indicates the number of residues and atoms per residue.
+
+        Returns:
+            str: String representation of the ProteinDatum
+        """
         return f"ProteinDatum(shape={self.atom_coord.shape[:-1]})"

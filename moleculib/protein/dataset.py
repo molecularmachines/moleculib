@@ -1,7 +1,7 @@
-from collections import defaultdict
 import os
 import pickle
 import traceback
+from collections import defaultdict
 from functools import partial
 from pathlib import Path
 from tempfile import mkdtemp
@@ -13,12 +13,11 @@ import pandas as pd
 from pandas import DataFrame, Series
 from tqdm.contrib.concurrent import process_map
 
+from ..abstract.dataset import PreProcessedDataset
 from .alphabet import UNK_TOKEN
 from .datum import ProteinDatum
 from .transform import ProteinTransform
 from .utils import pids_file_to_list
-
-from ..abstract.dataset import PreProcessedDataset
 
 MAX_COMPLEX_SIZE = 32
 PDB_HEADER_FIELDS = [
@@ -407,19 +406,19 @@ FAST_FOLDING_PROTEINS = {
 }
 
 
-from moleculib.protein.datum import ProteinDatum
-
-from moleculib.protein.transform import ProteinPad
-from biotite.structure import filter_amino_acids
-import biotite.structure.io.pdb as pdb
-import numpy as np
-from tqdm import tqdm
-
 import os
 from collections import defaultdict
 from copy import deepcopy
+
+import biotite.structure.io.pdb as pdb
+import numpy as np
+from biotite.structure import filter_amino_acids
 from biotite.structure.io.xtc import XTCFile
 from numpy.lib.format import open_memmap
+from tqdm import tqdm
+
+from moleculib.protein.datum import ProteinDatum
+from moleculib.protein.transform import ProteinPad
 
 
 class FastFoldingDataset:
@@ -557,13 +556,14 @@ class FastFoldingDataset:
 
 
 from biotite.structure.io import pdb
+
 from moleculib.protein.transform import ProteinPad
 
-
 TAUS = [0, 1, 2, 4, 8, 16]
+from copy import deepcopy
+
 import webdataset as wds
 
-from copy import deepcopy
 from moleculib.protein.datum import ProteinDatum
 
 

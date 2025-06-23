@@ -1,14 +1,13 @@
 # from moleculib.molecule.datum import MoleculeDatum
-from moleculib.protein.datum import ProteinDatum
 from typing import List
-from biotite.database import rcsb
+
 import biotite.structure.io.pdb as pdb
+import flax
+from biotite.database import rcsb
 from biotite.structure import filter_amino_acids
 
-
-import flax
-
 from moleculib.molecule.datum import MoleculeDatum
+from moleculib.protein.datum import ProteinDatum
 
 
 @flax.struct.dataclass

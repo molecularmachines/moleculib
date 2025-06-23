@@ -1,60 +1,47 @@
+import json
+import logging
+import multiprocessing
 import os
 import pickle
+import random
+import tempfile
+import threading
 import traceback
-from functools import partial
+from functools import partial, reduce
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List, Union, Callable
-from scipy.sparse.csgraph import laplacian
-import numpy as np
+from typing import Callable, List, Union
+
 import biotite
-import pandas as pd
-from pandas import Series
-from torch.utils.data import Dataset
-from tqdm.contrib.concurrent import process_map
-from tqdm import tqdm
-from .transform import (
-    MoleculeTransform,
-    MoleculePad,
-    DescribeGraph,
-    Permuter,
-    Centralize,
-    AtomFeatures,
-    StandardizeProperties,
-    SortAtoms,
-    PairPad,
-)
-from .utils import pids_file_to_list, extract_rdkit_mol_properties
-from .alphabet import elements
-from rdkit import Chem
-from rdkit.Chem import AllChem
-import random
-from rdkit import RDLogger
-from functools import reduce
-import lmdb
-from moleculib.molecule.datum import (
-    CrossdockDatum,
-    PDBBindDatum,
-    PDBMoleculeDatum,
-    QM9Datum,
-    RSDatum,
-    ReactDatum,
-    MISATODatum,
-    DensityDatum,
-)
-import biotite.structure.io.pdb as pdb
 import biotite.structure.io as strucio
-import mrcfile
-from sklearn.cluster import KMeans
-import json
-from ase.calculators.vasp import VaspChargeDensity
-import lz4.frame
-import tempfile
+import biotite.structure.io.pdb as pdb
 import h5py
+import lmdb
+import lz4.frame
+import mrcfile
+import numpy as np
+import pandas as pd
+from ase.calculators.vasp import VaspChargeDensity
+from pandas import Series
+from rdkit import Chem, RDLogger
+from rdkit.Chem import AllChem
+from scipy.sparse.csgraph import laplacian
+from sklearn.cluster import KMeans
+from torch.utils.data import Dataset
+from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
+
+from moleculib.molecule.datum import (CrossdockDatum, DensityDatum,
+                                      MISATODatum, PDBBindDatum,
+                                      PDBMoleculeDatum, QM9Datum, ReactDatum,
+                                      RSDatum)
 from moleculib.molecule.h5_to_pdb import create_pdb
-import multiprocessing
-import threading
-import logging
+
+from .alphabet import elements
+from .transform import (AtomFeatures, Centralize, DescribeGraph, MoleculePad,
+                        MoleculeTransform, PairPad, Permuter, SortAtoms,
+                        StandardizeProperties)
+from .utils import extract_rdkit_mol_properties, pids_file_to_list
 
 # Suppress RDKit prints
 RDLogger.DisableLog("rdApp.*")

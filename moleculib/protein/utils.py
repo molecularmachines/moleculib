@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
 
+import numpy as np
 from biotite.structure import filter_amino_acids
 from biotite.structure.io.pdb import PDBFile
-from .datum import ProteinDatum
-import numpy as np
 from einops import rearrange
+
+from .datum import ProteinDatum
 
 home_dir = str(Path.home())
 config = {"cache_dir": os.path.join(home_dir, ".cache", "moleculib")}
