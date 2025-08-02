@@ -1,0 +1,53 @@
+moleculib.molecule.datum
+========================
+
+.. py:module:: moleculib.molecule.datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.datum.MoleculeDatum
+
+
+Module Contents
+---------------
+
+.. py:class:: MoleculeDatum
+
+   Incorporates protein data to MolecularDatum
+   and reshapes atom arrays to residue-based representation
+
+
+   .. py:attribute:: idcode
+      :type:  str
+
+
+   .. py:attribute:: atom_type
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_coord
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_mask
+      :type:  numpy.ndarray
+
+
+   .. py:method:: from_atom_array(atom_array)
+      :classmethod:
+
+
+
+   .. py:method:: to_pdb_str()
+
+      Converts the atom array to a PDB string representation.
+
+
+
+   .. py:method:: plot(view=None)
+
+

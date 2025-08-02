@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.molecule.dataset</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.molecule.dataset">
+<span id="moleculib-molecule-dataset"></span><h1>moleculib.molecule.dataset<a class="headerlink" href="#module-moleculib.molecule.dataset" title="Link to this heading">¶</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.PDBMoleculeDataset" title="moleculib.molecule.dataset.PDBMoleculeDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDBMoleculeDataset</span></code></a></p></td>
+<td><p>Holds MoleculeDatum dataset with specified PDB IDs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.QM9Dataset" title="moleculib.molecule.dataset.QM9Dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QM9Dataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.RSDataset" title="moleculib.molecule.dataset.RSDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RSDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.PreProcessedDataset" title="moleculib.molecule.dataset.PreProcessedDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PreProcessedDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.DensityDataDir" title="moleculib.molecule.dataset.DensityDataDir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DensityDataDir</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.dataset.rotate_voxel" title="moleculib.molecule.dataset.rotate_voxel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate_voxel</span></code></a>(shape, cell, density, rotated_grid)</p></td>
+<td><p>Rotate the volumetric data using trilinear interpolation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">PDBMoleculeDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">moleculib.molecule.transform.MoleculeTransform</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_resolution</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_atom_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_atom_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preload_num_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>Holds MoleculeDatum dataset with specified PDB IDs</p>
+<section id="arguments">
+<h3>Arguments:<a class="headerlink" href="#arguments" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>base_path<span class="classifier">str</span></dt><dd><p>directory to store all PDB files</p>
+</dd>
+<dt>pdb_ids<span class="classifier">List[str]</span></dt><dd><p>list of all Molecule IDs that should be in the dataset</p>
+</dd>
+<dt>format<span class="classifier">str</span></dt><dd><p>the file format for each PDB file, either “npz” or “pdb”</p>
+</dd>
+<dt>attrs<span class="classifier">Union[str, List[str]]</span></dt><dd><p>a partial list of Molecule attributes that should be in each Molecule</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.base_path">
+<span class="sig-name descname"><span class="pre">base_path</span></span><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.base_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.splits">
+<span class="sig-name descname"><span class="pre">splits</span></span><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.splits" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.preload">
+<span class="sig-name descname"><span class="pre">preload</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.preload" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.load_index">
+<span class="sig-name descname"><span class="pre">load_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.load_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PDBMoleculeDataset.build">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdb_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.PDBMoleculeDataset.build" title="Link to this definition">¶</a></dt>
+<dd><p>Builds dataset from scratch given specified pdb_ids, prepares
+data and metadata for later use.</p>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">QM9Dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'QM9'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molecule_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centralize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_atom_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_max_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.data" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.graph" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.padding">
+<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.padding" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.permute">
+<span class="sig-name descname"><span class="pre">permute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.permute" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.centralize">
+<span class="sig-name descname"><span class="pre">centralize</span></span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.centralize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.sorter">
+<span class="sig-name descname"><span class="pre">sorter</span></span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.sorter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.atom_features">
+<span class="sig-name descname"><span class="pre">atom_features</span></span><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.atom_features" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.standardize">
+<span class="sig-name descname"><span class="pre">standardize</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.standardize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.QM9Dataset.use_atom_features">
+<span class="sig-name descname"><span class="pre">use_atom_features</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.molecule.dataset.QM9Dataset.use_atom_features" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">RSDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ChIRo'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molecule_transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_atom_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.data" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.max_num_atoms">
+<span class="sig-name descname"><span class="pre">max_num_atoms</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">50</span></em><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.max_num_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.padding">
+<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.padding" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.permute">
+<span class="sig-name descname"><span class="pre">permute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.permute" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.atom_features">
+<span class="sig-name descname"><span class="pre">atom_features</span></span><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.atom_features" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.RSDataset.use_atom_features">
+<span class="sig-name descname"><span class="pre">use_atom_features</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.molecule.dataset.RSDataset.use_atom_features" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PreProcessedDataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">PreProcessedDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">splits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.PreProcessedDataset" title="Link to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PreProcessedDataset.splits">
+<span class="sig-name descname"><span class="pre">splits</span></span><a class="headerlink" href="#moleculib.molecule.dataset.PreProcessedDataset.splits" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.PreProcessedDataset.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.molecule.dataset.PreProcessedDataset.transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.rotate_voxel">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">rotate_voxel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotated_grid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.rotate_voxel" title="Link to this definition">¶</a></dt>
+<dd><p>Rotate the volumetric data using trilinear interpolation.
+:param shape: voxel shape, tensor of shape (3,)
+:param cell: cell vectors, tensor of shape (3, 3)
+:param density: original density, tensor of shape (n_grid,)
+:param rotated_grid: rotated grid coordinates, tensor of shape (n_grid, 3)
+:return: rotated density, tensor of shape (n_grid,)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.molecule.dataset.</span></span><span class="sig-name descname"><span class="pre">DensityDataDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">29</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">36</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotate_voxel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.directory">
+<span class="sig-name descname"><span class="pre">directory</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/mas/projects/molecularmachines/db/qm9_vasp'</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.directory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.padding">
+<span class="sig-name descname"><span class="pre">padding</span></span><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.padding" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.max_atoms">
+<span class="sig-name descname"><span class="pre">max_atoms</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">29</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.max_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.grid_size">
+<span class="sig-name descname"><span class="pre">grid_size</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">36</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.grid_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.samples">
+<span class="sig-name descname"><span class="pre">samples</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.samples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.rotate_voxel">
+<span class="sig-name descname"><span class="pre">rotate_voxel</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.rotate_voxel" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.molecule.dataset.DensityDataDir.member_list">
+<span class="sig-name descname"><span class="pre">member_list</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#moleculib.molecule.dataset.DensityDataDir.member_list" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/molecule/dataset/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

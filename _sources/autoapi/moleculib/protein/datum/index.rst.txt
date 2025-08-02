@@ -1,0 +1,299 @@
+moleculib.protein.datum
+=======================
+
+.. py:module:: moleculib.protein.datum
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.datum.ProteinSequence
+   moleculib.protein.datum.ProteinDatum
+
+
+Module Contents
+---------------
+
+.. py:class:: ProteinSequence(idcode: str, sequence: biotite.sequence.ProteinSequence, residue_token: numpy.ndarray, residue_index: numpy.ndarray, residue_mask: numpy.ndarray, chain_token: numpy.ndarray, **kwargs)
+
+   A class representing a protein sequence with tokenized residues and associated metadata.
+
+   This class provides a container for protein sequence information including residue tokens,
+   indexes, masks, and chain assignments. It serves as a lightweight representation of
+   protein sequence data that can be used for sequence-based analysis.
+
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: sequence
+      :value: ''
+
+
+
+   .. py:attribute:: residue_token
+
+
+   .. py:attribute:: residue_index
+
+
+   .. py:attribute:: residue_mask
+
+
+   .. py:attribute:: chain_token
+
+
+.. py:class:: ProteinDatum
+
+   A comprehensive representation of protein structure data.
+
+   This class organizes protein structural data in a residue-centric format,
+   storing both sequence and atomic-level information. It provides methods for
+   manipulation, visualization, and conversion between different protein structure
+   representations. The data is organized as arrays with shapes that facilitate
+   machine learning applications.
+
+   The primary organization is:
+   - Residue-level arrays: [num_residues]
+   - Atom-level arrays: [num_residues, max_atoms_per_residue, ...]
+
+   Attributes are categorized into sequence information, residue properties,
+   atomic coordinates, and molecular geometry.
+
+
+   .. py:attribute:: idcode
+      :type:  str
+
+
+   .. py:attribute:: resolution
+      :type:  float
+
+
+   .. py:attribute:: sequence
+      :type:  biotite.sequence.ProteinSequence
+
+
+   .. py:attribute:: residue_token
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: residue_index
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: residue_mask
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: chain_token
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_token
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_coord
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_mask
+      :type:  numpy.ndarray
+
+
+   .. py:attribute:: atom_element
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: atom_radius
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: bonds_list
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: bonds_mask
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: angles_list
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: angles_mask
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: dihedrals_list
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:attribute:: dihedrals_mask
+      :type:  Optional[numpy.ndarray]
+      :value: None
+
+
+
+   .. py:method:: separate_chains(datum)
+      :staticmethod:
+
+
+      Splits a multi-chain protein datum into a list of single-chain protein data.
+
+      This method identifies unique chains in the protein structure and creates
+      separate ProteinDatum objects for each chain, preserving all relevant
+      attributes while subsetting the arrays to include only data for that chain.
+
+      :param datum: The ProteinDatum object containing multiple chains
+
+      :returns: List of ProteinDatum objects, one for each chain
+      :rtype: list
+
+
+
+   .. py:method:: empty()
+      :classmethod:
+
+
+      Creates an empty ProteinDatum object with zero-sized arrays.
+
+      This is useful when handling edge cases, errors, or as a placeholder.
+
+      :returns: An empty protein datum with empty arrays
+      :rtype: ProteinDatum
+
+
+
+   .. py:method:: replace(**kwargs)
+
+      Creates a new ProteinDatum with specific attributes replaced.
+
+      This method creates a copy of the current datum and updates
+      specific attributes with new values provided in kwargs.
+
+      :param \*\*kwargs: Key-value pairs of attributes to update
+
+      :returns: A new ProteinDatum with updated attributes
+      :rtype: ProteinDatum
+
+
+
+   .. py:method:: from_filepath(filepath, format=None, idcode=None, chain_id=None, chain=None, model=1)
+      :classmethod:
+
+
+
+   .. py:method:: fetch_pdb_id(id, format='pdb', chain=None, model=None, save_path=None)
+      :classmethod:
+
+
+
+   .. py:method:: set(**kwargs)
+
+
+   .. py:method:: get_sequence()
+
+
+   .. py:method:: from_atom_array(atom_array, header=None)
+      :classmethod:
+
+
+      Reshapes atom array to residue-indexed representation to
+      build a protein datum.
+
+
+
+   .. py:method:: apply_bonds(f)
+
+      Applies a function to calculate bond properties.
+
+      :param f: Function that calculates bond properties from atom coordinates
+
+      :returns: Array of bond measurements
+      :rtype: np.ndarray
+
+
+
+   .. py:method:: apply_angles(f)
+
+      Applies a function to calculate angle properties.
+
+      :param f: Function that calculates angle properties from atom coordinates
+
+      :returns: Array of angle measurements
+      :rtype: np.ndarray
+
+
+
+   .. py:method:: apply_dihedrals(f)
+
+      Applies a function to calculate dihedral angle properties.
+
+      :param f: Function that calculates dihedral properties from atom coordinates
+
+      :returns: Array of dihedral angle measurements
+      :rtype: np.ndarray
+
+
+
+   .. py:method:: apply(f)
+
+      Applies a function to all numpy-convertible attributes of the protein datum.
+
+      This is useful for batch processing of attributes, such as moving data between devices,
+      converting data types, or applying transformations.
+
+      :param f: Function to apply to each attribute with a numpy() method
+
+
+
+   .. py:method:: to_pdb_str()
+
+
+   .. py:method:: plot(view=None, viewer=None, sphere=False, ribbon=True, sidechain=True, color='spectrum', colors=None)
+
+
+   .. py:method:: to_atom_array()
+
+
+   .. py:method:: align_to(other)
+
+      Aligns the current protein datum to another protein datum based on CA atoms.
+
+      This method performs a structural alignment between two protein structures
+      using only their alpha carbon atoms. It computes the optimal rotation and
+      translation to minimize RMSD between aligned atoms.
+
+      :param other: Target ProteinDatum to align to
+      :param window: Optional tuple of (start, end) to restrict alignment to a specific region
+
+      :returns: A new protein datum with aligned coordinates
+      :rtype: ProteinDatum
+
+
+
+   .. py:method:: to_tensor_cloud()
+
+
+   .. py:method:: from_tensor_cloud(tensorcloud)
+      :classmethod:
+
+
+

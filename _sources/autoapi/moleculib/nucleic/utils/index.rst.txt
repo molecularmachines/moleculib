@@ -1,0 +1,40 @@
+moleculib.nucleic.utils
+=======================
+
+.. py:module:: moleculib.nucleic.utils
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.nucleic.utils.home_dir
+   moleculib.nucleic.utils.config
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.nucleic.utils.pdb_to_atom_array
+   moleculib.nucleic.utils.pids_file_to_list
+   moleculib.nucleic.utils.pad_array
+
+
+Module Contents
+---------------
+
+.. py:data:: home_dir
+   :value: ''
+
+
+.. py:data:: config
+
+.. py:function:: pdb_to_atom_array(pdb_path)
+
+.. py:function:: pids_file_to_list(pids_path)
+
+.. py:function:: pad_array(array, total_size)
+

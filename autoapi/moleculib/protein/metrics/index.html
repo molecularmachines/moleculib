@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.protein.metrics</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.protein.metrics">
+<span id="moleculib-protein-metrics"></span><h1>moleculib.protein.metrics<a class="headerlink" href="#module-moleculib.protein.metrics" title="Link to this heading">¶</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.ProteinMetric" title="moleculib.protein.metrics.ProteinMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinMetric</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.AlignedRootMeanSquareDeviation" title="moleculib.protein.metrics.AlignedRootMeanSquareDeviation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AlignedRootMeanSquareDeviation</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.CountClashes" title="moleculib.protein.metrics.CountClashes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CountClashes</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.ChemicalDeviationMetric" title="moleculib.protein.metrics.ChemicalDeviationMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalDeviationMetric</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.StandardBondDeviation" title="moleculib.protein.metrics.StandardBondDeviation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StandardBondDeviation</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.StandardAngleDeviation" title="moleculib.protein.metrics.StandardAngleDeviation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StandardAngleDeviation</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.StandardDihedralDeviation" title="moleculib.protein.metrics.StandardDihedralDeviation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StandardDihedralDeviation</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.StandardChemicalDeviation" title="moleculib.protein.metrics.StandardChemicalDeviation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StandardChemicalDeviation</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.safe_norm" title="moleculib.protein.metrics.safe_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">safe_norm</span></code></a>(→ jax.numpy.ndarray)</p></td>
+<td><p>safe_norm(x) = norm(x) if norm(x) != 0 else 1.0</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.norm" title="moleculib.protein.metrics.norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.normalize" title="moleculib.protein.metrics.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.measure_bonds" title="moleculib.protein.metrics.measure_bonds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">measure_bonds</span></code></a>(coord, idx)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.metrics.measure_angles" title="moleculib.protein.metrics.measure_angles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">measure_angles</span></code></a>(coords, idx)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.metrics.measure_dihedrals" title="moleculib.protein.metrics.measure_dihedrals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">measure_dihedrals</span></code></a>(coords, indices)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.safe_norm">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">safe_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">jax.numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">jax.numpy.ndarray</span></span></span><a class="headerlink" href="#moleculib.protein.metrics.safe_norm" title="Link to this definition">¶</a></dt>
+<dd><p>safe_norm(x) = norm(x) if norm(x) != 0 else 1.0</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ProteinMetric">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">ProteinMetric</span></span><a class="headerlink" href="#moleculib.protein.metrics.ProteinMetric" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.AlignedRootMeanSquareDeviation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">AlignedRootMeanSquareDeviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.AlignedRootMeanSquareDeviation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ProteinMetric" title="moleculib.protein.metrics.ProteinMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinMetric</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.CountClashes">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">CountClashes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radius_multiplier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.CountClashes" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ProteinMetric" title="moleculib.protein.metrics.ProteinMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinMetric</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.CountClashes.radius_multiplier">
+<span class="sig-name descname"><span class="pre">radius_multiplier</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.8</span></em><a class="headerlink" href="#moleculib.protein.metrics.CountClashes.radius_multiplier" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.CountClashes.smooth">
+<span class="sig-name descname"><span class="pre">smooth</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.protein.metrics.CountClashes.smooth" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.norm">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#moleculib.protein.metrics.norm" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.normalize">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#moleculib.protein.metrics.normalize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.measure_bonds">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">measure_bonds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coord</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.measure_bonds" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.measure_angles">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">measure_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.measure_angles" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.measure_dihedrals">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">measure_dihedrals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.measure_dihedrals" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ChemicalDeviationMetric">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">ChemicalDeviationMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactive_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.ChemicalDeviationMetric" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ProteinMetric" title="moleculib.protein.metrics.ProteinMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinMetric</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ChemicalDeviationMetric.key">
+<span class="sig-name descname"><span class="pre">key</span></span><a class="headerlink" href="#moleculib.protein.metrics.ChemicalDeviationMetric.key" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ChemicalDeviationMetric.measure">
+<span class="sig-name descname"><span class="pre">measure</span></span><a class="headerlink" href="#moleculib.protein.metrics.ChemicalDeviationMetric.measure" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ChemicalDeviationMetric.var_clip">
+<span class="sig-name descname"><span class="pre">var_clip</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#moleculib.protein.metrics.ChemicalDeviationMetric.var_clip" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.ChemicalDeviationMetric.num_interactive_atoms">
+<span class="sig-name descname"><span class="pre">num_interactive_atoms</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#moleculib.protein.metrics.ChemicalDeviationMetric.num_interactive_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardBondDeviation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">StandardBondDeviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardBondDeviation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ChemicalDeviationMetric" title="moleculib.protein.metrics.ChemicalDeviationMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalDeviationMetric</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardAngleDeviation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">StandardAngleDeviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardAngleDeviation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ChemicalDeviationMetric" title="moleculib.protein.metrics.ChemicalDeviationMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalDeviationMetric</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardDihedralDeviation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">StandardDihedralDeviation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.metrics.StandardDihedralDeviation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ChemicalDeviationMetric" title="moleculib.protein.metrics.ChemicalDeviationMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChemicalDeviationMetric</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.metrics.</span></span><span class="sig-name descname"><span class="pre">StandardChemicalDeviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.metrics.ProteinMetric" title="moleculib.protein.metrics.ProteinMetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinMetric</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation.describe_chemistry">
+<span class="sig-name descname"><span class="pre">describe_chemistry</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation.describe_chemistry" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation.count_clashes">
+<span class="sig-name descname"><span class="pre">count_clashes</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation.count_clashes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation.bond_deviation">
+<span class="sig-name descname"><span class="pre">bond_deviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation.bond_deviation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation.angle_deviation">
+<span class="sig-name descname"><span class="pre">angle_deviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation.angle_deviation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.metrics.StandardChemicalDeviation.dihedral_deviation">
+<span class="sig-name descname"><span class="pre">dihedral_deviation</span></span><a class="headerlink" href="#moleculib.protein.metrics.StandardChemicalDeviation.dihedral_deviation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/protein/metrics/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

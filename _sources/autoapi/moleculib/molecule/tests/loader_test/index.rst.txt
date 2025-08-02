@@ -1,0 +1,25 @@
+moleculib.molecule.tests.loader_test
+====================================
+
+.. py:module:: moleculib.molecule.tests.loader_test
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.molecule.tests.loader_test.test_dataloader
+   moleculib.molecule.tests.loader_test.test_dataload_from_filesystem
+   moleculib.molecule.tests.loader_test.check_dataloader_batch_size
+
+
+Module Contents
+---------------
+
+.. py:function:: test_dataloader()
+
+.. py:function:: test_dataload_from_filesystem()
+
+.. py:function:: check_dataloader_batch_size(pids, bs)
+

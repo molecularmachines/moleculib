@@ -1,0 +1,22 @@
+moleculib.abstract.metrics
+==========================
+
+.. py:module:: moleculib.abstract.metrics
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.abstract.metrics.MetricsPipe
+
+
+Module Contents
+---------------
+
+.. py:class:: MetricsPipe(metrics_list: List[Callable])
+
+   .. py:attribute:: metrics_list
+
+

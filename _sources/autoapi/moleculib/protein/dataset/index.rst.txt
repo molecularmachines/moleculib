@@ -1,0 +1,265 @@
+moleculib.protein.dataset
+=========================
+
+.. py:module:: moleculib.protein.dataset
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.dataset.MAX_COMPLEX_SIZE
+   moleculib.protein.dataset.PDB_HEADER_FIELDS
+   moleculib.protein.dataset.CHAIN_COUNTER_FIELDS
+   moleculib.protein.dataset.PDB_METADATA_FIELDS
+   moleculib.protein.dataset.SAMPLE_PDBS
+   moleculib.protein.dataset.FAST_FOLDING_PROTEINS
+   moleculib.protein.dataset.TAUS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.dataset.PDBDataset
+   moleculib.protein.dataset.MonomerDataset
+   moleculib.protein.dataset.TinyPDBDataset
+   moleculib.protein.dataset.FrameDiffDataset
+   moleculib.protein.dataset.TinyPDBDataset
+   moleculib.protein.dataset.FoldingDiffDataset
+   moleculib.protein.dataset.FoldDataset
+   moleculib.protein.dataset.EnzymeCommissionDataset
+   moleculib.protein.dataset.GeneOntologyDataset
+   moleculib.protein.dataset.FuncDataset
+   moleculib.protein.dataset.ScaffoldsDataset
+   moleculib.protein.dataset.FastFoldingDataset
+   moleculib.protein.dataset.ShardedFastFoldingDataset
+
+
+Module Contents
+---------------
+
+.. py:data:: MAX_COMPLEX_SIZE
+   :value: 32
+
+
+.. py:data:: PDB_HEADER_FIELDS
+
+.. py:data:: CHAIN_COUNTER_FIELDS
+
+.. py:data:: PDB_METADATA_FIELDS
+
+.. py:data:: SAMPLE_PDBS
+   :value: ['1C5E', '1C9O', '1CKU', '1CSE', '7ZKR', '7ZYS', '8AJQ', '8AQL', '8DCH']
+
+
+.. py:class:: PDBDataset(base_path: str, transform: moleculib.protein.transform.ProteinTransform = None, attrs: Union[List[str], str] = 'all', metadata: pandas.DataFrame = None, max_resolution: float = None, min_sequence_length: int = None, max_sequence_length: int = None, frac: float = 1.0, preload: bool = False, preload_num_workers: int = 10, keep_ids: List[str] = None, filter_ids=None)
+
+   Holds ProteinDatum dataset with specified PDB IDs
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   pdb_ids : List[str]
+       list of all protein IDs that should be in the dataset
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+   attrs : Union[str, List[str]]
+       a partial list of protein attributes that should be in each protein
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: metadata
+      :value: None
+
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: filter_ids
+
+
+   .. py:method:: load_index(idx)
+
+
+   .. py:method:: parse(molecules)
+      :abstractmethod:
+
+
+
+   .. py:method:: build(pdb_ids: List[str] = None, save: bool = True, save_path: str = None, max_workers: int = 1, format: str = 'mmtf', **kwargs)
+      :classmethod:
+
+
+      Builds dataset from scratch given specified pdb_ids, prepares
+      data and metadata for later use.
+
+
+
+.. py:class:: MonomerDataset(base_path: str, metadata: pandas.DataFrame = None, single_chain: bool = True, **kwargs)
+
+   Bases: :py:obj:`PDBDataset`
+
+
+   Holds ProteinDatum dataset with specified PDB IDs
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   pdb_ids : List[str]
+       list of all protein IDs that should be in the dataset
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+   attrs : Union[str, List[str]]
+       a partial list of protein attributes that should be in each protein
+
+
+   .. py:attribute:: splits
+
+
+   .. py:method:: parse(header, datum)
+
+
+.. py:class:: TinyPDBDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: FrameDiffDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: TinyPDBDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: FoldingDiffDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: FoldDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: EnzymeCommissionDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: GeneOntologyDataset(base_path, transform: List[Callable] = None, level='mf', shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: FuncDataset(base_path, transform: List[Callable] = None, shuffle=True)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:class:: ScaffoldsDataset(base_path, transform: List[Callable] = None, shuffle=True, val_split=0.0)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+.. py:data:: FAST_FOLDING_PROTEINS
+
+.. py:class:: FastFoldingDataset(base='/mas/projects/molecularmachines/db/FastFoldingProteins/memmap/', proteins=None, tau=0, shuffle=True, stride=1, preload=False, epoch_size=10000, padded=True, num_folders=1)
+
+   .. py:attribute:: base_path
+      :value: '/mas/projects/molecularmachines/db/FastFoldingProteins/memmap/'
+
+
+
+   .. py:attribute:: proteins
+      :value: None
+
+
+
+   .. py:attribute:: tau
+      :value: 0
+
+
+
+   .. py:attribute:: time_sort
+      :value: True
+
+
+
+   .. py:attribute:: stride
+      :value: 1
+
+
+
+   .. py:attribute:: epoch_size
+
+
+   .. py:attribute:: num_folders
+      :value: 1
+
+
+
+   .. py:attribute:: atom_arrays
+
+
+   .. py:attribute:: splits
+
+
+   .. py:method:: describe()
+
+
+.. py:data:: TAUS
+   :value: [0, 1, 2, 4, 8, 16]
+
+
+.. py:class:: ShardedFastFoldingDataset(base='/mas/projects/molecularmachines/db/FastFoldingProteins/web/', proteins=None, tau=0, padded=True, batch_size=1)
+
+   .. py:attribute:: base_path
+      :value: '/mas/projects/molecularmachines/db/FastFoldingProteins/web/'
+
+
+
+   .. py:attribute:: proteins
+      :value: None
+
+
+
+   .. py:attribute:: tau
+      :value: 0
+
+
+
+   .. py:attribute:: time_sort
+      :value: True
+
+
+
+   .. py:attribute:: num_shards
+
+
+   .. py:attribute:: batch_size
+      :value: 1
+
+
+
+   .. py:attribute:: atom_arrays
+
+
+   .. py:attribute:: web_ds
+
+
+   .. py:attribute:: splits
+
+

@@ -1,0 +1,37 @@
+moleculib.assembly.metrics
+==========================
+
+.. py:module:: moleculib.assembly.metrics
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.assembly.metrics.AssemblyMetric
+   moleculib.assembly.metrics.ApplyMetricsToProtein
+
+
+Module Contents
+---------------
+
+.. py:class:: AssemblyMetric
+
+   .. py:method:: transform(datum: moleculib.assembly.datum.AssemblyDatum) -> moleculib.assembly.datum.AssemblyDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new ProteinDatum
+
+
+
+.. py:class:: ApplyMetricsToProtein(protein_metrics: List[moleculib.protein.metrics.ProteinMetric])
+
+   Bases: :py:obj:`AssemblyMetric`
+
+
+   .. py:attribute:: protein_metrics
+
+

@@ -1,0 +1,94 @@
+moleculib.nucleic.alphabet
+==========================
+
+.. py:module:: moleculib.nucleic.alphabet
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.nucleic.alphabet.MAX_RES_ATOMS
+   moleculib.nucleic.alphabet.base_atoms_per_nuc
+   moleculib.nucleic.alphabet.backbone_atoms_DNA
+   moleculib.nucleic.alphabet.backbone_atoms_RNA
+   moleculib.nucleic.alphabet.special_tokens
+   moleculib.nucleic.alphabet.atoms_per_nuc
+   moleculib.nucleic.alphabet.MAX_DNA_ATOMS
+   moleculib.nucleic.alphabet.all_atoms
+   moleculib.nucleic.alphabet.all_atoms
+   moleculib.nucleic.alphabet.all_atoms_tokens
+   moleculib.nucleic.alphabet.elements
+   moleculib.nucleic.alphabet.all_atoms_elements
+   moleculib.nucleic.alphabet.all_nucs
+   moleculib.nucleic.alphabet.all_nucs
+   moleculib.nucleic.alphabet.all_nucs_tokens
+   moleculib.nucleic.alphabet.all_nucs_atom_mask
+   moleculib.nucleic.alphabet.all_nucs_atom_tokens
+   moleculib.nucleic.alphabet.atom_to_nucs_index
+   moleculib.nucleic.alphabet.atom_to_nucs_mask
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.nucleic.alphabet.atom_index
+   moleculib.nucleic.alphabet.get_nucleotide_index
+
+
+Module Contents
+---------------
+
+.. py:data:: MAX_RES_ATOMS
+   :value: 14
+
+
+.. py:data:: base_atoms_per_nuc
+
+.. py:data:: backbone_atoms_DNA
+   :value: ['P', 'OP1', 'OP2', 'OP3', "C1'", "C2'", "C3'", "C4'", "C5'", "O3'", "O4'", "O5'"]
+
+
+.. py:data:: backbone_atoms_RNA
+   :value: ['P', 'OP1', 'OP2', 'OP3', "C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"]
+
+
+.. py:data:: special_tokens
+   :value: ['PAD', 'UNK']
+
+
+.. py:data:: atoms_per_nuc
+
+.. py:data:: MAX_DNA_ATOMS
+
+.. py:data:: all_atoms
+
+.. py:data:: all_atoms
+
+.. py:data:: all_atoms_tokens
+
+.. py:data:: elements
+
+.. py:data:: all_atoms_elements
+
+.. py:data:: all_nucs
+
+.. py:data:: all_nucs
+
+.. py:data:: all_nucs_tokens
+
+.. py:data:: all_nucs_atom_mask
+
+.. py:data:: all_nucs_atom_tokens
+
+.. py:function:: atom_index(atom: str) -> int
+
+.. py:function:: get_nucleotide_index(nucleotide: str) -> int
+
+.. py:data:: atom_to_nucs_index
+
+.. py:data:: atom_to_nucs_mask
+

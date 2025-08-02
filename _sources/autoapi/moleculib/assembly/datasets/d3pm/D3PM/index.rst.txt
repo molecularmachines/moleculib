@@ -1,0 +1,39 @@
+moleculib.assembly.datasets.d3pm.D3PM
+=====================================
+
+.. py:module:: moleculib.assembly.datasets.d3pm.D3PM
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.assembly.datasets.d3pm.D3PM.base_path
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.assembly.datasets.d3pm.D3PM.D3PM
+
+
+Module Contents
+---------------
+
+.. py:class:: D3PM(splits, transform: List[Callable] = None, shuffle=True, pre_transform=False)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+
+   .. py:method:: build()
+      :classmethod:
+
+
+
+.. py:data:: base_path
+   :value: './'
+
+

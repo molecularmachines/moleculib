@@ -1,0 +1,50 @@
+moleculib.loss.structure
+========================
+
+.. py:module:: moleculib.loss.structure
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.loss.structure.VectorMapLoss
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.loss.structure.safe_norm
+
+
+Module Contents
+---------------
+
+.. py:function:: safe_norm(vector: jax.Array, axis: int = -1) -> jax.Array
+
+   safe_norm(x) = norm(x) if norm(x) != 0 else 1.0
+
+
+.. py:class:: VectorMapLoss(max_radius: float = 25.0, max_error: float = 10.0, measure_fn: jax.Array = optax.huber_loss, norm_only=False)
+
+   .. py:attribute:: norm_only
+      :value: False
+
+
+
+   .. py:attribute:: max_radius
+      :value: 25.0
+
+
+
+   .. py:attribute:: max_error
+      :value: 10.0
+
+
+
+   .. py:attribute:: measure_fn
+
+

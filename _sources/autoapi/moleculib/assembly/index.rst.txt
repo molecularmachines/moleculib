@@ -1,0 +1,18 @@
+moleculib.assembly
+==================
+
+.. py:module:: moleculib.assembly
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/assembly/dataset/index
+   /autoapi/moleculib/assembly/datum/index
+   /autoapi/moleculib/assembly/metrics/index
+   /autoapi/moleculib/assembly/transform/index
+
+

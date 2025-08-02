@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.nucleic.alphabet</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.nucleic.alphabet">
+<span id="moleculib-nucleic-alphabet"></span><h1>moleculib.nucleic.alphabet<a class="headerlink" href="#module-moleculib.nucleic.alphabet" title="Link to this heading">¶</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.MAX_RES_ATOMS" title="moleculib.nucleic.alphabet.MAX_RES_ATOMS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_RES_ATOMS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.base_atoms_per_nuc" title="moleculib.nucleic.alphabet.base_atoms_per_nuc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_atoms_per_nuc</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.backbone_atoms_DNA" title="moleculib.nucleic.alphabet.backbone_atoms_DNA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backbone_atoms_DNA</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.backbone_atoms_RNA" title="moleculib.nucleic.alphabet.backbone_atoms_RNA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backbone_atoms_RNA</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.special_tokens" title="moleculib.nucleic.alphabet.special_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">special_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.atoms_per_nuc" title="moleculib.nucleic.alphabet.atoms_per_nuc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atoms_per_nuc</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.MAX_DNA_ATOMS" title="moleculib.nucleic.alphabet.MAX_DNA_ATOMS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_DNA_ATOMS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id0" title="moleculib.nucleic.alphabet.all_atoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="moleculib.nucleic.alphabet.all_atoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.all_atoms_tokens" title="moleculib.nucleic.alphabet.all_atoms_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.elements" title="moleculib.nucleic.alphabet.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.all_atoms_elements" title="moleculib.nucleic.alphabet.all_atoms_elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms_elements</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="moleculib.nucleic.alphabet.all_nucs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_nucs</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="moleculib.nucleic.alphabet.all_nucs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_nucs</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.all_nucs_tokens" title="moleculib.nucleic.alphabet.all_nucs_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_nucs_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.all_nucs_atom_mask" title="moleculib.nucleic.alphabet.all_nucs_atom_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_nucs_atom_mask</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.all_nucs_atom_tokens" title="moleculib.nucleic.alphabet.all_nucs_atom_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_nucs_atom_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.atom_to_nucs_index" title="moleculib.nucleic.alphabet.atom_to_nucs_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_to_nucs_index</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.atom_to_nucs_mask" title="moleculib.nucleic.alphabet.atom_to_nucs_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_to_nucs_mask</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.atom_index" title="moleculib.nucleic.alphabet.atom_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_index</span></code></a>(→ int)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.nucleic.alphabet.get_nucleotide_index" title="moleculib.nucleic.alphabet.get_nucleotide_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nucleotide_index</span></code></a>(→ int)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.MAX_RES_ATOMS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">MAX_RES_ATOMS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">14</span></em><a class="headerlink" href="#moleculib.nucleic.alphabet.MAX_RES_ATOMS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.base_atoms_per_nuc">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">base_atoms_per_nuc</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.base_atoms_per_nuc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.backbone_atoms_DNA">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">backbone_atoms_DNA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['P',</span> <span class="pre">'OP1',</span> <span class="pre">'OP2',</span> <span class="pre">'OP3',</span> <span class="pre">&quot;C1'&quot;,</span> <span class="pre">&quot;C2'&quot;,</span> <span class="pre">&quot;C3'&quot;,</span> <span class="pre">&quot;C4'&quot;,</span> <span class="pre">&quot;C5'&quot;,</span> <span class="pre">&quot;O3'&quot;,</span> <span class="pre">&quot;O4'&quot;,</span> <span class="pre">&quot;O5'&quot;]</span></em><a class="headerlink" href="#moleculib.nucleic.alphabet.backbone_atoms_DNA" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.backbone_atoms_RNA">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">backbone_atoms_RNA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['P',</span> <span class="pre">'OP1',</span> <span class="pre">'OP2',</span> <span class="pre">'OP3',</span> <span class="pre">&quot;C1'&quot;,</span> <span class="pre">&quot;C2'&quot;,</span> <span class="pre">&quot;C3'&quot;,</span> <span class="pre">&quot;C4'&quot;,</span> <span class="pre">&quot;C5'&quot;,</span> <span class="pre">&quot;O2'&quot;,</span> <span class="pre">&quot;O3'&quot;,</span> <span class="pre">&quot;O4'&quot;,</span> <span class="pre">&quot;O5'&quot;]</span></em><a class="headerlink" href="#moleculib.nucleic.alphabet.backbone_atoms_RNA" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.special_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">special_tokens</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['PAD',</span> <span class="pre">'UNK']</span></em><a class="headerlink" href="#moleculib.nucleic.alphabet.special_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.atoms_per_nuc">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">atoms_per_nuc</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.atoms_per_nuc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.MAX_DNA_ATOMS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">MAX_DNA_ATOMS</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.MAX_DNA_ATOMS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_atoms">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_atoms_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms_tokens</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_atoms_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.elements">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">elements</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.elements" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_atoms_elements">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms_elements</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_atoms_elements" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_nucs">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_nucs</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_nucs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_nucs</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_nucs_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_nucs_tokens</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_nucs_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_nucs_atom_mask">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_nucs_atom_mask</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_nucs_atom_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.all_nucs_atom_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_nucs_atom_tokens</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.all_nucs_atom_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.atom_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.atom_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.get_nucleotide_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">get_nucleotide_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nucleotide</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.get_nucleotide_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.atom_to_nucs_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_to_nucs_index</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.atom_to_nucs_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.nucleic.alphabet.atom_to_nucs_mask">
+<span class="sig-prename descclassname"><span class="pre">moleculib.nucleic.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_to_nucs_mask</span></span><a class="headerlink" href="#moleculib.nucleic.alphabet.atom_to_nucs_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/nucleic/alphabet/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

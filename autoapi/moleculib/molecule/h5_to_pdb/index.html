@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.molecule.h5_to_pdb</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.molecule.h5_to_pdb">
+<span id="moleculib-molecule-h5-to-pdb"></span><h1>moleculib.molecule.h5_to_pdb<a class="headerlink" href="#module-moleculib.molecule.h5_to_pdb" title="Link to this heading">¶</a></h1>
+<p>MISATO, a database for protein-ligand interactions
+Copyright (C) 2023</p>
+<blockquote>
+<div><p>Till Siebenmorgen  (<a class="reference external" href="mailto:till&#46;siebenmorgen&#37;&#52;&#48;helmholtz-munich&#46;de">till<span>&#46;</span>siebenmorgen<span>&#64;</span>helmholtz-munich<span>&#46;</span>de</a>)
+Sabrina Benassou   (<a class="reference external" href="mailto:s&#46;benassou&#37;&#52;&#48;fz-juelich&#46;de">s<span>&#46;</span>benassou<span>&#64;</span>fz-juelich<span>&#46;</span>de</a>)
+Filipe Menezes     (<a class="reference external" href="mailto:filipe&#46;menezes&#37;&#52;&#48;helmholtz-munich&#46;de">filipe<span>&#46;</span>menezes<span>&#64;</span>helmholtz-munich<span>&#46;</span>de</a>)
+Erinç Merdivan     (<a class="reference external" href="mailto:erinc&#46;merdivan&#37;&#52;&#48;helmholtz-munich&#46;de">erinc<span>&#46;</span>merdivan<span>&#64;</span>helmholtz-munich<span>&#46;</span>de</a>)</p>
+</div></blockquote>
+<p>This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.</p>
+<p>This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.</p>
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.atomic_numbers_Map" title="moleculib.molecule.h5_to_pdb.atomic_numbers_Map"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atomic_numbers_Map</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.parser" title="moleculib.molecule.h5_to_pdb.parser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parser</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.get_maps" title="moleculib.molecule.h5_to_pdb.get_maps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_maps</span></code></a>([mapdir])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.get_entries" title="moleculib.molecule.h5_to_pdb.get_entries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_entries</span></code></a>(struct, f, frame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.get_entries_QM" title="moleculib.molecule.h5_to_pdb.get_entries_QM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_entries_QM</span></code></a>(struct, f)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.get_atom_name" title="moleculib.molecule.h5_to_pdb.get_atom_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_atom_name</span></code></a>(i, atoms_number, residue_atom_index, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.update_residue_indices" title="moleculib.molecule.h5_to_pdb.update_residue_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_residue_indices</span></code></a>(residue_number, i, type_string, ...)</p></td>
+<td><p>If the atom sequence has O-N icnrease the residueNumber</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.insert_TERS" title="moleculib.molecule.h5_to_pdb.insert_TERS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">insert_TERS</span></code></a>(i, molecules_begin_atom_index, ...)</p></td>
+<td><p>We have to insert TERs for the endings of the molecule</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.create_pdb" title="moleculib.molecule.h5_to_pdb.create_pdb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_pdb</span></code></a>(trajectory_coordinates, atoms_type, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.create_pdb_lines_MD" title="moleculib.molecule.h5_to_pdb.create_pdb_lines_MD"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_pdb_lines_MD</span></code></a>(trajectory_coordinates, ...)</p></td>
+<td><p>We go through each atom line and bring the inputs in the pdb format</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.create_pdb_lines_QM" title="moleculib.molecule.h5_to_pdb.create_pdb_lines_QM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_pdb_lines_QM</span></code></a>(trajectory_coordinates, ...)</p></td>
+<td><p>We go through each atom line and bring the inputs in the pdb format</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.write_pdb" title="moleculib.molecule.h5_to_pdb.write_pdb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_pdb</span></code></a>(struct, specification, lines)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.molecule.h5_to_pdb.main" title="moleculib.molecule.h5_to_pdb.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>(args)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.atomic_numbers_Map">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">atomic_numbers_Map</span></span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.atomic_numbers_Map" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.get_maps">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">get_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mapdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/u/ilanm/moleculib/moleculib/molecule/Maps/'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.get_maps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.get_entries">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">get_entries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.get_entries" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.get_entries_QM">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">get_entries_QM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.get_entries_QM" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.get_atom_name">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">get_atom_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_atom_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nameMap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.get_atom_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.update_residue_indices">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">update_residue_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residue_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_residue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_atom_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_Map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeMap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.update_residue_indices" title="Link to this definition">¶</a></dt>
+<dd><p>If the atom sequence has O-N icnrease the residueNumber</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.insert_TERS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">insert_TERS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molecules_begin_atom_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_atom_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.insert_TERS" title="Link to this definition">¶</a></dt>
+<dd><p>We have to insert TERs for the endings of the molecule</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.create_pdb">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">create_pdb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory_coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_residue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molecules_begin_atom_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.create_pdb" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.create_pdb_lines_MD">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">create_pdb_lines_MD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory_coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_residue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molecules_begin_atom_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeMap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_Map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nameMap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.create_pdb_lines_MD" title="Link to this definition">¶</a></dt>
+<dd><p>We go through each atom line and bring the inputs in the pdb format</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.create_pdb_lines_QM">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">create_pdb_lines_QM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory_coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nameMap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.create_pdb_lines_QM" title="Link to this definition">¶</a></dt>
+<dd><p>We go through each atom line and bring the inputs in the pdb format</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.write_pdb">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">write_pdb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specification</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.write_pdb" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.main">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.main" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.molecule.h5_to_pdb.parser">
+<span class="sig-prename descclassname"><span class="pre">moleculib.molecule.h5_to_pdb.</span></span><span class="sig-name descname"><span class="pre">parser</span></span><a class="headerlink" href="#moleculib.molecule.h5_to_pdb.parser" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/molecule/h5_to_pdb/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

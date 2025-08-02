@@ -1,0 +1,22 @@
+moleculib.loss.label
+====================
+
+.. py:module:: moleculib.loss.label
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.loss.label.CrossEntropyLoss
+
+
+Module Contents
+---------------
+
+.. py:class:: CrossEntropyLoss
+
+   Bases: :py:obj:`LossFunction`
+
+

@@ -1,0 +1,100 @@
+moleculib.molecule.h5_to_pdb
+============================
+
+.. py:module:: moleculib.molecule.h5_to_pdb
+
+.. autoapi-nested-parse::
+
+   MISATO, a database for protein-ligand interactions
+   Copyright (C) 2023
+                       Till Siebenmorgen  (till.siebenmorgen@helmholtz-munich.de)
+                       Sabrina Benassou   (s.benassou@fz-juelich.de)
+                       Filipe Menezes     (filipe.menezes@helmholtz-munich.de)
+                       Erinç Merdivan     (erinc.merdivan@helmholtz-munich.de)
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.molecule.h5_to_pdb.atomic_numbers_Map
+   moleculib.molecule.h5_to_pdb.parser
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.molecule.h5_to_pdb.get_maps
+   moleculib.molecule.h5_to_pdb.get_entries
+   moleculib.molecule.h5_to_pdb.get_entries_QM
+   moleculib.molecule.h5_to_pdb.get_atom_name
+   moleculib.molecule.h5_to_pdb.update_residue_indices
+   moleculib.molecule.h5_to_pdb.insert_TERS
+   moleculib.molecule.h5_to_pdb.create_pdb
+   moleculib.molecule.h5_to_pdb.create_pdb_lines_MD
+   moleculib.molecule.h5_to_pdb.create_pdb_lines_QM
+   moleculib.molecule.h5_to_pdb.write_pdb
+   moleculib.molecule.h5_to_pdb.main
+
+
+Module Contents
+---------------
+
+.. py:data:: atomic_numbers_Map
+
+.. py:function:: get_maps(mapdir='/u/ilanm/moleculib/moleculib/molecule/Maps/')
+
+.. py:function:: get_entries(struct, f, frame)
+
+.. py:function:: get_entries_QM(struct, f)
+
+.. py:function:: get_atom_name(i, atoms_number, residue_atom_index, residue_name, type_string, nameMap)
+
+.. py:function:: update_residue_indices(residue_number, i, type_string, atoms_type, atoms_residue, residue_name, residue_atom_index, residue_Map, typeMap)
+
+   If the atom sequence has O-N icnrease the residueNumber
+
+
+.. py:function:: insert_TERS(i, molecules_begin_atom_index, residue_number, residue_atom_index, lines)
+
+   We have to insert TERs for the endings of the molecule
+
+
+.. py:function:: create_pdb(trajectory_coordinates, atoms_type, atoms_number, atoms_residue, molecules_begin_atom_index)
+
+.. py:function:: create_pdb_lines_MD(trajectory_coordinates, atoms_type, atoms_number, atoms_residue, molecules_begin_atom_index, typeMap, residue_Map, nameMap)
+
+   We go through each atom line and bring the inputs in the pdb format
+
+
+
+.. py:function:: create_pdb_lines_QM(trajectory_coordinates, atoms_number, nameMap)
+
+   We go through each atom line and bring the inputs in the pdb format
+
+
+
+.. py:function:: write_pdb(struct, specification, lines)
+
+.. py:function:: main(args)
+
+.. py:data:: parser
+

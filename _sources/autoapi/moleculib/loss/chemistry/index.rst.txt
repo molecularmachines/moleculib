@@ -1,0 +1,87 @@
+moleculib.loss.chemistry
+========================
+
+.. py:module:: moleculib.loss.chemistry
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.loss.chemistry.ChemicalViolationLoss
+   moleculib.loss.chemistry.BondLoss
+   moleculib.loss.chemistry.AngleLoss
+   moleculib.loss.chemistry.DihedralLoss
+   moleculib.loss.chemistry.ClashLoss
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.loss.chemistry.safe_norm
+   moleculib.loss.chemistry.safe_normalize
+
+
+Module Contents
+---------------
+
+.. py:function:: safe_norm(vector: jax.Array, axis: int = -1) -> jax.Array
+
+   safe_norm(x) = norm(x) if norm(x) != 0 else 1.0
+
+
+.. py:function:: safe_normalize(vector: jax.Array) -> jax.Array
+
+.. py:class:: ChemicalViolationLoss(weight=1.0, key=None, measure=None)
+
+   Bases: :py:obj:`learnax.loss.LossFunction`
+
+
+   .. py:attribute:: key
+      :value: None
+
+
+
+   .. py:attribute:: measure
+      :value: None
+
+
+
+.. py:class:: BondLoss(weight=1.0)
+
+   Bases: :py:obj:`ChemicalViolationLoss`
+
+
+   .. py:method:: measure_bonds(coords, indices)
+      :staticmethod:
+
+
+
+.. py:class:: AngleLoss(weight=1.0)
+
+   Bases: :py:obj:`ChemicalViolationLoss`
+
+
+   .. py:method:: measure_angles(coords, indices)
+      :staticmethod:
+
+
+
+.. py:class:: DihedralLoss(weight, start_step)
+
+   Bases: :py:obj:`ChemicalViolationLoss`
+
+
+   .. py:method:: measure_dihedrals(coords, indices)
+      :staticmethod:
+
+
+
+.. py:class:: ClashLoss
+
+   Bases: :py:obj:`learnax.loss.LossFunction`
+
+

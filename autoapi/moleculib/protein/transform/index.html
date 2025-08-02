@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.protein.transform</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.protein.transform">
+<span id="moleculib-protein-transform"></span><h1>moleculib.protein.transform<a class="headerlink" href="#module-moleculib.protein.transform" title="Link to this heading">¶</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.SSE_TOKENS" title="moleculib.protein.transform.SSE_TOKENS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SSE_TOKENS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.ProteinCrop" title="moleculib.protein.transform.ProteinCrop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinCrop</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.ProteinRescale" title="moleculib.protein.transform.ProteinRescale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinRescale</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.BackboneOnly" title="moleculib.protein.transform.BackboneOnly"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BackboneOnly</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.CaOnly" title="moleculib.protein.transform.CaOnly"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CaOnly</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.ProteinPad" title="moleculib.protein.transform.ProteinPad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinPad</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.ListBonds" title="moleculib.protein.transform.ListBonds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListBonds</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.ListAngles" title="moleculib.protein.transform.ListAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListAngles</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.ListDihedrals" title="moleculib.protein.transform.ListDihedrals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListDihedrals</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.DescribeChemistry" title="moleculib.protein.transform.DescribeChemistry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DescribeChemistry</span></code></a></p></td>
+<td><p>Augments ProteinDatum with bonds_list and angles_list a list of atomic indexes connected by bonds and angles</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.TokenizeSequenceBoundaries" title="moleculib.protein.transform.TokenizeSequenceBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TokenizeSequenceBoundaries</span></code></a></p></td>
+<td><p>Augments ProteinDatum with boundary_token and boundary_mask</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.MaybeMirror" title="moleculib.protein.transform.MaybeMirror"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaybeMirror</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.AnnotateSecondaryStructure" title="moleculib.protein.transform.AnnotateSecondaryStructure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnnotateSecondaryStructure</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.MaskResidues" title="moleculib.protein.transform.MaskResidues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaskResidues</span></code></a></p></td>
+<td><p>Abstract class for transformation of ProteinDatum datapoints</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.transform.normalize" title="moleculib.protein.transform.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span></code></a>(vector)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.transform.measure_chirality" title="moleculib.protein.transform.measure_chirality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">measure_chirality</span></code></a>(coords)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinTransform">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ProteinTransform</span></span><a class="headerlink" href="#moleculib.protein.transform.ProteinTransform" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract class for transformation of ProteinDatum datapoints</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinCrop">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ProteinCrop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.ProteinCrop" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinCrop.crop_size">
+<span class="sig-name descname"><span class="pre">crop_size</span></span><a class="headerlink" href="#moleculib.protein.transform.ProteinCrop.crop_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinRescale">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ProteinRescale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.ProteinRescale" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinRescale.factor">
+<span class="sig-name descname"><span class="pre">factor</span></span><a class="headerlink" href="#moleculib.protein.transform.ProteinRescale.factor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.BackboneOnly">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">BackboneOnly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.BackboneOnly" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.BackboneOnly.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.protein.transform.BackboneOnly.filter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.BackboneOnly.keep_seq">
+<span class="sig-name descname"><span class="pre">keep_seq</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.protein.transform.BackboneOnly.keep_seq" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.CaOnly">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">CaOnly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.CaOnly" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.CaOnly.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.protein.transform.CaOnly.filter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.CaOnly.keep_seq">
+<span class="sig-name descname"><span class="pre">keep_seq</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.protein.transform.CaOnly.keep_seq" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinPad">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ProteinPad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pad_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.ProteinPad" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinPad.pad_size">
+<span class="sig-name descname"><span class="pre">pad_size</span></span><a class="headerlink" href="#moleculib.protein.transform.ProteinPad.pad_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ProteinPad.random_position">
+<span class="sig-name descname"><span class="pre">random_position</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#moleculib.protein.transform.ProteinPad.random_position" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ListBonds">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ListBonds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peptide_bonds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.ListBonds" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ListBonds.peptide_bonds">
+<span class="sig-name descname"><span class="pre">peptide_bonds</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#moleculib.protein.transform.ListBonds.peptide_bonds" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ListAngles">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ListAngles</span></span><a class="headerlink" href="#moleculib.protein.transform.ListAngles" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.ListDihedrals">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">ListDihedrals</span></span><a class="headerlink" href="#moleculib.protein.transform.ListDihedrals" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.DescribeChemistry">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">DescribeChemistry</span></span><a class="headerlink" href="#moleculib.protein.transform.DescribeChemistry" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Augments ProteinDatum with bonds_list and angles_list a list of atomic indexes connected by bonds and angles
+that should have invariant behavior according to chemistry
+Note that indexing is performed at atom level, that is, as residue_dim atom_dim -&gt; (residue_dim atom_dim)</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.DescribeChemistry.bond_transform">
+<span class="sig-name descname"><span class="pre">bond_transform</span></span><a class="headerlink" href="#moleculib.protein.transform.DescribeChemistry.bond_transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.DescribeChemistry.angle_transform">
+<span class="sig-name descname"><span class="pre">angle_transform</span></span><a class="headerlink" href="#moleculib.protein.transform.DescribeChemistry.angle_transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.DescribeChemistry.dihedral_transform">
+<span class="sig-name descname"><span class="pre">dihedral_transform</span></span><a class="headerlink" href="#moleculib.protein.transform.DescribeChemistry.dihedral_transform" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.TokenizeSequenceBoundaries">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">TokenizeSequenceBoundaries</span></span><a class="headerlink" href="#moleculib.protein.transform.TokenizeSequenceBoundaries" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Augments ProteinDatum with boundary_token and boundary_mask</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.transform.normalize">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.normalize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.transform.measure_chirality">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">measure_chirality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.measure_chirality" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.MaybeMirror">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">MaybeMirror</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'left'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.MaybeMirror" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.MaybeMirror.hand">
+<span class="sig-name descname"><span class="pre">hand</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'left'</span></em><a class="headerlink" href="#moleculib.protein.transform.MaybeMirror.hand" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.transform.SSE_TOKENS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">SSE_TOKENS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['',</span> <span class="pre">'c',</span> <span class="pre">'a',</span> <span class="pre">'b']</span></em><a class="headerlink" href="#moleculib.protein.transform.SSE_TOKENS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.AnnotateSecondaryStructure">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">AnnotateSecondaryStructure</span></span><a class="headerlink" href="#moleculib.protein.transform.AnnotateSecondaryStructure" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.transform.MaskResidues">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.transform.</span></span><span class="sig-name descname"><span class="pre">MaskResidues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contiguous</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.transform.MaskResidues" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#moleculib.protein.transform.ProteinTransform" title="moleculib.protein.transform.ProteinTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinTransform</span></code></a></p>
+<p>Abstract class for transformation of ProteinDatum datapoints</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.MaskResidues.mask_ratio">
+<span class="sig-name descname"><span class="pre">mask_ratio</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#moleculib.protein.transform.MaskResidues.mask_ratio" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.transform.MaskResidues.contiguous">
+<span class="sig-name descname"><span class="pre">contiguous</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#moleculib.protein.transform.MaskResidues.contiguous" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/protein/transform/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,165 @@
+moleculib.protein.alphabet
+==========================
+
+.. py:module:: moleculib.protein.alphabet
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.alphabet.van_der_walls_radii
+   moleculib.protein.alphabet.sidechain_atoms_per_residue
+   moleculib.protein.alphabet.sidechain_chemistry_per_residue
+   moleculib.protein.alphabet.backbone_atoms
+   moleculib.protein.alphabet.backbone_chemistry
+   moleculib.protein.alphabet.special_tokens
+   moleculib.protein.alphabet.atoms_per_residue
+   moleculib.protein.alphabet.all_atoms
+   moleculib.protein.alphabet.all_atoms
+   moleculib.protein.alphabet.all_atoms_tokens
+   moleculib.protein.alphabet.elements
+   moleculib.protein.alphabet.all_atoms_elements
+   moleculib.protein.alphabet.all_atoms_radii
+   moleculib.protein.alphabet.all_residues
+   moleculib.protein.alphabet.all_residues
+   moleculib.protein.alphabet.all_residues_tokens
+   moleculib.protein.alphabet.all_residues_atom_mask
+   moleculib.protein.alphabet.all_residues_atom_tokens
+   moleculib.protein.alphabet.bond_lens_arr
+   moleculib.protein.alphabet.max_arr_size
+   moleculib.protein.alphabet.bond_lens_arr
+   moleculib.protein.alphabet.UNK_TOKEN
+   moleculib.protein.alphabet.atom_to_residues_index
+   moleculib.protein.alphabet.atom_to_residues_mask
+   moleculib.protein.alphabet.HELIX_BACKBONE
+   moleculib.protein.alphabet.BETA_BACKBONE
+   moleculib.protein.alphabet.HELIX_ROTAMERS
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.protein.alphabet.geometry_to_per_residue_indexing_array
+   moleculib.protein.alphabet.atom_index
+   moleculib.protein.alphabet.get_residue_index
+
+
+Module Contents
+---------------
+
+.. py:data:: van_der_walls_radii
+
+.. py:data:: sidechain_atoms_per_residue
+
+.. py:data:: sidechain_chemistry_per_residue
+
+.. py:data:: backbone_atoms
+   :value: ['N', 'CA', 'C', 'O']
+
+
+.. py:data:: backbone_chemistry
+
+.. py:data:: special_tokens
+   :value: ['PAD', 'MASK', 'UNK']
+
+
+.. py:data:: atoms_per_residue
+
+.. py:data:: all_atoms
+
+.. py:data:: all_atoms
+
+.. py:data:: all_atoms_tokens
+
+.. py:data:: elements
+
+.. py:data:: all_atoms_elements
+
+.. py:data:: all_atoms_radii
+
+.. py:data:: all_residues
+
+.. py:data:: all_residues
+
+.. py:data:: all_residues_tokens
+
+.. py:data:: all_residues_atom_mask
+
+.. py:data:: all_residues_atom_tokens
+
+.. py:function:: geometry_to_per_residue_indexing_array(property='bonds')
+
+.. py:data:: bond_lens_arr
+
+.. py:data:: max_arr_size
+
+.. py:data:: bond_lens_arr
+
+.. py:data:: UNK_TOKEN
+
+.. py:function:: atom_index(atom: str) -> int
+
+.. py:function:: get_residue_index(residue: str) -> int
+
+.. py:data:: atom_to_residues_index
+
+.. py:data:: atom_to_residues_mask
+
+.. py:data:: HELIX_BACKBONE
+   :value: Multiline-String
+
+   .. raw:: html
+
+      <details><summary>Show Value</summary>
+
+   .. code-block:: python
+
+      """
+      ATOM      1  N   GLY A   1      -5.606  -2.251 -12.878  1.00  0.00           N
+      ATOM      2  CA  GLY A   1      -5.850  -1.194 -13.852  1.00  0.00           C
+      ATOM      3  C   GLY A   1      -5.186  -1.524 -15.184  1.00  0.00           C
+      ATOM      4  O   GLY A   1      -5.744  -1.260 -16.249  1.00  0.00           O
+      ATOM      6  N   GLY A   2      -3.991  -2.102 -15.115  1.00  0.00           N
+      ATOM      7  CA  GLY A   2      -3.262  -2.499 -16.313  1.00  0.00           C
+      ATOM      8  C   GLY A   2      -3.961  -3.660 -17.011  1.00  0.00           C
+      ATOM      9  O   GLY A   2      -4.016  -3.716 -18.240  1.00  0.00           O
+      """
+
+   .. raw:: html
+
+      </details>
+
+
+
+.. py:data:: BETA_BACKBONE
+   :value: Multiline-String
+
+   .. raw:: html
+
+      <details><summary>Show Value</summary>
+
+   .. code-block:: python
+
+      """
+      ATOM      1  N   GLY A   1      27.961   0.504   1.988  1.00  0.00           N
+      ATOM      2  CA  GLY A   1      29.153   0.205   2.773  1.00  0.00           C
+      ATOM      3  C   GLY A   1      30.420   0.562   2.003  1.00  0.00           C
+      ATOM      4  O   GLY A   1      30.753  -0.077   1.005  1.00  0.00           O
+      ATOM      6  N   GLY A   2      31.123   1.587   2.474  1.00  0.00           N
+      ATOM      7  CA  GLY A   2      32.355   2.031   1.832  1.00  0.00           C
+      ATOM      8  C   GLY A   2      33.552   1.851   2.758  1.00  0.00           C
+      ATOM      9  O   GLY A   2      33.675   2.539   3.772  1.00  0.00           O
+      """
+
+   .. raw:: html
+
+      </details>
+
+
+
+.. py:data:: HELIX_ROTAMERS
+

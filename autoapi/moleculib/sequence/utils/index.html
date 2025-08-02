@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.sequence.utils</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.sequence.utils">
+<span id="moleculib-sequence-utils"></span><h1>moleculib.sequence.utils<a class="headerlink" href="#module-moleculib.sequence.utils" title="Link to this heading">¶</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.sequence.utils.alphabet" title="moleculib.sequence.utils.alphabet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alphabet</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.sequence.utils.onehot_encode_datum" title="moleculib.sequence.utils.onehot_encode_datum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">onehot_encode_datum</span></code></a>(sequencedatum)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.sequence.utils.decode_one_hot" title="moleculib.sequence.utils.decode_one_hot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_one_hot</span></code></a>(x)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.sequence.utils.residue_tokens_to_sequence" title="moleculib.sequence.utils.residue_tokens_to_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">residue_tokens_to_sequence</span></code></a>(sequencedatum)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.sequence.utils.load_fasta_file" title="moleculib.sequence.utils.load_fasta_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_fasta_file</span></code></a>(→ List[Tuple[str]])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.sequence.utils.save_fasta_file" title="moleculib.sequence.utils.save_fasta_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_fasta_file</span></code></a>(sequences, names, save_path)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.sequence.utils.one_hot_encode_seq" title="moleculib.sequence.utils.one_hot_encode_seq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">one_hot_encode_seq</span></code></a>(protein_seq[, max_length])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.alphabet">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">alphabet</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['A',</span> <span class="pre">'C',</span> <span class="pre">'D',</span> <span class="pre">'E',</span> <span class="pre">'F',</span> <span class="pre">'G',</span> <span class="pre">'H',</span> <span class="pre">'I',</span> <span class="pre">'K',</span> <span class="pre">'L',</span> <span class="pre">'M',</span> <span class="pre">'N',</span> <span class="pre">'P',</span> <span class="pre">'Q',</span> <span class="pre">'R',</span> <span class="pre">'S',</span> <span class="pre">'T',</span> <span class="pre">'V',</span> <span class="pre">'W',</span> <span class="pre">'Y',</span> <span class="pre">'X']</span></em><a class="headerlink" href="#moleculib.sequence.utils.alphabet" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.onehot_encode_datum">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">onehot_encode_datum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequencedatum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.sequence.datum.SeqDatum" title="moleculib.sequence.datum.SeqDatum"><span class="pre">SeqDatum</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.sequence.utils.onehot_encode_datum" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.decode_one_hot">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">decode_one_hot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.sequence.utils.decode_one_hot" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.residue_tokens_to_sequence">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">residue_tokens_to_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequencedatum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../datum/index.html#moleculib.sequence.datum.SeqDatum" title="moleculib.sequence.datum.SeqDatum"><span class="pre">SeqDatum</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.sequence.utils.residue_tokens_to_sequence" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.load_fasta_file">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">load_fasta_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#moleculib.sequence.utils.load_fasta_file" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.save_fasta_file">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">save_fasta_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequences</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.sequence.utils.save_fasta_file" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.sequence.utils.one_hot_encode_seq">
+<span class="sig-prename descclassname"><span class="pre">moleculib.sequence.utils.</span></span><span class="sig-name descname"><span class="pre">one_hot_encode_seq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">protein_seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.sequence.utils.one_hot_encode_seq" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/sequence/utils/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

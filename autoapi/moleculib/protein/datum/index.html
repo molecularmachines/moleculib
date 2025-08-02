@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.protein.datum</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.protein.datum">
+<span id="moleculib-protein-datum"></span><h1>moleculib.protein.datum<a class="headerlink" href="#module-moleculib.protein.datum" title="Link to this heading">¶</a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.datum.ProteinSequence" title="moleculib.protein.datum.ProteinSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinSequence</span></code></a></p></td>
+<td><p>A class representing a protein sequence with tokenized residues and associated metadata.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProteinDatum</span></code></a></p></td>
+<td><p>A comprehensive representation of protein structure data.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.datum.</span></span><span class="sig-name descname"><span class="pre">ProteinSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idcode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">biotite.sequence.ProteinSequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residue_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain_token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence" title="Link to this definition">¶</a></dt>
+<dd><p>A class representing a protein sequence with tokenized residues and associated metadata.</p>
+<p>This class provides a container for protein sequence information including residue tokens,
+indexes, masks, and chain assignments. It serves as a lightweight representation of
+protein sequence data that can be used for sequence-based analysis.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.idcode">
+<span class="sig-name descname"><span class="pre">idcode</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.idcode" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.sequence">
+<span class="sig-name descname"><span class="pre">sequence</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.sequence" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.residue_token">
+<span class="sig-name descname"><span class="pre">residue_token</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.residue_token" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.residue_index">
+<span class="sig-name descname"><span class="pre">residue_index</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.residue_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.residue_mask">
+<span class="sig-name descname"><span class="pre">residue_mask</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.residue_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinSequence.chain_token">
+<span class="sig-name descname"><span class="pre">chain_token</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinSequence.chain_token" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">moleculib.protein.datum.</span></span><span class="sig-name descname"><span class="pre">ProteinDatum</span></span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum" title="Link to this definition">¶</a></dt>
+<dd><p>A comprehensive representation of protein structure data.</p>
+<p>This class organizes protein structural data in a residue-centric format,
+storing both sequence and atomic-level information. It provides methods for
+manipulation, visualization, and conversion between different protein structure
+representations. The data is organized as arrays with shapes that facilitate
+machine learning applications.</p>
+<p>The primary organization is:
+- Residue-level arrays: [num_residues]
+- Atom-level arrays: [num_residues, max_atoms_per_residue, …]</p>
+<p>Attributes are categorized into sequence information, residue properties,
+atomic coordinates, and molecular geometry.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.idcode">
+<span class="sig-name descname"><span class="pre">idcode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.idcode" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.resolution">
+<span class="sig-name descname"><span class="pre">resolution</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.resolution" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.sequence">
+<span class="sig-name descname"><span class="pre">sequence</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">biotite.sequence.ProteinSequence</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.sequence" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.residue_token">
+<span class="sig-name descname"><span class="pre">residue_token</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.residue_token" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.residue_index">
+<span class="sig-name descname"><span class="pre">residue_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.residue_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.residue_mask">
+<span class="sig-name descname"><span class="pre">residue_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.residue_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.chain_token">
+<span class="sig-name descname"><span class="pre">chain_token</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.chain_token" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.atom_token">
+<span class="sig-name descname"><span class="pre">atom_token</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.atom_token" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.atom_coord">
+<span class="sig-name descname"><span class="pre">atom_coord</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.atom_coord" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.atom_mask">
+<span class="sig-name descname"><span class="pre">atom_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.atom_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.atom_element">
+<span class="sig-name descname"><span class="pre">atom_element</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.atom_element" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.atom_radius">
+<span class="sig-name descname"><span class="pre">atom_radius</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.atom_radius" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.bonds_list">
+<span class="sig-name descname"><span class="pre">bonds_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.bonds_list" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.bonds_mask">
+<span class="sig-name descname"><span class="pre">bonds_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.bonds_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.angles_list">
+<span class="sig-name descname"><span class="pre">angles_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.angles_list" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.angles_mask">
+<span class="sig-name descname"><span class="pre">angles_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.angles_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.dihedrals_list">
+<span class="sig-name descname"><span class="pre">dihedrals_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.dihedrals_list" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.dihedrals_mask">
+<span class="sig-name descname"><span class="pre">dihedrals_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.dihedrals_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.separate_chains">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">separate_chains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datum</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.separate_chains" title="Link to this definition">¶</a></dt>
+<dd><p>Splits a multi-chain protein datum into a list of single-chain protein data.</p>
+<p>This method identifies unique chains in the protein structure and creates
+separate ProteinDatum objects for each chain, preserving all relevant
+attributes while subsetting the arrays to include only data for that chain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>datum</strong> – The ProteinDatum object containing multiple chains</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of ProteinDatum objects, one for each chain</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.empty">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">empty</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.empty" title="Link to this definition">¶</a></dt>
+<dd><p>Creates an empty ProteinDatum object with zero-sized arrays.</p>
+<p>This is useful when handling edge cases, errors, or as a placeholder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An empty protein datum with empty arrays</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum">ProteinDatum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.replace">
+<span class="sig-name descname"><span class="pre">replace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.replace" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new ProteinDatum with specific attributes replaced.</p>
+<p>This method creates a copy of the current datum and updates
+specific attributes with new values provided in kwargs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Key-value pairs of attributes to update</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new ProteinDatum with updated attributes</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum">ProteinDatum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.from_filepath">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_filepath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idcode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.from_filepath" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.fetch_pdb_id">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fetch_pdb_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdb'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.fetch_pdb_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.set" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.get_sequence">
+<span class="sig-name descname"><span class="pre">get_sequence</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.get_sequence" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.from_atom_array">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_atom_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.from_atom_array" title="Link to this definition">¶</a></dt>
+<dd><p>Reshapes atom array to residue-indexed representation to
+build a protein datum.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.apply_bonds">
+<span class="sig-name descname"><span class="pre">apply_bonds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.apply_bonds" title="Link to this definition">¶</a></dt>
+<dd><p>Applies a function to calculate bond properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – Function that calculates bond properties from atom coordinates</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of bond measurements</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.apply_angles">
+<span class="sig-name descname"><span class="pre">apply_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.apply_angles" title="Link to this definition">¶</a></dt>
+<dd><p>Applies a function to calculate angle properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – Function that calculates angle properties from atom coordinates</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of angle measurements</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.apply_dihedrals">
+<span class="sig-name descname"><span class="pre">apply_dihedrals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.apply_dihedrals" title="Link to this definition">¶</a></dt>
+<dd><p>Applies a function to calculate dihedral angle properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – Function that calculates dihedral properties from atom coordinates</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of dihedral angle measurements</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.apply" title="Link to this definition">¶</a></dt>
+<dd><p>Applies a function to all numpy-convertible attributes of the protein datum.</p>
+<p>This is useful for batch processing of attributes, such as moving data between devices,
+converting data types, or applying transformations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – Function to apply to each attribute with a numpy() method</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.to_pdb_str">
+<span class="sig-name descname"><span class="pre">to_pdb_str</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.to_pdb_str" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sphere</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ribbon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sidechain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'spectrum'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.plot" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.to_atom_array">
+<span class="sig-name descname"><span class="pre">to_atom_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.to_atom_array" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.align_to">
+<span class="sig-name descname"><span class="pre">align_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.align_to" title="Link to this definition">¶</a></dt>
+<dd><p>Aligns the current protein datum to another protein datum based on CA atoms.</p>
+<p>This method performs a structural alignment between two protein structures
+using only their alpha carbon atoms. It computes the optimal rotation and
+translation to minimize RMSD between aligned atoms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other</strong> – Target ProteinDatum to align to</p></li>
+<li><p><strong>window</strong> – Optional tuple of (start, end) to restrict alignment to a specific region</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new protein datum with aligned coordinates</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#moleculib.protein.datum.ProteinDatum" title="moleculib.protein.datum.ProteinDatum">ProteinDatum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.to_tensor_cloud">
+<span class="sig-name descname"><span class="pre">to_tensor_cloud</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.to_tensor_cloud" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="moleculib.protein.datum.ProteinDatum.from_tensor_cloud">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_tensor_cloud</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensorcloud</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.datum.ProteinDatum.from_tensor_cloud" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/protein/datum/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>

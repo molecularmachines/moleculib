@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: moleculib.protein.alphabet</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../_static/logo.png">
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+
+    <link rel="stylesheet" href="../../../../_static/css/insegel.css" />
+    <link rel="stylesheet" href="../../../../_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../"
+        src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="../../../../index.html"><img src="../../../../_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="module-moleculib.protein.alphabet">
+<span id="moleculib-protein-alphabet"></span><h1>moleculib.protein.alphabet<a class="headerlink" href="#module-moleculib.protein.alphabet" title="Link to this heading">¶</a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.van_der_walls_radii" title="moleculib.protein.alphabet.van_der_walls_radii"><code class="xref py py-obj docutils literal notranslate"><span class="pre">van_der_walls_radii</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.sidechain_atoms_per_residue" title="moleculib.protein.alphabet.sidechain_atoms_per_residue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sidechain_atoms_per_residue</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.sidechain_chemistry_per_residue" title="moleculib.protein.alphabet.sidechain_chemistry_per_residue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sidechain_chemistry_per_residue</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.backbone_atoms" title="moleculib.protein.alphabet.backbone_atoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backbone_atoms</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.backbone_chemistry" title="moleculib.protein.alphabet.backbone_chemistry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">backbone_chemistry</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.special_tokens" title="moleculib.protein.alphabet.special_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">special_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.atoms_per_residue" title="moleculib.protein.alphabet.atoms_per_residue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atoms_per_residue</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id0" title="moleculib.protein.alphabet.all_atoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="moleculib.protein.alphabet.all_atoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_atoms_tokens" title="moleculib.protein.alphabet.all_atoms_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.elements" title="moleculib.protein.alphabet.elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_atoms_elements" title="moleculib.protein.alphabet.all_atoms_elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms_elements</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_atoms_radii" title="moleculib.protein.alphabet.all_atoms_radii"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_atoms_radii</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="moleculib.protein.alphabet.all_residues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_residues</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="moleculib.protein.alphabet.all_residues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_residues</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_residues_tokens" title="moleculib.protein.alphabet.all_residues_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_residues_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_residues_atom_mask" title="moleculib.protein.alphabet.all_residues_atom_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_residues_atom_mask</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.all_residues_atom_tokens" title="moleculib.protein.alphabet.all_residues_atom_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_residues_atom_tokens</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="moleculib.protein.alphabet.bond_lens_arr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_lens_arr</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.max_arr_size" title="moleculib.protein.alphabet.max_arr_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_arr_size</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="moleculib.protein.alphabet.bond_lens_arr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_lens_arr</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.UNK_TOKEN" title="moleculib.protein.alphabet.UNK_TOKEN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UNK_TOKEN</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.atom_to_residues_index" title="moleculib.protein.alphabet.atom_to_residues_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_to_residues_index</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.atom_to_residues_mask" title="moleculib.protein.alphabet.atom_to_residues_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_to_residues_mask</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.HELIX_BACKBONE" title="moleculib.protein.alphabet.HELIX_BACKBONE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HELIX_BACKBONE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.BETA_BACKBONE" title="moleculib.protein.alphabet.BETA_BACKBONE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BETA_BACKBONE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.HELIX_ROTAMERS" title="moleculib.protein.alphabet.HELIX_ROTAMERS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HELIX_ROTAMERS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.geometry_to_per_residue_indexing_array" title="moleculib.protein.alphabet.geometry_to_per_residue_indexing_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geometry_to_per_residue_indexing_array</span></code></a>([property])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.atom_index" title="moleculib.protein.alphabet.atom_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">atom_index</span></code></a>(→ int)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#moleculib.protein.alphabet.get_residue_index" title="moleculib.protein.alphabet.get_residue_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_residue_index</span></code></a>(→ int)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.van_der_walls_radii">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">van_der_walls_radii</span></span><a class="headerlink" href="#moleculib.protein.alphabet.van_der_walls_radii" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.sidechain_atoms_per_residue">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">sidechain_atoms_per_residue</span></span><a class="headerlink" href="#moleculib.protein.alphabet.sidechain_atoms_per_residue" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.sidechain_chemistry_per_residue">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">sidechain_chemistry_per_residue</span></span><a class="headerlink" href="#moleculib.protein.alphabet.sidechain_chemistry_per_residue" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.backbone_atoms">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">backbone_atoms</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['N',</span> <span class="pre">'CA',</span> <span class="pre">'C',</span> <span class="pre">'O']</span></em><a class="headerlink" href="#moleculib.protein.alphabet.backbone_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.backbone_chemistry">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">backbone_chemistry</span></span><a class="headerlink" href="#moleculib.protein.alphabet.backbone_chemistry" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.special_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">special_tokens</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['PAD',</span> <span class="pre">'MASK',</span> <span class="pre">'UNK']</span></em><a class="headerlink" href="#moleculib.protein.alphabet.special_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.atoms_per_residue">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">atoms_per_residue</span></span><a class="headerlink" href="#moleculib.protein.alphabet.atoms_per_residue" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_atoms">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_atoms" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_atoms_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms_tokens</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_atoms_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.elements">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">elements</span></span><a class="headerlink" href="#moleculib.protein.alphabet.elements" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_atoms_elements">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms_elements</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_atoms_elements" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_atoms_radii">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_atoms_radii</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_atoms_radii" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_residues">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_residues</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_residues" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_residues</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_residues_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_residues_tokens</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_residues_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_residues_atom_mask">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_residues_atom_mask</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_residues_atom_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.all_residues_atom_tokens">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">all_residues_atom_tokens</span></span><a class="headerlink" href="#moleculib.protein.alphabet.all_residues_atom_tokens" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.geometry_to_per_residue_indexing_array">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">geometry_to_per_residue_indexing_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bonds'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#moleculib.protein.alphabet.geometry_to_per_residue_indexing_array" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.bond_lens_arr">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">bond_lens_arr</span></span><a class="headerlink" href="#moleculib.protein.alphabet.bond_lens_arr" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.max_arr_size">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">max_arr_size</span></span><a class="headerlink" href="#moleculib.protein.alphabet.max_arr_size" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">bond_lens_arr</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.UNK_TOKEN">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">UNK_TOKEN</span></span><a class="headerlink" href="#moleculib.protein.alphabet.UNK_TOKEN" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.atom_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#moleculib.protein.alphabet.atom_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.get_residue_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">get_residue_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#moleculib.protein.alphabet.get_residue_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.atom_to_residues_index">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_to_residues_index</span></span><a class="headerlink" href="#moleculib.protein.alphabet.atom_to_residues_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.atom_to_residues_mask">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">atom_to_residues_mask</span></span><a class="headerlink" href="#moleculib.protein.alphabet.atom_to_residues_mask" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.HELIX_BACKBONE">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">HELIX_BACKBONE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Multiline-String</span></em><a class="headerlink" href="#moleculib.protein.alphabet.HELIX_BACKBONE" title="Link to this definition">¶</a></dt>
+<dd><details><summary>Show Value</summary><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ATOM      1  N   GLY A   1      -5.606  -2.251 -12.878  1.00  0.00           N</span>
+<span class="sd">ATOM      2  CA  GLY A   1      -5.850  -1.194 -13.852  1.00  0.00           C</span>
+<span class="sd">ATOM      3  C   GLY A   1      -5.186  -1.524 -15.184  1.00  0.00           C</span>
+<span class="sd">ATOM      4  O   GLY A   1      -5.744  -1.260 -16.249  1.00  0.00           O</span>
+<span class="sd">ATOM      6  N   GLY A   2      -3.991  -2.102 -15.115  1.00  0.00           N</span>
+<span class="sd">ATOM      7  CA  GLY A   2      -3.262  -2.499 -16.313  1.00  0.00           C</span>
+<span class="sd">ATOM      8  C   GLY A   2      -3.961  -3.660 -17.011  1.00  0.00           C</span>
+<span class="sd">ATOM      9  O   GLY A   2      -4.016  -3.716 -18.240  1.00  0.00           O</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</details></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.BETA_BACKBONE">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">BETA_BACKBONE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Multiline-String</span></em><a class="headerlink" href="#moleculib.protein.alphabet.BETA_BACKBONE" title="Link to this definition">¶</a></dt>
+<dd><details><summary>Show Value</summary><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ATOM      1  N   GLY A   1      27.961   0.504   1.988  1.00  0.00           N</span>
+<span class="sd">ATOM      2  CA  GLY A   1      29.153   0.205   2.773  1.00  0.00           C</span>
+<span class="sd">ATOM      3  C   GLY A   1      30.420   0.562   2.003  1.00  0.00           C</span>
+<span class="sd">ATOM      4  O   GLY A   1      30.753  -0.077   1.005  1.00  0.00           O</span>
+<span class="sd">ATOM      6  N   GLY A   2      31.123   1.587   2.474  1.00  0.00           N</span>
+<span class="sd">ATOM      7  CA  GLY A   2      32.355   2.031   1.832  1.00  0.00           C</span>
+<span class="sd">ATOM      8  C   GLY A   2      33.552   1.851   2.758  1.00  0.00           C</span>
+<span class="sd">ATOM      9  O   GLY A   2      33.675   2.539   3.772  1.00  0.00           O</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</details></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="moleculib.protein.alphabet.HELIX_ROTAMERS">
+<span class="sig-prename descclassname"><span class="pre">moleculib.protein.alphabet.</span></span><span class="sig-name descname"><span class="pre">HELIX_ROTAMERS</span></span><a class="headerlink" href="#moleculib.protein.alphabet.HELIX_ROTAMERS" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">moleculib</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../../../../_sources/autoapi/moleculib/protein/alphabet/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>
