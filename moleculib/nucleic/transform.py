@@ -13,8 +13,7 @@ from einops import rearrange, repeat
 from tqdm import tqdm
 
 from moleculib.nucleic.alphabet import *
-from moleculib.nucleic.datum import (NucleicDatum, dna_res_tokens,
-                                     rna_res_tokens)
+from moleculib.nucleic.datum import (NucleicDatum)
 from moleculib.nucleic.utils import pad_array, pids_file_to_list
 
 # followed Allan but not sure exactly why we need all these abstraction:
@@ -49,21 +48,7 @@ class NucCrop(NucTransform):
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if attr == "contact_map" and obj is not None:
-                # Crop the contact map
-                new_datum_[attr] = obj[
-                    cut : cut + self.crop_size, cut : cut + self.crop_size
-                ]
-            elif attr == "fmtoks" and obj is not None:
-                new_datum_[attr] = obj[cut : cut + self.crop_size, :]
-            elif attr == "msa" and obj is not None:
-                new_datum_[attr] = obj[:, cut : cut + self.crop_size]
-            elif attr == "attention" and obj is not None:
-                new_datum_[attr] = obj[
-                    ..., cut : cut + self.crop_size, cut : cut + self.crop_size
-                ]
-
-            elif (
+            if (
                 type(obj)
                 in [
                     np.ndarray,
@@ -76,11 +61,11 @@ class NucCrop(NucTransform):
                 and len(obj) == seq_len
             ):
                 new_datum_[attr] = obj[cut : cut + self.crop_size]
-
             else:
                 new_datum_[attr] = obj
 
         new_datum = type(datum)(**new_datum_)
+
         return new_datum
 
 
@@ -103,43 +88,18 @@ class NucPad(NucTransform):
             return type(datum)(**new_datum)
 
         size_diff = self.pad_size - seq_len
-        # shift = np.random.randint(0, size_diff)
 
         new_datum_ = dict()
         for attr, obj in vars(datum).items():
-            if attr == "contact_map" and obj is not None:
-                # Pad the contact map
-                padded_contact_map = np.zeros((self.pad_size, self.pad_size), dtype=int)
-                padded_contact_map[:seq_len, :seq_len] = obj[:, :]
-                new_datum_[attr] = padded_contact_map
-
-            elif attr == "fmtoks" and obj is not None:
-                # Pad the fmtoks
-                padded_fmtoks = np.zeros((self.pad_size, obj.shape[1]), dtype=float)
-                padded_fmtoks[:seq_len, :] = obj[:, :]
-                new_datum_[attr] = padded_fmtoks
-            elif attr == "msa" and obj is not None:
-                # Pad the msa
-                depth = obj.shape[0]
-                pad_msa = np.full(
-                    (depth, self.pad_size), 12, dtype=float
-                )  # pad token is 12 for MSA
-                pad_msa[:, :seq_len] = obj[:, :seq_len]
-                new_datum_[attr] = pad_msa
-            elif attr == "attention" and obj is not None:
-                padded_attention = np.zeros((12, 20, self.pad_size, self.pad_size))
-                padded_attention[..., :seq_len, :seq_len] = obj[..., :seq_len, :seq_len]
-                new_datum_[attr] = padded_attention
-
-            elif type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
+            if type(obj) == np.ndarray and attr != "label" and len(obj) == seq_len:
                 obj = pad_array(obj, self.pad_size)  # func from utils
-                # obj = np.roll(obj, shift, axis=0)
                 new_datum_[attr] = obj
             else:
                 new_datum_[attr] = obj
 
-        pad_mask = pad_array(np.ones_like(datum.nuc_token), self.pad_size)
-        # new_datum_["pad_mask"] = pad_mask
+        pad_mask = np.zeros((self.pad_size,), dtype=bool)
+        pad_mask[:seq_len] = True  # True for the original sequence, False for padding
+        new_datum_["pad_mask"] = pad_mask
         new_datum = type(datum)(**new_datum_)
 
         return new_datum

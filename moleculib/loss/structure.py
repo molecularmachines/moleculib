@@ -1,33 +1,49 @@
-class VectorMapLoss(LossFunction):
+import einops as ein
+import jax.numpy as jnp
+import jax
+from typing import Tuple, Dict
+from jaxtyping import PyTree
+import optax
+
+from ..protein.datum import ProteinDatum
+
+def safe_norm(vector: jax.Array, axis: int = -1) -> jax.Array:
+    """safe_norm(x) = norm(x) if norm(x) != 0 else 1.0"""
+    norms_sqr = jnp.sum(vector**2, axis=axis)
+    norms = jnp.where(norms_sqr == 0.0, 1.0, norms_sqr) ** 0.5
+    return norms
+
+
+class VectorMapLoss:
+
     def __init__(
         self,
-        weight=1.0,
-        start_step=0,
-        max_radius: float = 32.0,
-        max_error: float = 800.0,
+        max_radius: float = 25.0,
+        max_error: float = 10.0,
+        measure_fn: jax.Array = optax.huber_loss,
         norm_only=False,
     ):
-        super().__init__(weight=weight, start_step=start_step)
         self.norm_only = norm_only
         self.max_radius = max_radius
         self.max_error = max_error
+        self.measure_fn = measure_fn
 
-    def _call(
-        self, rng_key, prediction: ProteinDatum, ground: ProteinDatum
-    ) -> Tuple[ModelOutput, jax.Array, Dict[str, float]]:
-        ground = ground[0]
+    def __call__(
+        self, prediction: ProteinDatum, ground: ProteinDatum
+    ) -> Tuple[ProteinDatum, jax.Array, Dict[str, float]]:
 
-        all_atom_coords = rearrange(
-            prediction.datum["atom_coord"], "... a c -> (... a) c"
-        )
-        all_atom_coords_ground = rearrange(ground.atom_coord, "... a c -> (... a) c")
-        all_atom_mask = rearrange(ground.atom_mask, "... a -> (... a)")
+        if type(ground) == list or type(ground) == tuple and len(ground) == 2:
+            ground = ground[1]
 
-        vector_map = lambda x: rearrange(x, "i c -> i () c") - rearrange(
+        all_atom_coords = ein.rearrange(prediction.atom_coord, "... a c -> (... a) c")
+        all_atom_coords_ground = ein.rearrange(ground.atom_coord, "... a c -> (... a) c")
+        all_atom_mask = ein.rearrange(ground.atom_mask, "... a -> (... a)")
+
+        vector_map = lambda x: ein.rearrange(x, "i c -> i () c") - ein.rearrange(
             x, "j c -> () j c"
         )
 
-        cross_mask = rearrange(all_atom_mask, "i -> i ()") & rearrange(
+        cross_mask = ein.rearrange(all_atom_mask, "i -> i ()") & ein.rearrange(
             all_atom_mask, "j -> () j"
         )
 
@@ -39,7 +55,7 @@ class VectorMapLoss(LossFunction):
             vector_maps = safe_norm(vector_maps)[..., None]
             vector_maps_ground = safe_norm(vector_maps_ground)[..., None]
 
-        error = optax.huber_loss(vector_maps, vector_maps_ground, delta=1.0).mean(-1)
+        error = self.measure_fn(vector_maps, vector_maps_ground).mean(-1)
         if self.max_error > 0.0:
             error = jnp.clip(error, 0.0, self.max_error)
 
@@ -50,7 +66,7 @@ class VectorMapLoss(LossFunction):
         error = error * (cross_mask.sum() > 0).astype(error.dtype)
 
         metrics = dict(
-            cross_vector_loss=error,
+            vector_map_loss=error,
         )
 
         return prediction, error, metrics

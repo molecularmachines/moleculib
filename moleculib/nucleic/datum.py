@@ -21,8 +21,9 @@ from biotite.structure.io import pdbx
 from biotite.structure.io.pdb import PDBFile
 # import biotite.structure.io.mmtf as mmtf
 from einops import rearrange, repeat
+from tensorclouds import TensorCloud
+import e3nn_jax as e3nn
 
-# from biotite.structure import superimpose
 
 
 sys.path.append(".")
@@ -31,7 +32,7 @@ sys.path.append(".")
 import os
 from pathlib import Path
 
-import fm
+# import fm
 import numpy as np
 import py3Dmol
 import torch
@@ -470,38 +471,38 @@ class NucleicDatum:
         # RNA FM:
 
         # Load RNA-FM model
-        model, alphabet = fm.pretrained.rna_fm_t12()
-        batch_converter = alphabet.get_batch_converter()
-        model.eval()  # disables dropout for deterministic results
+        # model, alphabet = fm.pretrained.rna_fm_t12()
+        # batch_converter = alphabet.get_batch_converter()
+        # model.eval()  # disables dropout for deterministic results
 
-        def encode(rnaseq):
-            data = [
-                ("", rnaseq),
-            ]
-            batch_labels, batch_strs, batch_tokens = batch_converter(data)
-            with torch.no_grad():
-                results = model(batch_tokens, repr_layers=[12], need_head_weights=True)
-            token_embeddings = results["representations"][12][0]
-            if token_embeddings.shape[0] - len(rnaseq) != 2:
-                raise KeyError
-            # Extract only the actual sequence embeddings (exclude the first and last token)
-            sequence_embeddings = token_embeddings[1:-1]
-            print(
-                f"Encoding FM. RNA length is {len(rnaseq)}, and FM embeddings are size: {sequence_embeddings.shape} "
-            )
-            attentions = results["attentions"][0]  # shape [12, 20, N, N]
-            return sequence_embeddings, attentions
+        # def encode(rnaseq):
+        #     data = [
+        #         ("", rnaseq),
+        #     ]
+        #     batch_labels, batch_strs, batch_tokens = batch_converter(data)
+        #     with torch.no_grad():
+        #         results = model(batch_tokens, repr_layers=[12], need_head_weights=True)
+        #     token_embeddings = results["representations"][12][0]
+        #     if token_embeddings.shape[0] - len(rnaseq) != 2:
+        #         raise KeyError
+        #     # Extract only the actual sequence embeddings (exclude the first and last token)
+        #     sequence_embeddings = token_embeddings[1:-1]
+        #     print(
+        #         f"Encoding FM. RNA length is {len(rnaseq)}, and FM embeddings are size: {sequence_embeddings.shape} "
+        #     )
+        #     attentions = results["attentions"][0]  # shape [12, 20, N, N]
+        #     return sequence_embeddings, attentions
 
-        fmtoks, attention = encode(seq)
-        # END RNA FM Model
+        # fmtoks, attention = encode(seq)
+        # # END RNA FM Model
 
-        fc = RNA.fold_compound(seq)
-        mfe_structure, mfe = fc.mfe()  # Example of mfe structure "....(...((.())))"
-        contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
-        if contact_pairs is None:
-            print("contact pairs is None, seq is ", seq)
-        if contact_pairs.shape[0] != len(residue_token):
-            print("contact_pairs.shape[0] != len(residue_token)")
+        # fc = RNA.fold_compound(seq)
+        # mfe_structure, mfe = fc.mfe()  # Example of mfe structure "....(...((.())))"
+        # contact_pairs = secondary_dot_bracket_to_contact_map(mfe_structure)
+        # if contact_pairs is None:
+        #     print("contact pairs is None, seq is ", seq)
+        # if contact_pairs.shape[0] != len(residue_token):
+            # print("contact_pairs.shape[0] != len(residue_token)")
         # print("Done")
 
         return cls(
@@ -515,9 +516,9 @@ class NucleicDatum:
             **atom_extract,
             atom_mask=atom_mask,
             # id=id_,
-            contact_map=contact_pairs,
-            fmtoks=fmtoks,
-            attention=attention,
+            # contact_map=contact_pairs,
+            # fmtoks=fmtoks,
+            # attention=attention,
         )
 
     def to_pdb_str(self):
@@ -671,164 +672,30 @@ class NucleicDatum:
 
     def from_pytree(self, tree):
         return NucleicDatum(**tree)
+    
+    def to_tensor_cloud(self):
+        """
+        Converts the NucleicDatum to a TensorCloud representation.
+        """
+        res_mask = self.atom_mask[..., 8] 
+        mask = self.atom_mask
+        vectors = self.atom_coord
+        
+        #the ca coord must be present for the atoms in the residue to be available
+        #so if the c5' coord is masked, the entire nucleotide is masked:
+        mask = mask & res_mask[..., None] 
+        
+        ca_coord = vectors[..., 8, :] #taking C5' atom as center
+        vectors = vectors - ca_coord[..., None, :]
+        vectors = vectors * mask[..., None]
+        vectors = rearrange(vectors, "r a c -> r (a c)")
 
+        irreps_array = e3nn.IrrepsArray("24x1e", vectors)
 
-def _scatter_coord(name, coord, color="black", visible=True):
-    sc_coords = []
-    x, y, z = coord.T
-    data = [
-        go.Scatter3d(
-            name=name + " coord",
-            x=x,
-            y=y,
-            z=z,
-            marker=dict(
-                size=7,
-                colorscale="Viridis",
-            ),
-            hovertemplate="<b>%{text}</b><extra></extra>",
-            text=np.arange(0, len(coord)),
-            line=dict(color=color, width=4),
-            visible="legendonly" if not visible else True,
+        return TensorCloud(
+            irreps_array=irreps_array, #TODO:  check if we want irreps_array * ca_mask[..., None],
+            mask_irreps_array=mask,
+            coord=ca_coord,  #TODO:  check if we want ca_coord * ca_mask[..., None],
+            mask_coord=res_mask,
+            label = self.nuc_token
         )
-    ]
-    fig = go.Figure(data=data)
-    fig.update_layout(
-        width=650,
-        height=750,
-    )
-    fig.update_scenes(xaxis_visible=False, yaxis_visible=False, zaxis_visible=False)
-
-    return fig
-
-
-# np.array(list(map(lambda atom: atom_index(atom), atom_array.atom_name)))
-rna_res_names = ["A", "U", "RT", "G", "C", "I"]
-dna_res_names = ["DA", "DU", "DT", "DG", "DC", "DI"]
-dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
-rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
-
-
-if __name__ == "__main__":
-    dna_datum = NucleicDatum.fetch_pdb_id("1ZEW")  # 2n96
-    # print(dna_datum)
-    # breakpoint()
-    ##DNADATUM: str,
-    # resolution: float,
-    # sequence: NucleotideSequence,
-    # nuc_token: np.ndarray, #tokenize nucs (0 to ~14 or so, ie options of nucs)
-    # nuc_index: np.ndarray, #index each nuc from 0 to len of nucleotides in the datum
-    # nuc_mask: np.ndarray, #
-    # chain_token: np.ndarray, #gives each chain a different token 0-number of chains in datum
-    # atom_token: np.ndarray, #shape of (len nucs, max_DNA)
-    # atom_coord: np.ndarray, #shape of (len nucs, max_DNA, 3)
-    # atom_mask
-    ##PLOTTING:
-    coords = dna_datum.atom_coord[dna_datum.atom_mask]
-    # zerocheck = (coords==0).any(axis=-1) &dna_datum.atom_mask
-    # if zerocheck.any():
-    #     print("there are 0 coords")
-    # else:
-    #     print("NO")
-
-    import plotly.graph_objects as go
-
-    atom_names = np.array(all_atoms)[dna_datum.atom_token.astype(int)].reshape(
-        -1
-    )  # all_atoms[dna_datum.atom_token]
-    # atomcoords =
-    # print(dna_datum.nuc_token.shape)
-    x, y, z = coords.reshape(-1, 3).T
-    # print(dna_datum.chain_token)
-    color_mapping = {
-        0: "rgb(31, 119, 180)",  # blue
-        1: "rgb(255, 127, 14)",  # orange
-        2: "rgb(44, 160, 44)",  # green
-        3: "rgb(214, 39, 40)",  # red
-        4: "rgb(148, 103, 189)",  # purple
-        5: "rgb(247, 182, 210)",  # light pink
-        6: "rgb(227, 119, 194)",  # pink
-        7: "rgb(0, 0, 0)",  # gray
-        8: "rgb(188, 189, 34)",  # yellow
-        9: "rgb(23, 190, 207)",  # cyan
-        10: "rgb(174, 199, 232)",  # light blue
-        11: "rgb(255, 152, 150)",  # light red
-        12: "rgb(197, 176, 213)",  # light purple
-        13: "rgb(196, 156, 148)",  # light brown
-    }
-    cord = coords.reshape(-1).reshape(322, -1)
-    colors = [color_mapping[token] for token in dna_datum.nuc_token for _ in range(24)]
-    fig = go.Figure(
-        data=[
-            go.Scatter3d(
-                mode="markers",
-                x=x,
-                y=y,
-                z=z,
-                # text=atom_names,
-                text=cord,
-                hovertemplate="<b>%{text}</b>",
-                marker=dict(size=3),
-                # color = dna_datum.nuc_token,
-                line=dict(
-                    color=colors,
-                    width=3,
-                ),
-            )
-        ]
-    )
-    fig.update_layout(
-        scene=dict(xaxis_title="X", yaxis_title="Y", zaxis_title="Z"),
-        width=800,
-        height=800,
-        title="3D Scatter Plot of Atom Coordinates",
-    )
-
-    ####TO PLOT:
-    fig.show()
-
-    def get_repetition_lengths(lst):
-        lengths = []
-        count = 1
-        for i in range(1, len(lst)):
-            if lst[i] == lst[i - 1]:
-                count += 1
-            else:
-                lengths.append(count)
-                count = 1
-        lengths.append(count)
-        return lengths
-
-    rna_res_names = ["A", "U", "RT", "G", "C", "I"]
-    dna_res_names = ["DA", "DU", "DT", "DG", "DC", "DI"]
-    dna_res_tokens = list(map(lambda res: get_nucleotide_index(res), dna_res_names))
-    rna_res_tokens = list(map(lambda res: get_nucleotide_index(res), rna_res_names))
-
-    rna_res_tokens_dict = {res: get_nucleotide_index(res) for res in rna_res_names}
-    dna_res_tokens_dict = {res: get_nucleotide_index(res) for res in dna_res_names}
-    # print(rna_res_tokens_dict)
-    # print(dna_res_tokens_dict)
-
-    # num_chains = dna_datum.chain_token[-1]
-    # chains_len = get_repetition_lengths(dna_datum.chain_token)
-    # follow=[]
-    # for nuci in dna_datum.nuc_token:
-    #     if nuci in rna_res_tokens:
-    #         follow.append('R')
-    #     elif nuci in dna_res_tokens:
-    #         follow.append('D')
-    #     else:
-    #         follow.append('confused')
-    # print(dna_datum.nuc_token[140])
-    # print(len(dna_datum))
-    # print(len(dna_datum.nuc_token))
-    # #number of RNA chains,
-    # for chain in range(num_chains+1):
-    #     chain_len = chains_len[chain]
-
-    # number of DNA chains, (check for chain and RNA/DNA),
-
-    # how long the chain is
-    # total number of nucleotides,
-
-    breakpoint()

@@ -1,4 +1,3 @@
-import biotite.structure.io.mmtf as mmtf
 import biotite.structure.io.pdb as pdb
 import biotite.structure.io.pdbx as pdbx
 import numpy as np
@@ -15,8 +14,10 @@ from einops import rearrange, repeat
 
 from .alphabet import (all_atoms, all_residues, atom_index,
                        atom_to_residues_index, backbone_atoms,
-                       get_residue_index)
+                       get_residue_index, all_residues_atom_mask,
+                       all_residues_atom_tokens)
 
+from typing import Optional
 
 class ProteinSequence:
     """
@@ -101,16 +102,16 @@ class ProteinDatum:
     atom_mask: np.ndarray  # Boolean mask for valid atoms [num_residues, max_atoms]
 
     # Optional atomic properties
-    atom_element: np.ndarray = None  # Element type for each atom
-    atom_radius: np.ndarray = None  # Atomic radii
+    atom_element: Optional[np.ndarray] = None  # Element type for each atom
+    atom_radius: Optional[np.ndarray] = None  # Atomic radii
 
     # Molecular geometry features
-    bonds_list: np.ndarray = None  # List of atom pairs forming bonds
-    bonds_mask: np.ndarray = None  # Boolean mask for valid bonds
-    angles_list: np.ndarray = None  # List of atom triplets forming angles
-    angles_mask: np.ndarray = None  # Boolean mask for valid angles
-    dihedrals_list: np.ndarray = None  # List of atom quartets forming dihedrals
-    dihedrals_mask: np.ndarray = None  # Boolean mask for valid dihedrals
+    bonds_list: Optional[np.ndarray] = None  # List of atom pairs forming bonds
+    bonds_mask: Optional[np.ndarray] = None  # Boolean mask for valid bonds
+    angles_list: Optional[np.ndarray] = None  # List of atom triplets forming angles
+    angles_mask: Optional[np.ndarray] = None  # Boolean mask for valid angles
+    dihedrals_list: Optional[np.ndarray] = None  # List of atom quartets forming dihedrals
+    dihedrals_mask: Optional[np.ndarray] = None  # Boolean mask for valid dihedrals
 
     @classmethod
     def _extract_reshaped_atom_attr(
@@ -346,15 +347,6 @@ class ProteinDatum:
             header = dict(
                 idcode=idcode,
                 resolution=None,
-            )
-        elif str(filepath).endswith(".mmtf"):
-            mmtf_file = mmtf.MMTFFile.read(filepath)
-            atom_array = mmtf.get_structure(mmtf_file, model=model)
-            header = dict(
-                idcode=mmtf_file["structureId"] if "structureId" in mmtf_file else None,
-                resolution=(
-                    None if ("resolution" not in mmtf_file) else mmtf_file["resolution"]
-                ),
             )
         elif str(filepath).endswith(".bcif"):
             bcif_file = pdbx.BinaryCIFFile.read(filepath)
@@ -719,7 +711,7 @@ class ProteinDatum:
 
         return AtomArrayConstructor(atoms)
 
-    def align_to(self, other, window=None):
+    def align_to(self, other):
         """
         Aligns the current protein datum to another protein datum based on CA atoms.
 
@@ -734,44 +726,8 @@ class ProteinDatum:
         Returns:
             ProteinDatum: A new protein datum with aligned coordinates
         """
-
-        def to_ca_atom_array(prot, mask):
-            """
-            Extracts CA atoms from a protein datum to create a Biotite atom array.
-
-            Args:
-                prot: ProteinDatum to extract CA atoms from
-                mask: Boolean mask indicating which residues to include
-
-            Returns:
-                AtomArray: Biotite atom array containing only CA atoms
-            """
-            # Extract CA atom coordinates (index 1 in atom dimension is CA)
-            cas = prot.atom_coord[..., 1, :]
-            atoms = [
-                Atom(
-                    atom_name="CA",
-                    element="C",
-                    coord=ca,
-                    res_id=prot.residue_index[i],
-                    chain_id=prot.chain_token[i],
-                )
-                for i, ca in enumerate(cas)
-                if mask[i]
-            ]
-            return AtomArrayConstructor(atoms)
-
-        common_mask = self.atom_mask[..., 1] & other.atom_mask[..., 1]
-        if window is not None:
-            common_mask = (
-                common_mask
-                & (np.arange(len(common_mask)) < window[1])
-                & (np.arange(len(common_mask)) >= window[0])
-            )
-
-        self_array, other_array = to_ca_atom_array(self, common_mask), to_ca_atom_array(
-            other, common_mask
-        )
+        # NOTE(Allan): Triple check that this works, modified recently
+        self_array, other_array = self.to_atom_array(), other.to_atom_array()
         _, transform = superimpose(other_array, self_array)
         new_atom_coord = self.atom_coord + transform.center_translation
         new_atom_coord = np.einsum(
@@ -782,9 +738,76 @@ class ProteinDatum:
 
         return self.set(atom_coord=new_atom_coord)
 
+
+    def to_tensor_cloud(self):
+        import jax.numpy as jnp
+        import e3nn_jax as e3nn
+        from tensorclouds.tensorcloud import TensorCloud
+
+        res_token = self.residue_token
+        res_mask = self.atom_mask[..., 1]
+        vectors = self.atom_coord
+        mask = self.atom_mask
+
+        ca_coord = vectors[..., 1, :]
+
+        vectors = vectors - ca_coord[..., None, :]
+        vectors = vectors * mask[..., None]
+        vectors = rearrange(vectors, "r a c -> r (a c)")
+
+        irreps_array = e3nn.IrrepsArray("14x1e", jnp.array(vectors))
+
+        tensorcloud = TensorCloud(
+            irreps_array=irreps_array,
+            mask_irreps_array=jnp.array(mask),
+            coord=jnp.array(ca_coord),
+            mask_coord=jnp.array(res_mask),
+            label=jnp.array(res_token * res_mask),
+        )
+
+        return tensorcloud
+
     @classmethod
-    def from_dict(cls, dict_):
-        return cls(**dict_)
+    def from_tensor_cloud(cls, tensorcloud):
+        import jax.numpy as jnp
+
+        irreps_array = tensorcloud.irreps_array
+        ca_coord = tensorcloud.coord
+        res_mask = tensorcloud.mask_coord
+
+
+        if tensorcloud.annotations and ('b_factor' in tensorcloud.annotations):
+            resolution = tensorcloud.annotations['b_factor']
+        else:
+            resolution = None
+
+        atom_coord = irreps_array.filter("1e").array
+        atom_coord = rearrange(atom_coord, "r (a c) -> r a c", a=14)
+
+        labels = tensorcloud.label
+        logit_extract = repeat(labels, "r -> r l", l=23) == repeat(
+            jnp.arange(0, 23), "l -> () l"
+        )
+
+        atom_token = (logit_extract[..., None] * all_residues_atom_tokens[None]).sum(-2)
+        atom_mask = (logit_extract[..., None] * all_residues_atom_mask[None]).sum(-2)
+
+        atom_coord = atom_coord.at[..., 1, :].set(0.0)
+        atom_coord = atom_coord + ca_coord[..., None, :]
+        atom_coord = atom_coord * atom_mask[..., None]
+
+        return cls(
+            idcode=None,
+            resolution=resolution,
+            sequence=None,
+            residue_token=labels,
+            residue_index=jnp.arange(labels.shape[0]),
+            residue_mask=res_mask,
+            chain_token=jnp.zeros(labels.shape[0], dtype=jnp.int32),
+            atom_token=atom_token,
+            atom_coord=atom_coord,
+            atom_mask=atom_mask,
+        )
 
     def __repr__(self):
         """

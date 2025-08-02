@@ -25,20 +25,21 @@ class ProteinTransform:
         Takes as input an individual data point, processes
         the values in it and returns a new ProteinDatum
         """
-        # raise NotImplementedError("method transform must be implemented")
+        raise NotImplementedError("method transform must be implemented")
 
-        if type(datum) == ProteinDatum:
-            datum = self.__call(datum)
-        elif type(datum) == AssemblyDatum:
-            datum = datum.replace(proteins=self.__call(datum.proteins))
-        else:
-            raise TypeError(
-                f"Expected ProteinDatum or AssemblyDatum, got {type(datum)}"
-            )
-        return datum
+        # if type(datum) == ProteinDatum:
+        #     datum = self.__call(datum)
+        # elif type(datum) == AssemblyDatum:
+        #     datum = datum.replace(proteins=self.__call(datum.proteins))
+        # else:
+        #     raise TypeError(
+        #         f"Expected ProteinDatum or AssemblyDatum, got {type(datum)}"
+        #     )
+        # return datum
 
 
 class ProteinCrop(ProteinTransform):
+    
     def __init__(self, crop_size):
         self.crop_size = crop_size
 
@@ -179,7 +180,7 @@ class ListBonds(ProteinTransform):
     def __init__(self, peptide_bonds: bool = True):
         self.peptide_bonds = peptide_bonds
 
-    def __call(self, datum):
+    def __call__(self, datum):
         num_atoms = datum.atom_coord.shape[-2]
         count = num_atoms * np.expand_dims(
             np.arange(0, len(datum.residue_token)), axis=(-1, -2)
@@ -230,7 +231,7 @@ class ListBonds(ProteinTransform):
 
 
 class ListAngles(ProteinTransform):
-    def __call(self, datum):
+    def __call__(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
         count = num_atoms * np.expand_dims(
@@ -289,7 +290,7 @@ class ListAngles(ProteinTransform):
 
 
 class ListDihedrals(ProteinTransform):
-    def __call(self, datum):
+    def __call__(self, datum):
         # solve for intra-residue angles
         num_atoms = datum.atom_coord.shape[-2]
         count = num_atoms * np.expand_dims(
@@ -346,7 +347,7 @@ class ListDihedrals(ProteinTransform):
 
 
 # class ListMirrorFlips(ProteinTransform):
-#     def __call(self, datum):
+#     def __call__(self, datum):
 #         flips_per_residue = flippable_arr[datum.residue_token]
 
 #         flips_mask_per_residue = flippable_mask[datum.residue_token].squeeze(-1)
@@ -356,7 +357,7 @@ class ListDihedrals(ProteinTransform):
 #         datum.flips_mask = flips_mask_per_residue
 
 #         return datum
-
+from typing import Union, List
 
 class DescribeChemistry(ProteinTransform):
     """
@@ -372,21 +373,29 @@ class DescribeChemistry(ProteinTransform):
         # Note(Allan): This is not used currently, but I can re-activate it if we find trouble with tyrosine
         # self.flip_transform = ListMirrorFlips()
 
-    def __call(self, datum):
-        new_datum = vars(datum)
-        atom_token = datum.atom_token.astype(np.int32)
-        new_datum.update(
-            {
-                "atom_element": all_atoms_elements[atom_token],
-                "atom_radius": all_atoms_radii[atom_token],
-            }
-        )
-        datum = ProteinDatum(**new_datum)
-        datum = self.bond_transform.__call(datum)
-        datum = self.angle_transform.__call(datum)
-        datum = self.dihedral_transform.__call(datum)
-        # datum = self.flip_transform.__call(datum)
-        return datum
+    def __call__(self, datum: Union[ProteinDatum, List]):
+        if not isinstance(datum, (ProteinDatum, List)):
+            raise TypeError("Input must be a ProteinDatum or a list of ProteinDatum")
+
+        if isinstance(datum, List):
+            new_datum = [*datum[:-1], self(datum[-1])]
+            return new_datum
+
+        if isinstance(datum, ProteinDatum):
+            new_datum = vars(datum)
+            atom_token = datum.atom_token.astype(np.int32)
+            new_datum.update(
+                {
+                    "atom_element": all_atoms_elements[atom_token],
+                    "atom_radius": all_atoms_radii[atom_token],
+                }
+            )
+            datum = ProteinDatum(**new_datum)
+            datum = self.bond_transform(datum)
+            datum = self.angle_transform(datum)
+            datum = self.dihedral_transform(datum)
+            # datum = self.flip_transform.__call(datum)
+            return datum
 
 
 class TokenizeSequenceBoundaries(ProteinTransform):

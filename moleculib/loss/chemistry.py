@@ -1,24 +1,49 @@
+
+import einops as ein
+import jax.numpy as jnp
+import jax
+from typing import Tuple, Dict
+from jaxtyping import PyTree
+import optax
+
+from ..protein.datum import ProteinDatum
+from learnax.loss import LossFunction
+
+from einops import rearrange
+
+
+
+def safe_norm(vector: jax.Array, axis: int = -1) -> jax.Array:
+    """safe_norm(x) = norm(x) if norm(x) != 0 else 1.0"""
+    norms_sqr = jnp.sum(vector**2, axis=axis)
+    norms = jnp.where(norms_sqr == 0.0, 1.0, norms_sqr) ** 0.5
+    return norms
+
+
+def safe_normalize(vector: jax.Array) -> jax.Array:
+    return vector / safe_norm(vector)[..., None]
+
+
 class ChemicalViolationLoss(LossFunction):
     def __init__(
         self,
         weight=1.0,
-        start_step=0,
         key=None,
         measure=None,
     ):
-        super().__init__(weight=weight, start_step=start_step)
+        super().__init__(weight=weight)
         self.key = key
         self.measure = measure
 
     def _call(
-        self, rng_key, model_output: ModelOutput, ground: ProteinDatum
-    ) -> Tuple[ModelOutput, jax.Array, Dict[str, float]]:
+        self, model_output: ProteinDatum, ground: ProteinDatum
+    ) -> Tuple[ProteinDatum, jax.Array, Dict[str, float]]:
         if getattr(self, "key") is None:
             raise ValueError("Must set key before calling ChemicalViolationLoss")
-        ground = ground[0]
+        ground = ground[1]
 
         ground_coords = ground.atom_coord
-        coords = model_output.datum["atom_coord"]
+        coords = model_output.atom_coord
 
         indices = getattr(ground, f"{self.key}_list")
         mask = getattr(ground, f"{self.key}_mask")
@@ -45,10 +70,9 @@ class ChemicalViolationLoss(LossFunction):
 class BondLoss(ChemicalViolationLoss):
     def __init__(
         self,
-        weight,
-        start_step,
+        weight = 1.0,
     ):
-        super().__init__(weight, start_step, "bonds", self.measure_bonds)
+        super().__init__(weight, "bonds", self.measure_bonds)
 
     @staticmethod
     def measure_bonds(coords, indices):
@@ -61,10 +85,9 @@ class BondLoss(ChemicalViolationLoss):
 class AngleLoss(ChemicalViolationLoss):
     def __init__(
         self,
-        weight,
-        start_step,
+        weight = 1.0,
     ):
-        super().__init__(weight, start_step, "angles", self.measure_angles)
+        super().__init__(weight, "angles", self.measure_angles)
 
     @staticmethod
     def measure_angles(coords, indices):
@@ -109,11 +132,14 @@ class DihedralLoss(ChemicalViolationLoss):
         return rad
 
 
-class ClashLoss(LossFunction):
-    def _call(self, rng_key, model_output: ModelOutput, ground: ProteinDatum):
-        ground = ground[0]
+import e3nn_jax as e3nn
 
-        coords = model_output.datum["atom_coord"]
+class ClashLoss(LossFunction):
+
+    def __call__(self, model_output: ProteinDatum, ground: ProteinDatum):
+        ground = ground[1]
+
+        coords = model_output.atom_coord
         all_atom_coords = rearrange(coords, "r a c -> (r a) c")
         all_atom_radii = rearrange(ground.atom_radius, "r a -> (r a)")
         all_atom_mask = rearrange(ground.atom_mask, "r a -> (r a)")

@@ -9,8 +9,8 @@ from ordered_set import OrderedSet
 # Further processed by Eric Alcaide in
 # MP-NeRF: Massively Parallel Natural Extension of Reference Frame
 # https://github.com/EleutherAI/mp_nerf
-# And modified in this version to allow cycles in sidechains
-# number of listed properties significantly reduced from original
+# And modified in this version to enable cycles in sidechains
+# Number of listed properties significantly reduced from original
 #
 # This document inherits the license from SidechainNet
 #

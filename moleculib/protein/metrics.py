@@ -21,6 +21,9 @@ class ProteinMetric:
         raise NotImplementedError("ProteinMetric is abstract")
 
 
+
+
+
 class AlignedRootMeanSquareDeviation(ProteinMetric):
 
     def __call__(self, datum, other_datum):
