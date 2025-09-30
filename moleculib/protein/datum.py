@@ -666,9 +666,10 @@ class ProteinDatum:
                 {"model": -1},
                 {
                     "stick": {"colorscheme": {"prop": "resi", "map": colors}},
-                    "sphere": {"colorscheme": {"prop": "resi", "map": colors}},
+                    "sphere": {"colorscheme": {"prop": "resi", "map": colors}, 'radius': 0.5},
                     "cartoon": {"colorscheme": {"prop": "resi", "map": colors}},
-                },
+                }, 
+                viewer=viewer,
             )  # 'label': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'surface': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'dot': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'contact': {'colorscheme': {'prop': 'resi', 'map': colors}}, 'callback': 'function(){}'}, viewer=viewer)
 
         return view
@@ -820,3 +821,21 @@ class ProteinDatum:
             str: String representation of the ProteinDatum
         """
         return f"ProteinDatum(shape={self.atom_coord.shape[:-1]})"
+
+    def centralize(self):
+        """
+        Centralizes the protein structure by translating it to the origin.
+
+        This method computes the center of mass of the protein structure
+        and translates all atom coordinates so that the center of mass is at the origin.
+
+        Returns:
+            ProteinDatum: A new ProteinDatum with centralized coordinates
+        """
+        # consider masks
+        atom_mask = self.atom_mask.astype(np.bool_)
+        all_atom_coords = self.atom_coord[atom_mask]
+        center_of_mass = all_atom_coords.mean(axis=(0))
+        new_atom_coord = self.atom_coord - center_of_mass[None, None, :]
+        new_atom_coord = new_atom_coord * self.atom_mask[..., None]
+        return self.replace(atom_coord=new_atom_coord)
