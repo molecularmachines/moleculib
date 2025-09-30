@@ -1,0 +1,88 @@
+moleculib.molecule.transform
+============================
+
+.. py:module:: moleculib.molecule.transform
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.transform.NucTransform
+   moleculib.molecule.transform.NucCrop
+   moleculib.molecule.transform.NucPad
+   moleculib.molecule.transform.PrepareForPipeline
+
+
+Module Contents
+---------------
+
+.. py:class:: NucTransform
+
+   Abstract class for nucleic transform
+
+
+   .. py:method:: transform(datum: moleculib.nucleic.datum.NucleicDatum) -> moleculib.nucleic.datum.NucleicDatum
+      :abstractmethod:
+
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+
+.. py:class:: NucCrop(crop_size)
+
+   Bases: :py:obj:`NucTransform`
+
+
+   Abstract class for nucleic transform
+
+
+   .. py:attribute:: crop_size
+
+
+   .. py:method:: transform(datum, cut=None)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+
+.. py:class:: NucPad(pad_size)
+
+   Bases: :py:obj:`NucTransform`
+
+
+   Abstract class for nucleic transform
+
+
+   .. py:attribute:: pad_size
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+
+.. py:class:: PrepareForPipeline(msa_depth)
+
+   Bases: :py:obj:`NucTransform`
+
+
+   Abstract class for nucleic transform
+
+
+   .. py:attribute:: msa_depth
+
+
+   .. py:method:: transform(datum)
+
+      Takes as input an individual data point, processes
+      the values in it and returns a new NucleicDatum
+
+
+

@@ -1,0 +1,97 @@
+moleculib.sequence.datum
+========================
+
+.. py:module:: moleculib.sequence.datum
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.sequence.datum.API_URL
+   moleculib.sequence.datum.allowed_aa
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.sequence.datum.SeqDatum
+
+
+Module Contents
+---------------
+
+.. py:data:: API_URL
+   :value: 'https://rest.uniprot.org'
+
+
+.. py:data:: allowed_aa
+   :value: ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',...
+
+
+.. py:class:: SeqDatum(idcode: str, sequence: biotite.sequence.ProteinSequence, residue_token: numpy.ndarray, **kwargs)
+
+   Incorporates protein data to MolecularDatum
+   and reshapes atom arrays to residue-based representation
+
+
+   .. py:attribute:: idcode
+
+
+   .. py:attribute:: sequence
+
+
+   .. py:attribute:: residue_token
+
+
+   .. py:method:: onehot_encode_datum()
+
+
+   .. py:method:: empty_seqrecord()
+      :classmethod:
+
+
+
+   .. py:method:: from_tokens(residues)
+      :classmethod:
+
+
+      Fasta file would only have sequence entry
+      :param filepath:
+      :return:
+
+
+
+   .. py:method:: from_filepath(filepath)
+      :classmethod:
+
+
+      Fasta file would only have sequence entry
+      :param filepath:
+      :return:
+
+
+
+   .. py:method:: from_sequence(idcode, sequence)
+      :classmethod:
+
+
+      Fasta file would only have sequence entry
+      :param filepath:
+      :return:
+
+
+
+   .. py:method:: from_pdb_id(pdb_id, chain_id=None)
+      :classmethod:
+
+
+
+   .. py:method:: from_uniprot_id(uniprotid, save_path=None)
+      :classmethod:
+
+
+

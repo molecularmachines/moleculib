@@ -1,0 +1,21 @@
+moleculib.protein
+=================
+
+.. py:module:: moleculib.protein
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/protein/alphabet/index
+   /autoapi/moleculib/protein/dataset/index
+   /autoapi/moleculib/protein/datum/index
+   /autoapi/moleculib/protein/measures/index
+   /autoapi/moleculib/protein/metrics/index
+   /autoapi/moleculib/protein/transform/index
+   /autoapi/moleculib/protein/utils/index
+
+

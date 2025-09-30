@@ -1,0 +1,19 @@
+moleculib.protein.measures
+==========================
+
+.. py:module:: moleculib.protein.measures
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.measures.STANDARD_CHEMICAL_MEASURES
+
+
+Module Contents
+---------------
+
+.. py:data:: STANDARD_CHEMICAL_MEASURES
+

@@ -1,0 +1,22 @@
+moleculib.assembly.dataset
+==========================
+
+.. py:module:: moleculib.assembly.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.assembly.dataset.ChromaDataset
+
+
+Module Contents
+---------------
+
+.. py:class:: ChromaDataset(base_path, transform: List[Callable] = None, shuffle=True, reduced=False)
+
+   Bases: :py:obj:`moleculib.abstract.dataset.PreProcessedDataset`
+
+

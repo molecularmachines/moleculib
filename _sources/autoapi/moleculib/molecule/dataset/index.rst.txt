@@ -1,0 +1,208 @@
+moleculib.molecule.dataset
+==========================
+
+.. py:module:: moleculib.molecule.dataset
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.dataset.PDBMoleculeDataset
+   moleculib.molecule.dataset.QM9Dataset
+   moleculib.molecule.dataset.RSDataset
+   moleculib.molecule.dataset.PreProcessedDataset
+   moleculib.molecule.dataset.DensityDataDir
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.molecule.dataset.rotate_voxel
+
+
+Module Contents
+---------------
+
+.. py:class:: PDBMoleculeDataset(base_path: str, transform: List[moleculib.molecule.transform.MoleculeTransform] = None, attrs: Union[List[str], str] = 'all', metadata: pandas.DataFrame = None, max_resolution: float = None, min_atom_count: int = None, max_atom_count: int = None, frac: float = 1.0, preload: bool = False, preload_num_workers: int = 10)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Holds MoleculeDatum dataset with specified PDB IDs
+
+   Arguments:
+   ----------
+   base_path : str
+       directory to store all PDB files
+   pdb_ids : List[str]
+       list of all Molecule IDs that should be in the dataset
+   format : str
+       the file format for each PDB file, either "npz" or "pdb"
+   attrs : Union[str, List[str]]
+       a partial list of Molecule attributes that should be in each Molecule
+
+
+   .. py:attribute:: base_path
+
+
+   .. py:attribute:: metadata
+      :value: None
+
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+   .. py:attribute:: splits
+
+
+   .. py:attribute:: preload
+      :value: False
+
+
+
+   .. py:method:: load_index(idx)
+
+
+   .. py:method:: build(pdb_ids: List[str] = None, save: bool = True, save_path: str = None, max_workers: int = 1, **kwargs)
+      :classmethod:
+
+
+      Builds dataset from scratch given specified pdb_ids, prepares
+      data and metadata for later use.
+
+
+
+.. py:class:: QM9Dataset(base_path='QM9', full_data=True, num_train=None, num_val=None, num_test=None, molecule_transform: List = [], permute=False, centralize=True, use_atom_features=True, standardize=True, shuffle=False, _split='train', _data=None, _max_atoms=29, _padding=True, to_split=True)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: data
+      :value: None
+
+
+
+   .. py:attribute:: graph
+
+
+   .. py:attribute:: padding
+
+
+   .. py:attribute:: permute
+      :value: None
+
+
+
+   .. py:attribute:: centralize
+
+
+   .. py:attribute:: sorter
+
+
+   .. py:attribute:: atom_features
+
+
+   .. py:attribute:: standardize
+      :value: True
+
+
+
+   .. py:attribute:: use_atom_features
+      :value: True
+
+
+
+.. py:class:: RSDataset(base_path='ChIRo', molecule_transform: List = [], permute=False, use_atom_features=True, max_num_atoms=50, _split='train')
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: max_num_atoms
+      :value: 50
+
+
+
+   .. py:attribute:: padding
+
+
+   .. py:attribute:: permute
+      :value: None
+
+
+
+   .. py:attribute:: atom_features
+
+
+   .. py:attribute:: use_atom_features
+      :value: True
+
+
+
+.. py:class:: PreProcessedDataset(splits, transform: List[Callable] = None, shuffle=True, pre_transform=False)
+
+   .. py:attribute:: splits
+
+
+   .. py:attribute:: transform
+      :value: None
+
+
+
+.. py:function:: rotate_voxel(shape, cell, density, rotated_grid)
+
+   Rotate the volumetric data using trilinear interpolation.
+   :param shape: voxel shape, tensor of shape (3,)
+   :param cell: cell vectors, tensor of shape (3, 3)
+   :param density: original density, tensor of shape (n_grid,)
+   :param rotated_grid: rotated grid coordinates, tensor of shape (n_grid, 3)
+   :return: rotated density, tensor of shape (n_grid,)
+
+
+.. py:class:: DensityDataDir(max_atoms=29, grid_size=36, samples=1000, _split='train', _rotated=True, to_split=True, rotate_voxel=False, **kwargs)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   .. py:attribute:: directory
+      :value: '/mas/projects/molecularmachines/db/qm9_vasp'
+
+
+
+   .. py:attribute:: padding
+
+
+   .. py:attribute:: max_atoms
+      :value: 29
+
+
+
+   .. py:attribute:: grid_size
+      :value: 36
+
+
+
+   .. py:attribute:: samples
+      :value: 1000
+
+
+
+   .. py:attribute:: rotate_voxel
+      :value: False
+
+
+
+   .. py:attribute:: member_list
+      :value: []
+
+
+

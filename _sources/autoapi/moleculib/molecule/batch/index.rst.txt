@@ -1,0 +1,110 @@
+moleculib.molecule.batch
+========================
+
+.. py:module:: moleculib.molecule.batch
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.molecule.batch.MoleculeCollator
+   moleculib.molecule.batch.MoleculePadBatch
+   moleculib.molecule.batch.MoleculeGeometricBatch
+
+
+Module Contents
+---------------
+
+.. py:class:: MoleculeCollator
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: collate(data_list: List[moleculib.molecule.datum.MoleculeDatum])
+      :classmethod:
+
+      :abstractmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+   .. py:method:: revert() -> List[moleculib.molecule.datum.MoleculeDatum]
+      :abstractmethod:
+
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: to(device: str) -> MoleculeCollator
+
+
+   .. py:method:: torch() -> MoleculeCollator
+
+
+   .. py:method:: to_dict(attrs=None)
+
+
+.. py:class:: MoleculePadBatch(**kwargs)
+
+   Bases: :py:obj:`MoleculeCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:method:: revert(constructor=MoleculeDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+
+.. py:class:: MoleculeGeometricBatch(batch_index, num_nodes, **kwargs)
+
+   Bases: :py:obj:`MoleculeCollator`
+
+
+   Abstract class for collation of multiple ProteinDatum instances
+   into a single batch instance
+
+
+   .. py:attribute:: batch_index
+
+
+   .. py:attribute:: num_nodes
+
+
+   .. py:method:: revert(constructor=MoleculeDatum)
+
+      Reverts a batch to its original list form
+
+
+
+   .. py:method:: collate(data_list)
+      :classmethod:
+
+
+      Takes a list of ProteinDatum instances and produces
+      a ProteinCollate instance with all the instances collated
+      according to the appropriate collate function
+
+
+

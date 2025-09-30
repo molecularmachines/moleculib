@@ -1,0 +1,19 @@
+moleculib.sequence
+==================
+
+.. py:module:: moleculib.sequence
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/moleculib/sequence/dataset/index
+   /autoapi/moleculib/sequence/datum/index
+   /autoapi/moleculib/sequence/metrics/index
+   /autoapi/moleculib/sequence/transform/index
+   /autoapi/moleculib/sequence/utils/index
+
+

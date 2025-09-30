@@ -1,0 +1,21 @@
+moleculib.molecule.alphabet
+===========================
+
+.. py:module:: moleculib.molecule.alphabet
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.molecule.alphabet.PERIODIC_TABLE
+
+
+Module Contents
+---------------
+
+.. py:data:: PERIODIC_TABLE
+   :value: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl',...
+
+

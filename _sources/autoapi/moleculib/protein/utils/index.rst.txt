@@ -1,0 +1,46 @@
+moleculib.protein.utils
+=======================
+
+.. py:module:: moleculib.protein.utils
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.utils.home_dir
+   moleculib.protein.utils.config
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.protein.utils.pdb_to_atom_array
+   moleculib.protein.utils.pids_file_to_list
+   moleculib.protein.utils.pad_array
+   moleculib.protein.utils.measure_rmsd
+   moleculib.protein.utils.rigid_Kabsch_3D
+
+
+Module Contents
+---------------
+
+.. py:data:: home_dir
+   :value: ''
+
+
+.. py:data:: config
+
+.. py:function:: pdb_to_atom_array(pdb_path)
+
+.. py:function:: pids_file_to_list(pids_path)
+
+.. py:function:: pad_array(array, total_size)
+
+.. py:function:: measure_rmsd(x: moleculib.protein.datum.ProteinDatum, y: moleculib.protein.datum.ProteinDatum, mode='all_atom')
+
+.. py:function:: rigid_Kabsch_3D(Q, P)
+

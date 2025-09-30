@@ -1,0 +1,229 @@
+moleculib.protein.transform
+===========================
+
+.. py:module:: moleculib.protein.transform
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.SSE_TOKENS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.ProteinTransform
+   moleculib.protein.transform.ProteinCrop
+   moleculib.protein.transform.ProteinRescale
+   moleculib.protein.transform.BackboneOnly
+   moleculib.protein.transform.CaOnly
+   moleculib.protein.transform.ProteinPad
+   moleculib.protein.transform.ListBonds
+   moleculib.protein.transform.ListAngles
+   moleculib.protein.transform.ListDihedrals
+   moleculib.protein.transform.DescribeChemistry
+   moleculib.protein.transform.TokenizeSequenceBoundaries
+   moleculib.protein.transform.MaybeMirror
+   moleculib.protein.transform.AnnotateSecondaryStructure
+   moleculib.protein.transform.MaskResidues
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   moleculib.protein.transform.normalize
+   moleculib.protein.transform.measure_chirality
+
+
+Module Contents
+---------------
+
+.. py:class:: ProteinTransform
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+.. py:class:: ProteinCrop(crop_size)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: crop_size
+
+
+.. py:class:: ProteinRescale(factor)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: factor
+
+
+.. py:class:: BackboneOnly(filter: bool = True, keep_seq: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: filter
+      :value: True
+
+
+
+   .. py:attribute:: keep_seq
+      :value: False
+
+
+
+.. py:class:: CaOnly(filter: bool = True, keep_seq: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: filter
+      :value: True
+
+
+
+   .. py:attribute:: keep_seq
+      :value: False
+
+
+
+.. py:class:: ProteinPad(pad_size: int, random_position: bool = False)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: pad_size
+
+
+   .. py:attribute:: random_position
+      :value: False
+
+
+
+.. py:class:: ListBonds(peptide_bonds: bool = True)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: peptide_bonds
+      :value: True
+
+
+
+.. py:class:: ListAngles
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+.. py:class:: ListDihedrals
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+.. py:class:: DescribeChemistry
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Augments ProteinDatum with bonds_list and angles_list a list of atomic indexes connected by bonds and angles
+   that should have invariant behavior according to chemistry
+   Note that indexing is performed at atom level, that is, as residue_dim atom_dim -> (residue_dim atom_dim)
+
+
+   .. py:attribute:: bond_transform
+
+
+   .. py:attribute:: angle_transform
+
+
+   .. py:attribute:: dihedral_transform
+
+
+.. py:class:: TokenizeSequenceBoundaries
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Augments ProteinDatum with boundary_token and boundary_mask
+
+
+.. py:function:: normalize(vector)
+
+.. py:function:: measure_chirality(coords)
+
+.. py:class:: MaybeMirror(hand='left')
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: hand
+      :value: 'left'
+
+
+
+.. py:data:: SSE_TOKENS
+   :value: ['', 'c', 'a', 'b']
+
+
+.. py:class:: AnnotateSecondaryStructure
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+.. py:class:: MaskResidues(mask_ratio: float = 0.0, contiguous: float = 0.0)
+
+   Bases: :py:obj:`ProteinTransform`
+
+
+   Abstract class for transformation of ProteinDatum datapoints
+
+
+   .. py:attribute:: mask_ratio
+      :value: 0.0
+
+
+
+   .. py:attribute:: contiguous
+      :value: 0.0
+
+
+

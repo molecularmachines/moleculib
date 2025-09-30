@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D2D2D" />
+    
+    <title>moleculib :: MoleculIB: Molecular Data Library for Machine Learning</title>
+    
+
+    <link rel="icon" type="image/png" sizes="32x32" href="_static/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="_static/logo.png">
+    <link rel="index" title="Index" href="genindex.html" />
+
+    <link rel="stylesheet" href="_static/css/insegel.css" />
+    <link rel="stylesheet" href="_static/css/custom.css" />
+
+    <script type="text/javascript" id="documentation_options" data-url_root="./"
+        src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/sphinx_highlight.js"></script>
+    
+
+    <script
+        src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+    <div id="insegel-container">
+        <header>
+            <div id="logo-container">
+                
+                <a href="#"><img src="_static/logo.png"></a>
+                
+            </div>
+            <div id="project-container">
+                
+                <h1><strong>moleculib</strong> Documentation</h1>
+                
+            </div>
+        </header>
+
+        <div id="content-container">
+
+            <div id="main-content-container">
+                <div id="main-content" role="main">
+                    
+  <section id="moleculib-molecular-data-library-for-machine-learning">
+<h1>MoleculIB: Molecular Data Library for Machine Learning<a class="headerlink" href="#moleculib-molecular-data-library-for-machine-learning" title="Link to this heading">¶</a></h1>
+<p><strong>MoleculIB</strong> is a comprehensive Python package designed to streamline the processing and management of biomolecular data within machine learning workflows. It empowers researchers and developers with a robust set of functionalities for working with proteins, nucleic acids, and small molecules, simplifying complex data pipelines and accelerating the journey from raw biomolecular data to valuable insights.</p>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Data Processing</strong>: Preprocessing and cleaning capabilities for data normalization and feature engineering</p></li>
+<li><p><strong>Machine Learning-First</strong>: Designed to readily integrate with JAX and pytrees in machine learning pipelines</p></li>
+<li><p><strong>Reproducibility</strong>: Modular classes and workflows for better organization and reproducible research</p></li>
+<li><p><strong>Multi-scale Representation</strong>: Work with molecules at different scales - from sequences to 3D structures</p></li>
+<li><p><strong>Interoperability</strong>: Seamless conversion between common biomolecular file formats and data structures</p></li>
+</ul>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Link to this heading">¶</a></h2>
+<section id="protein-module">
+<h3>Protein Module<a class="headerlink" href="#protein-module" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">protein</span></code> module provides comprehensive tools for working with protein structures and sequences:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ProteinDatum</span></code>: Core class for protein structure representation with residue and atom-level information</p></li>
+<li><p>Manipulation of protein coordinates, sequences, and structural features</p></li>
+<li><p>Support for common operations like alignment, chain separation, and structural analysis</p></li>
+<li><p>Conversion between different protein file formats (PDB, mmCIF, mmtf)</p></li>
+</ul>
+</section>
+<section id="nucleic-module">
+<h3>Nucleic Module<a class="headerlink" href="#nucleic-module" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">nucleic</span></code> module handles RNA and DNA structures and sequences:</p>
+<ul class="simple">
+<li><p>Support for standard nucleic acid operations and representations</p></li>
+<li><p>Tools for working with RNA/DNA secondary structure</p></li>
+<li><p>Conversion utilities for different nucleic acid file formats</p></li>
+</ul>
+</section>
+<section id="molecule-module">
+<h3>Molecule Module<a class="headerlink" href="#molecule-module" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">molecule</span></code> module focuses on small molecule representation and processing:</p>
+<ul class="simple">
+<li><p>Tools for representing and manipulating small molecules</p></li>
+<li><p>Atom typing and feature extraction</p></li>
+<li><p>Conversion between different molecular file formats</p></li>
+</ul>
+</section>
+<section id="assembly-module">
+<h3>Assembly Module<a class="headerlink" href="#assembly-module" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">assembly</span></code> module handles multi-component biological assemblies:</p>
+<ul class="simple">
+<li><p>Tools for working with protein-protein complexes</p></li>
+<li><p>Support for protein-ligand and protein-nucleic acid interactions</p></li>
+<li><p>Assembly generation and analysis capabilities</p></li>
+</ul>
+</section>
+<section id="sequence-module">
+<h3>Sequence Module<a class="headerlink" href="#sequence-module" title="Link to this heading">¶</a></h3>
+<p>Tools for biological sequence analysis:</p>
+<ul class="simple">
+<li><p>Sequence alignment and comparison</p></li>
+<li><p>Feature extraction from sequences</p></li>
+<li><p>Integration with structure-based features</p></li>
+</ul>
+</section>
+<section id="metrics-and-loss">
+<h3>Metrics and Loss<a class="headerlink" href="#metrics-and-loss" title="Link to this heading">¶</a></h3>
+<p>The library includes specialized modules for molecular metrics and loss functions:</p>
+<ul class="simple">
+<li><p>Domain-specific metrics for evaluating molecular models</p></li>
+<li><p>Custom loss functions designed for biomolecular machine learning tasks</p></li>
+<li><p>Support for both training and evaluation workflows</p></li>
+</ul>
+</section>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>Install MoleculIB via pip:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">moleculib</span>
+</pre></div>
+</div>
+<p>Requirements:</p>
+<ul class="simple">
+<li><p>Python ≥ 3.7</p></li>
+<li><p>NumPy ≥ 1.20.0</p></li>
+<li><p>JAX ≥ 0.3.0</p></li>
+<li><p>Biotite ≥ 0.30.0</p></li>
+<li><p>py3Dmol ≥ 1.8.0 (for visualization)</p></li>
+</ul>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
+<p>Basic usage example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">moleculib</span> <span class="k">as</span> <span class="nn">mol</span>
+
+<span class="c1"># Load a protein from a PDB file</span>
+<span class="n">protein</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">protein</span><span class="o">.</span><span class="n">ProteinDatum</span><span class="o">.</span><span class="n">from_filepath</span><span class="p">(</span><span class="s2">&quot;example.pdb&quot;</span><span class="p">)</span>
+
+<span class="c1"># Access protein attributes</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of residues: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">protein</span><span class="o">.</span><span class="n">residue_token</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Protein sequence: </span><span class="si">{</span><span class="n">protein</span><span class="o">.</span><span class="n">get_sequence</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Perform operations</span>
+<span class="n">chains</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">protein</span><span class="o">.</span><span class="n">ProteinDatum</span><span class="o">.</span><span class="n">separate_chains</span><span class="p">(</span><span class="n">protein</span><span class="p">)</span>
+<span class="n">aligned_protein</span> <span class="o">=</span> <span class="n">protein</span><span class="o">.</span><span class="n">align_to</span><span class="p">(</span><span class="n">reference_protein</span><span class="p">)</span>
+
+<span class="c1"># Save in different format</span>
+<span class="n">protein</span><span class="o">.</span><span class="n">save_mmcif</span><span class="p">(</span><span class="s2">&quot;output.cif&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For more examples and detailed documentation, see the specific module sections below.</p>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </div>
+            </div>
+
+            <div id="side-menu-container">
+
+                <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+                <div id="side-menu" role="navigation">
+
+                    
+  
+    
+  
+  
+    <p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/moleculib/index.html">moleculib</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/moleculib/index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  
+
+
+                </div>
+
+                
+
+            </div>
+
+        </div>
+
+        <footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="_sources/index.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2024, Center for Bits and Atoms, MIT Media Lab Molecular Machines
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+    </div>
+
+</body>
+
+</html>
